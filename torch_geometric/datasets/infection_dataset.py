@@ -9,59 +9,6 @@ from torch_geometric.utils import k_hop_subgraph
 
 
 class InfectionDataset(InMemoryDataset):
-    r"""Generates a synthetic infection dataset for evaluating explainabilty
-    algorithms, as described in the `"Explainability Techniques for Graph
-    Convolutional Networks" <https://arxiv.org/abs/1905.13686>`__ paper.
-    The :class:`~torch_geometric.datasets.InfectionDataset` creates synthetic
-    graphs coming from a
-    :class:`~torch_geometric.datasets.graph_generator.GraphGenerator` with
-    :obj:`num_infected` randomly assigned infected nodes.
-    The dataset describes a node classification task of predicting the length
-    of the shortest path to infected nodes, with corresponding ground-truth
-    edge-level masks.
-
-    For example, to generate a random Erdos-Renyi (ER) infection graph
-    with :obj:`500` nodes and :obj:`0.004` edge probability, write:
-
-    .. code-block:: python
-
-        from torch_geometric.datasets import InfectionDataset
-        from torch_geometric.datasets.graph_generator import ERGraph
-
-        dataset = InfectionDataset(
-            graph_generator=ERGraph(num_nodes=500, edge_prob=0.004),
-            num_infected_nodes=50,
-            max_path_length=3,
-        )
-
-    Args:
-        graph_generator (GraphGenerator or str): The graph generator to be
-            used, *e.g.*,
-            :class:`torch.geometric.datasets.graph_generator.BAGraph`
-            (or any string that automatically resolves to it).
-        num_infected_nodes (int or List[int]): The number of randomly
-            selected infected nodes in the graph.
-            If given as a list, will select a different number of infected
-            nodes for different graphs.
-        max_path_length (int, List[int]): The maximum shortest path length to
-            determine whether a node will be infected.
-            If given as a list, will apply different shortest path lengths for
-            different graphs. (default: :obj:`5`)
-        num_graphs (int, optional): The number of graphs to generate.
-            The number of graphs will be automatically determined by
-            :obj:`len(num_infected_nodes)` or :obj:`len(max_path_length)` in
-            case either of them is given as a list, and should only be set in
-            case one wants to create multiple graphs while
-            :obj:`num_infected_nodes` and :obj:`max_path_length` are given as
-            an integer. (default: :obj:`None`)
-        graph_generator_kwargs (Dict[str, Any], optional): Arguments passed to
-            the respective graph generator module in case it gets automatically
-            resolved. (default: :obj:`None`)
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-    """
     def __init__(
         self,
         graph_generator: Union[GraphGenerator, str],

@@ -37,27 +37,13 @@ class DeviceHelper:
         self.module = getattr(torch, self.device.type) if self.is_gpu else None
 
     def maybe_init_stream(self) -> None:
-        if self.is_gpu:
-            self.stream = self.module.Stream()
-            self.stream_context = partial(
-                self.module.stream,
-                stream=self.stream,
-            )
+        pass
 
     def maybe_wait_stream(self) -> None:
-        if self.stream is not None:
-            self.module.current_stream().wait_stream(self.stream)
+        pass
 
 
 class PrefetchLoader:
-    r"""A GPU prefetcher class for asynchronously transferring data of a
-    :class:`torch.utils.data.DataLoader` from host memory to device memory.
-
-    Args:
-        loader (torch.utils.data.DataLoader): The data loader.
-        device (torch.device, optional): The device to load the data to.
-            (default: :obj:`None`)
-    """
     def __init__(
         self,
         loader: DataLoader,
@@ -67,15 +53,7 @@ class PrefetchLoader:
         self.device_helper = DeviceHelper(device)
 
     def non_blocking_transfer(self, batch: Any) -> Any:
-        if not self.device_helper.is_gpu:
-            return batch
-        if isinstance(batch, (list, tuple)):
-            return [self.non_blocking_transfer(v) for v in batch]
-        if isinstance(batch, dict):
-            return {k: self.non_blocking_transfer(v) for k, v in batch.items()}
-
-        batch = batch.pin_memory()
-        return batch.to(self.device_helper.device, non_blocking=True)
+        pass
 
     def __iter__(self) -> Any:
         first = True

@@ -15,49 +15,6 @@ from torch_geometric.io import fs
 
 
 class BrcaTcga(InMemoryDataset):
-    r"""The breast cancer (BRCA TCGA Pan-Cancer Atlas) dataset consisting of
-    patients with survival information and gene expression data from
-    `cBioPortal <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4160307/>`_
-    and a network of biological interactions between those nodes from
-    `Pathway Commons <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7145667/>`_.
-    The dataset contains the gene features of 1,082 patients, and the overall
-    survival time (in months) of each patient as label.
-
-    Pre-processing and example model codes on how to use this dataset can be
-    found `here <https://github.com/cannin/pyg_pathway_commons_cbioportal>`_.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        pre_filter (callable, optional): A function that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a boolean
-            value, indicating whether the data object should be included in the
-            final dataset. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-
-    **STATS:**
-
-    .. list-table::
-        :widths: 10 10 10 10
-        :header-rows: 1
-
-        * - #graphs
-          - #nodes
-          - #edges
-          - #features
-        * - 1,082
-          - 9,288
-          - 271,771
-          - 1,082
-    """
     url = 'https://zenodo.org/record/8251328/files/brca_tcga.zip?download=1'
 
     def __init__(
@@ -74,11 +31,11 @@ class BrcaTcga(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> List[str]:
-        return ['graph_idx.csv', 'graph_labels.csv', 'edge_index.pt']
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def download(self) -> None:
         path = download_url(self.url, self.root)

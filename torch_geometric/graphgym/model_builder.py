@@ -24,26 +24,19 @@ class GraphGymModule(LightningModule):
         return self.model(*args, **kwargs)
 
     def configure_optimizers(self) -> Tuple[Any, Any]:
-        optimizer = create_optimizer(self.model.parameters(), self.cfg.optim)
-        scheduler = create_scheduler(optimizer, self.cfg.optim)
-        return [optimizer], [scheduler]
+        pass
 
     def _shared_step(self, batch, split: str) -> Dict:
-        batch.split = split
-        pred, true = self(batch)
-        loss, pred_score = compute_loss(pred, true)
-        step_end_time = time.time()
-        return dict(loss=loss, true=true, pred_score=pred_score.detach(),
-                    step_end_time=step_end_time)
+        pass
 
     def training_step(self, batch, *args, **kwargs):
-        return self._shared_step(batch, split="train")
+        pass
 
     def validation_step(self, batch, *args, **kwargs):
-        return self._shared_step(batch, split="val")
+        pass
 
     def test_step(self, batch, *args, **kwargs):
-        return self._shared_step(batch, split="test")
+        pass
 
     @property
     def encoder(self) -> torch.nn.Module:
@@ -51,20 +44,18 @@ class GraphGymModule(LightningModule):
 
     @property
     def mp(self) -> torch.nn.Module:
-        return self.model.mp
+        pass
 
     @property
     def post_mp(self) -> torch.nn.Module:
-        return self.model.post_mp
+        pass
 
     @property
     def pre_mp(self) -> torch.nn.Module:
-        return self.model.pre_mp
+        pass
 
     def lr_scheduler_step(self, *args, **kwargs):
-        # Needed for PyTorch 2.0 since the base class of LR schedulers changed.
-        # TODO Remove once we only want to support PyTorch Lightning >= 2.0.
-        return super().lr_scheduler_step(*args, **kwargs)
+        pass
 
 
 def create_model(to_device=True, dim_in=None, dim_out=None) -> GraphGymModule:
@@ -78,7 +69,6 @@ def create_model(to_device=True, dim_in=None, dim_out=None) -> GraphGymModule:
     """
     dim_in = cfg.share.dim_in if dim_in is None else dim_in
     dim_out = cfg.share.dim_out if dim_out is None else dim_out
-    # binary classification, output dim = 1
     if 'classification' == cfg.dataset.task_type and dim_out == 2:
         dim_out = 1
 

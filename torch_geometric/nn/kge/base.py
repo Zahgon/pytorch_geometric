@@ -9,15 +9,6 @@ from torch_geometric.nn.kge.loader import KGTripletLoader
 
 
 class KGEModel(torch.nn.Module):
-    r"""An abstract base class for implementing custom KGE models.
-
-    Args:
-        num_nodes (int): The number of nodes/entities in the graph.
-        num_relations (int): The number of relations in the graph.
-        hidden_channels (int): The hidden embedding size.
-        sparse (bool, optional): If set to :obj:`True`, gradients w.r.t. to the
-            embedding matrices will be sparse. (default: :obj:`False`)
-    """
     def __init__(
         self,
         num_nodes: int,
@@ -76,18 +67,7 @@ class KGEModel(torch.nn.Module):
         tail_index: Tensor,
         **kwargs,
     ) -> Tensor:
-        r"""Returns a mini-batch loader that samples a subset of triplets.
-
-        Args:
-            head_index (torch.Tensor): The head indices.
-            rel_type (torch.Tensor): The relation type.
-            tail_index (torch.Tensor): The tail indices.
-            **kwargs (optional): Additional arguments of
-                :class:`torch.utils.data.DataLoader`, such as
-                :obj:`batch_size`, :obj:`shuffle`, :obj:`drop_last`
-                or :obj:`num_workers`.
-        """
-        return KGTripletLoader(head_index, rel_type, tail_index, **kwargs)
+        pass
 
     @torch.no_grad()
     def test(
@@ -150,7 +130,6 @@ class KGEModel(torch.nn.Module):
             rel_type (torch.Tensor): The relation type.
             tail_index (torch.Tensor): The tail indices.
         """
-        # Random sample either `head_index` or `tail_index` (but not both):
         num_negatives = head_index.numel() // 2
         rnd_index = torch.randint(self.num_nodes, head_index.size(),
                                   device=head_index.device)

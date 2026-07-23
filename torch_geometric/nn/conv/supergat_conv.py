@@ -23,105 +23,6 @@ from torch_geometric.utils import (
 
 
 class SuperGATConv(MessagePassing):
-    r"""The self-supervised graph attentional operator from the `"How to Find
-    Your Friendly Neighborhood: Graph Attention Design with Self-Supervision"
-    <https://openreview.net/forum?id=Wi5KUNlqWty>`_ paper.
-
-    .. math::
-
-        \mathbf{x}^{\prime}_i = \alpha_{i,i}\mathbf{\Theta}\mathbf{x}_{i} +
-        \sum_{j \in \mathcal{N}(i)} \alpha_{i,j}\mathbf{\Theta}\mathbf{x}_{j},
-
-    where the two types of attention :math:`\alpha_{i,j}^{\mathrm{MX\ or\ SD}}`
-    are computed as:
-
-    .. math::
-
-        \alpha_{i,j}^{\mathrm{MX\ or\ SD}} &=
-        \frac{
-        \exp\left(\mathrm{LeakyReLU}\left(
-            e_{i,j}^{\mathrm{MX\ or\ SD}}
-        \right)\right)}
-        {\sum_{k \in \mathcal{N}(i) \cup \{ i \}}
-        \exp\left(\mathrm{LeakyReLU}\left(
-            e_{i,k}^{\mathrm{MX\ or\ SD}}
-        \right)\right)}
-
-        e_{i,j}^{\mathrm{MX}} &= \mathbf{a}^{\top}
-            [\mathbf{\Theta}\mathbf{x}_i \, \Vert \,
-             \mathbf{\Theta}\mathbf{x}_j]
-            \cdot \sigma \left(
-                \left( \mathbf{\Theta}\mathbf{x}_i \right)^{\top}
-                \mathbf{\Theta}\mathbf{x}_j
-            \right)
-
-        e_{i,j}^{\mathrm{SD}} &= \frac{
-            \left( \mathbf{\Theta}\mathbf{x}_i \right)^{\top}
-            \mathbf{\Theta}\mathbf{x}_j
-        }{ \sqrt{d} }
-
-    The self-supervised task is a link prediction using the attention values
-    as input to predict the likelihood :math:`\phi_{i,j}^{\mathrm{MX\ or\ SD}}`
-    that an edge exists between nodes:
-
-    .. math::
-
-        \phi_{i,j}^{\mathrm{MX}} &= \sigma \left(
-            \left( \mathbf{\Theta}\mathbf{x}_i \right)^{\top}
-            \mathbf{\Theta}\mathbf{x}_j
-        \right)
-
-        \phi_{i,j}^{\mathrm{SD}} &= \sigma \left(
-            \frac{
-                \left( \mathbf{\Theta}\mathbf{x}_i \right)^{\top}
-                \mathbf{\Theta}\mathbf{x}_j
-            }{ \sqrt{d} }
-        \right)
-
-    .. note::
-
-        For an example of using SuperGAT, see `examples/super_gat.py
-        <https://github.com/pyg-team/pytorch_geometric/blob/master/examples/
-        super_gat.py>`_.
-
-    Args:
-        in_channels (int): Size of each input sample, or :obj:`-1` to derive
-            the size from the first input(s) to the forward method.
-        out_channels (int): Size of each output sample.
-        heads (int, optional): Number of multi-head-attentions.
-            (default: :obj:`1`)
-        concat (bool, optional): If set to :obj:`False`, the multi-head
-            attentions are averaged instead of concatenated.
-            (default: :obj:`True`)
-        negative_slope (float, optional): LeakyReLU angle of the negative
-            slope. (default: :obj:`0.2`)
-        dropout (float, optional): Dropout probability of the normalized
-            attention coefficients which exposes each node to a stochastically
-            sampled neighborhood during training. (default: :obj:`0`)
-        add_self_loops (bool, optional): If set to :obj:`False`, will not add
-            self-loops to the input graph. (default: :obj:`True`)
-        bias (bool, optional): If set to :obj:`False`, the layer will not learn
-            an additive bias. (default: :obj:`True`)
-        attention_type (str, optional): Type of attention to use
-            (:obj:`'MX'`, :obj:`'SD'`). (default: :obj:`'MX'`)
-        neg_sample_ratio (float, optional): The ratio of the number of sampled
-            negative edges to the number of positive edges.
-            (default: :obj:`0.5`)
-        edge_sample_ratio (float, optional): The ratio of samples to use for
-            training among the number of training edges. (default: :obj:`1.0`)
-        is_undirected (bool, optional): Whether the input graph is undirected.
-            If not given, will be automatically computed with the input graph
-            when negative sampling is performed. (default: :obj:`False`)
-        **kwargs (optional): Additional arguments of
-            :class:`torch_geometric.nn.conv.MessagePassing`.
-
-    Shapes:
-        - **input:**
-          node features :math:`(|\mathcal{V}|, F_{in})`,
-          edge indices :math:`(2, |\mathcal{E}|)`,
-          negative edge indices :math:`(2, |\mathcal{E}^{(-)}|)` *(optional)*
-        - **output:** node features :math:`(|\mathcal{V}|, H * F_{out})`
-    """
     att_x: OptTensor
     att_y: OptTensor
 
@@ -209,7 +110,6 @@ class SuperGATConv(MessagePassing):
 
         x = self.lin(x).view(-1, H, C)
 
-        # propagate_type: (x: Tensor)
         out = self.propagate(edge_index, x=x)
 
         if self.training:
@@ -304,14 +204,7 @@ class SuperGATConv(MessagePassing):
         return alpha
 
     def get_attention_loss(self) -> Tensor:
-        r"""Computes the self-supervised graph attention loss."""
-        if not self.training:
-            return torch.tensor([0], device=self.lin.weight.device)
-
-        return F.binary_cross_entropy_with_logits(
-            self.att_x.mean(dim=-1),
-            self.att_y,
-        )
+        pass
 
     def __repr__(self) -> str:
         return (f'{self.__class__.__name__}({self.in_channels}, '

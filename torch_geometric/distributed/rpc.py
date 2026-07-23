@@ -23,9 +23,7 @@ def rpc_is_initialized() -> bool:
 
 
 def rpc_require_initialized(func: Callable) -> Callable:
-    if hasattr(rpc, 'api'):
-        return rpc.api._require_initialized(func)
-    return func
+    pass
 
 
 @rpc_require_initialized
@@ -90,7 +88,6 @@ def shutdown_rpc(id: str = None, graceful: bool = True,
 
 
 class RPCRouter:
-    r"""A router to get the worker based on the partition ID."""
     def __init__(self, partition_to_workers: List[List[str]]):
         for rpc_worker_list in partition_to_workers:
             if len(rpc_worker_list) == 0:
@@ -126,7 +123,6 @@ def rpc_partition_to_workers(
 
 
 class RPCCallBase(ABC):
-    r"""A wrapper base class for RPC calls in remote processes."""
     @abstractmethod
     def rpc_sync(self, *args, **kwargs):
         pass
@@ -157,8 +153,7 @@ def rpc_register(call: RPCCallBase) -> int:
 
 
 def _rpc_async_call(call_id: int, *args, **kwargs):
-    r"""Entry point for RPC requests."""
-    return _rpc_call_pool.get(call_id).rpc_async(*args, **kwargs)
+    pass
 
 
 @rpc_require_initialized
@@ -173,17 +168,9 @@ def rpc_async(worker_name: str, call_id: int, args=None, kwargs=None):
 
 
 def _rpc_sync_call(call_id: int, *args, **kwargs):
-    r"""Entry point for synchronous RPC requests."""
-    return _rpc_call_pool.get(call_id).rpc_sync(*args, **kwargs)
+    pass
 
 
 @rpc_require_initialized
 def rpc_sync(worker_name: str, call_id: int, args=None, kwargs=None):
-    r"""Performs a synchronous RPC request and returns a future."""
-    future = rpc.rpc_async(
-        to=worker_name,
-        func=_rpc_sync_call,
-        args=(call_id, *args),
-        kwargs=kwargs,
-    )
-    return future.wait()
+    pass

@@ -17,87 +17,6 @@ from torch_geometric.utils import remove_self_loops
 
 
 class GNNBenchmarkDataset(InMemoryDataset):
-    r"""A variety of artificially and semi-artificially generated graph
-    datasets from the `"Benchmarking Graph Neural Networks"
-    <https://arxiv.org/abs/2003.00982>`_ paper.
-
-    .. note::
-        The ZINC dataset is provided via
-        :class:`torch_geometric.datasets.ZINC`.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        name (str): The name of the dataset (one of :obj:`"PATTERN"`,
-            :obj:`"CLUSTER"`, :obj:`"MNIST"`, :obj:`"CIFAR10"`,
-            :obj:`"TSP"`, :obj:`"CSL"`)
-        split (str, optional): If :obj:`"train"`, loads the training dataset.
-            If :obj:`"val"`, loads the validation dataset.
-            If :obj:`"test"`, loads the test dataset.
-            (default: :obj:`"train"`)
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        pre_filter (callable, optional): A function that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a boolean
-            value, indicating whether the data object should be included in the
-            final dataset. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-
-    **STATS:**
-
-    .. list-table::
-        :widths: 20 10 10 10 10 10
-        :header-rows: 1
-
-        * - Name
-          - #graphs
-          - #nodes
-          - #edges
-          - #features
-          - #classes
-        * - PATTERN
-          - 14,000
-          - ~118.9
-          - ~6,098.9
-          - 3
-          - 2
-        * - CLUSTER
-          - 12,000
-          - ~117.2
-          - ~4,303.9
-          - 7
-          - 6
-        * - MNIST
-          - 70,000
-          - ~70.6
-          - ~564.5
-          - 3
-          - 10
-        * - CIFAR10
-          - 60,000
-          - ~117.6
-          - ~941.2
-          - 5
-          - 10
-        * - TSP
-          - 12,000
-          - ~275.4
-          - ~6,885.0
-          - 2
-          - 2
-        * - CSL
-          - 150
-          - ~41.0
-          - ~164.0
-          - 0
-          - 10
-    """
 
     names = ['PATTERN', 'CLUSTER', 'MNIST', 'CIFAR10', 'TSP', 'CSL']
 
@@ -148,29 +67,19 @@ class GNNBenchmarkDataset(InMemoryDataset):
 
     @property
     def raw_dir(self) -> str:
-        return osp.join(self.root, self.name, 'raw')
+        pass
 
     @property
     def processed_dir(self) -> str:
-        return osp.join(self.root, self.name, 'processed')
+        pass
 
     @property
     def raw_file_names(self) -> List[str]:
-        if self.name == 'CSL':
-            return [
-                'graphs_Kary_Deterministic_Graphs.pkl',
-                'y_Kary_Deterministic_Graphs.pt'
-            ]
-        else:
-            name = self.urls[self.name].split('/')[-1][:-4]
-            return [f'{name}.pt']
+        pass
 
     @property
     def processed_file_names(self) -> List[str]:
-        if self.name == 'CSL':
-            return ['data.pt']
-        else:
-            return ['train_data.pt', 'val_data.pt', 'test_data.pt']
+        pass
 
     def download(self) -> None:
         path = download_url(self.urls[self.name], self.raw_dir)

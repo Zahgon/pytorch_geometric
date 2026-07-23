@@ -57,53 +57,6 @@ INDEX_TO_SORT_ORDER = {v: k for k, v in SORT_ORDER_TO_INDEX.items()}
 
 
 class Database(ABC):
-    r"""Base class for inserting and retrieving data from a database.
-
-    A database acts as a persisted, out-of-memory and index-based key/value
-    store for tensor and custom data:
-
-    .. code-block:: python
-
-        db = Database()
-        db[0] = Data(x=torch.randn(5, 16), y=0, z='id_0')
-        print(db[0])
-        >>> Data(x=[5, 16], y=0, z='id_0')
-
-    To improve efficiency, it is recommended to specify the underlying
-    :obj:`schema` of the data:
-
-    .. code-block:: python
-
-        db = Database(schema={  # Custom schema:
-            # Tensor information can be specified through a dictionary:
-            'x': dict(dtype=torch.float, size=(-1, 16)),
-            'y': int,
-            'z': str,
-        })
-        db[0] = dict(x=torch.randn(5, 16), y=0, z='id_0')
-        print(db[0])
-        >>> {'x': torch.tensor(...), 'y': 0, 'z': 'id_0'}
-
-    In addition, databases support batch-wise insert and get, and support
-    syntactic sugar known from indexing :python:`Python` lists, *e.g.*:
-
-    .. code-block:: python
-
-        db = Database()
-        db[2:5] = torch.randn(3, 16)
-        print(db[torch.tensor([2, 3])])
-        >>> [torch.tensor(...), torch.tensor(...)]
-
-    Args:
-        schema (Any or Tuple[Any] or Dict[str, Any], optional): The schema of
-            the input data.
-            Can take :obj:`int`, :obj:`float`, :obj:`str`, :obj:`object`, or a
-            dictionary with :obj:`dtype` and :obj:`size` keys (for specifying
-            tensor data) as input, and can be nested as a tuple or dictionary.
-            Specifying the schema will improve efficiency, since by default the
-            database will use python pickling for serializing and
-            deserializing. (default: :obj:`object`)
-    """
     def __init__(self, schema: Schema = object) -> None:
         schema_dict = self._to_dict(maybe_cast_to_tensor_info(schema))
         self.schema: Dict[Union[str, int], Any] = {
@@ -194,32 +147,11 @@ class Database(ABC):
         indices: Union[Sequence[int], Tensor, slice, range],
         batch_size: Optional[int] = None,
     ) -> List[Any]:
-        r"""Gets a chunk of data from the specified indices.
-
-        Args:
-            indices (List[int] or torch.Tensor or range): The indices to query.
-            batch_size (int, optional): If specified, will request the data
-                from the database in batches of size :obj:`batch_size`.
-                (default: :obj:`None`)
-        """
-        if isinstance(indices, slice):
-            indices = self.slice_to_range(indices)
-
-        length = len(indices)
-        batch_size = length if batch_size is None else batch_size
-
-        data_list: List[Any] = []
-        for start in range(0, length, batch_size):
-            chunk_indices = indices[start:start + batch_size]
-            data_list.extend(self._multi_get(chunk_indices))
-        return data_list
+        pass
 
     def _multi_get(self, indices: Union[Sequence[int], Tensor]) -> List[Any]:
-        if isinstance(indices, Tensor):
-            indices = indices.tolist()
-        return [self.get(index) for index in indices]
+        pass
 
-    # Helper functions ########################################################
 
     @staticmethod
     def _to_dict(
@@ -239,7 +171,6 @@ class Database(ABC):
 
         return range(start, stop, step)
 
-    # Python built-ins ########################################################
 
     def __len__(self) -> int:
         raise NotImplementedError
@@ -272,23 +203,6 @@ class Database(ABC):
 
 
 class SQLiteDatabase(Database):
-    r"""An index-based key/value database based on :obj:`sqlite3`.
-
-    .. note::
-        This database implementation requires the :obj:`sqlite3` package.
-
-    Args:
-        path (str): The path to where the database should be saved.
-        name (str): The name of the table to save the data to.
-        schema (Any or Tuple[Any] or Dict[str, Any], optional): The schema of
-            the input data.
-            Can take :obj:`int`, :obj:`float`, :obj:`str`, :obj:`object`, or a
-            dictionary with :obj:`dtype` and :obj:`size` keys (for specifying
-            tensor data) as input, and can be nested as a tuple or dictionary.
-            Specifying the schema will improve efficiency, since by default the
-            database will use python pickling for serializing and
-            deserializing. (default: :obj:`object`)
-    """
     def __init__(self, path: str, name: str, schema: Schema = object) -> None:
         super().__init__(schema)
 
@@ -304,8 +218,6 @@ class SQLiteDatabase(Database):
 
         self.connect()
 
-        # Create the table (if it does not exist) by mapping the Python schema
-        # to the corresponding SQL schema:
         sql_schema = ',\n'.join([
             f'  {col_name} {self._to_sql_type(type_info)}' for col_name,
             type_info in zip(self._col_names, self.schema.values())
@@ -330,9 +242,7 @@ class SQLiteDatabase(Database):
 
     @property
     def connection(self) -> Any:
-        if self._connection is None:
-            raise RuntimeError("No open database connection")
-        return self._connection
+        pass
 
     @property
     def cursor(self) -> Any:
@@ -375,68 +285,25 @@ class SQLiteDatabase(Database):
         indices: Union[Sequence[int], Tensor, slice, range],
         batch_size: Optional[int] = None,
     ) -> List[Any]:
-
-        if isinstance(indices, slice):
-            indices = self.slice_to_range(indices)
-        elif isinstance(indices, Tensor):
-            indices = indices.tolist()
-
-        # We create a temporary ID table to then perform an INNER JOIN.
-        # This avoids having a long IN clause and guarantees sorted outputs:
-        join_table_name = f'{self.name}__join'
-        # Temporary tables do not lock the database.
-        query = (f'CREATE TEMP TABLE {join_table_name} (\n'
-                 f'  id INTEGER,\n'
-                 f'  row_id INTEGER\n'
-                 f')')
-        self.cursor.execute(query)
-
-        query = f'INSERT INTO {join_table_name} (id, row_id) VALUES (?, ?)'
-        self.cursor.executemany(query, zip(indices, range(len(indices))))
-        self.connection.commit()
-
-        query = f'SELECT * FROM {join_table_name}'
-        self.cursor.execute(query)
-
-        query = (f'SELECT {self._joined_col_names} '
-                 f'FROM {self.name} INNER JOIN {join_table_name} '
-                 f'ON {self.name}.id = {join_table_name}.id '
-                 f'ORDER BY {join_table_name}.row_id')
-        self.cursor.execute(query)
-
-        if batch_size is None:
-            data_list = self.cursor.fetchall()
-        else:
-            data_list = []
-            while True:
-                chunk_list = self.cursor.fetchmany(size=batch_size)
-                if len(chunk_list) == 0:
-                    break
-                data_list.extend(chunk_list)
-
-        query = f'DROP TABLE {join_table_name}'
-        self.cursor.execute(query)
-
-        return [self._deserialize(data) for data in data_list]
+        pass
 
     def __len__(self) -> int:
         query = f'SELECT COUNT(*) FROM {self.name}'
         self.cursor.execute(query)
         return self.cursor.fetchone()[0]
 
-    # Helper functions ########################################################
 
     @cached_property
     def _col_names(self) -> List[str]:
-        return [f'COL_{key}' for key in self.schema.keys()]
+        pass
 
     @cached_property
     def _joined_col_names(self) -> str:
-        return ', '.join(self._col_names)
+        pass
 
     @cached_property
     def _dummies(self) -> str:
-        return ', '.join(['?'] * len(self.schema.keys()))
+        pass
 
     def _to_sql_type(self, type_info: Any) -> str:
         if type_info == int:
@@ -449,12 +316,6 @@ class SQLiteDatabase(Database):
             return 'BLOB NOT NULL'
 
     def _serialize(self, row: Any) -> List[Any]:
-        # Serializes the given input data according to `schema`:
-        # * {int, float, str}: Use as they are.
-        # * torch.Tensor: Convert into the raw byte string
-        # * object: Dump via pickle
-        # If we find a `torch.Tensor` that is not registered as such in
-        # `schema`, we modify the schema in-place for improved efficiency.
         out: List[Any] = []
         row_dict = self._to_dict(row)
         for key, schema in self.schema.items():
@@ -507,11 +368,6 @@ class SQLiteDatabase(Database):
         return out
 
     def _deserialize(self, row: Tuple[Any]) -> Any:
-        # Deserializes the DB data according to `schema`:
-        # * {int, float, str}: Use as they are.
-        # * torch.Tensor: Load raw byte string with `dtype` and `size`
-        #   information from `schema`
-        # * object: Load via pickle
         out_dict = {}
         for i, (key, schema) in enumerate(self.schema.items()):
             value = row[i]
@@ -570,8 +426,6 @@ class SQLiteDatabase(Database):
                     weights_only=False,
                 )
 
-        # In case `0` exists as integer in the schema, this means that the
-        # schema was passed as either a single entry or a tuple:
         if 0 in self.schema:
             if len(self.schema) == 1:
                 return out_dict[0]
@@ -582,26 +436,6 @@ class SQLiteDatabase(Database):
 
 
 class RocksDatabase(Database):
-    r"""An index-based key/value database based on :obj:`RocksDB`.
-
-    .. note::
-        This database implementation requires the :obj:`rocksdict` package.
-
-    .. warning::
-        :class:`RocksDatabase` is currently less optimized than
-        :class:`SQLiteDatabase`.
-
-    Args:
-        path (str): The path to where the database should be saved.
-        schema (Any or Tuple[Any] or Dict[str, Any], optional): The schema of
-            the input data.
-            Can take :obj:`int`, :obj:`float`, :obj:`str`, :obj:`object`, or a
-            dictionary with :obj:`dtype` and :obj:`size` keys (for specifying
-            tensor data) as input, and can be nested as a tuple or dictionary.
-            Specifying the schema will improve efficiency, since by default the
-            database will use python pickling for serializing and
-            deserializing. (default: :obj:`object`)
-    """
     def __init__(self, path: str, schema: Schema = object) -> None:
         super().__init__(schema)
 
@@ -627,9 +461,7 @@ class RocksDatabase(Database):
 
     @property
     def db(self) -> Any:
-        if self._db is None:
-            raise RuntimeError("No open database connection")
-        return self._db
+        pass
 
     @staticmethod
     def to_key(index: int) -> bytes:
@@ -642,15 +474,10 @@ class RocksDatabase(Database):
         return self._deserialize(self.db[self.to_key(index)])
 
     def _multi_get(self, indices: Union[Sequence[int], Tensor]) -> List[Any]:
-        if isinstance(indices, Tensor):
-            indices = indices.tolist()
-        data_list = self.db[[self.to_key(index) for index in indices]]
-        return [self._deserialize(data) for data in data_list]
+        pass
 
-    # Helper functions ########################################################
 
     def _serialize(self, row: Any) -> bytes:
-        # Ensure that data is not a view of a larger tensor:
         if isinstance(row, Tensor):
             row = row.clone()
         buffer = io.BytesIO()

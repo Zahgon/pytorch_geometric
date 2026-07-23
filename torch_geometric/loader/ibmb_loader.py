@@ -51,8 +51,7 @@ class _IBMBBaseLoader(torch.utils.data.DataLoader):
         raise NotImplementedError
 
     def _cache_fn(self, data_list: List[Data]) -> Data:
-        assert len(data_list) == 1
-        return data_list[0]
+        pass
 
     def _collate_fn(self, output_nodes: List[OutputNodes]) -> Data:
         raise NotImplementedError
@@ -61,7 +60,6 @@ class _IBMBBaseLoader(torch.utils.data.DataLoader):
         return f'{self.__class__.__name__}()'
 
 
-###############################################################################
 
 
 def get_partitions(
@@ -271,13 +269,11 @@ def create_batchwise_out_aux_pairs(
         if len(primes_in_part):  # no output nodes in this partition
             cur_output_nodes.append(primes_in_part)
 
-        # accumulate enough output nodes to make good use of GPU memory
         if len(cur_output_nodes
                ) >= num_outnodeset_per_batch or n == len(partitions) - 1:
             topk_neighbors = ppr_power_method(adj, cur_output_nodes, topk,
                                               ppr_iterations, alpha)
             for i in range(len(cur_output_nodes)):
-                # force output nodes to be aux nodes
                 auxiliary_nodes = np.union1d(cur_output_nodes[i],
                                              topk_neighbors[i])
                 loader.append((cur_output_nodes[i], auxiliary_nodes))
@@ -298,9 +294,7 @@ def get_pairs(ppr_mat: Any) -> np.ndarray:
 
     row, col, data = row[mask], col[mask], data[mask]
     sort_arg = np.argsort(data)[::-1]
-    # sort_arg = parallel_sort.parallel_argsort(data)[::-1]
 
-    # map prime_nodes to arange
     ppr_pairs = np.vstack((row[sort_arg], col[sort_arg])).T
     return ppr_pairs
 
@@ -328,29 +322,7 @@ def _prime_orient_merge(
     primes_per_batch: int,
     num_nodes: int,
 ):
-    id_primes_list = list(np.arange(num_nodes, dtype=np.int32).reshape(-1, 1))
-    node_id_list = np.arange(num_nodes, dtype=np.int32)
-    placeholder = np.zeros(0, dtype=np.int32)
-
-    for i, j in ppr_pairs:
-        id1, id2 = node_id_list[i], node_id_list[j]
-        if id1 > id2:
-            id1, id2 = id2, id1
-
-        if id1 != id2 and len(id_primes_list[id1]) + len(
-                id_primes_list[id2]) <= primes_per_batch:
-            id_primes_list[id1] = np.concatenate(
-                (id_primes_list[id1], id_primes_list[id2]))
-            node_id_list[id_primes_list[id2]] = id1
-            id_primes_list[id2] = placeholder
-
-    prime_lst = list()
-    ids = np.unique(node_id_list)
-
-    for _id in ids:
-        prime_lst.append(list(id_primes_list[_id]))
-
-    return list(prime_lst)
+    pass
 
 
 def prime_post_process(loader, merge_max_size):
@@ -437,7 +409,6 @@ def topk_ppr_matrix(
     _, out_degree = torch.unique(edge_index[0], sorted=True,
                                  return_counts=True)
     if normalization == 'sym':
-        # Assume undirected (symmetric) adjacency matrix
         deg_sqrt = np.sqrt(np.maximum(out_degree, 1e-12))
         deg_inv_sqrt = 1. / deg_sqrt
 
@@ -446,7 +417,6 @@ def topk_ppr_matrix(
             ppr_matrix.data * \
             deg_inv_sqrt[col]
     elif normalization == 'col':
-        # Assume undirected (symmetric) adjacency matrix
         deg_inv = 1. / np.maximum(out_degree, 1e-12)
 
         row, col = ppr_matrix.nonzero()
@@ -535,72 +505,13 @@ class IBMBBaseLoader(torch.utils.data.DataLoader):
         return adj
 
     def collate_fn(self, data_list: List[Union[Data, Tuple]]):
-        if len(data_list) == 1 and isinstance(data_list[0], Data):
-            return data_list[0]
-
-        out, aux = zip(*data_list)
-        out = np.concatenate(out)
-        aux = np.unique(np.concatenate(aux))
-        mask = torch.from_numpy(np.isin(aux, out))
-        aux = torch.from_numpy(aux)
-
-        subg = get_subgraph(aux, self.graph, self.return_edge_index_type,
-                            self.adj, output_node_mask=mask)
-        return subg
+        pass
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}()'
 
 
 class IBMBBatchLoader(IBMBBaseLoader):
-    r"""The batch-wise influence-based data loader from the
-    `"Influence-Based Mini-Batching for Graph Neural Networks"
-    <https://arxiv.org/abs/2212.09083>`__ paper.
-
-    First, the METIS graph partitioning algorithm separates the graph into
-    :obj:`num_partitions` many partitions.
-    Afterwards, input/seed nodes and their auxiliary nodes (found via
-    topic-sensitive PageRank) are used to form a mini-batch.
-
-    If :obj:`batch_size` is set to :obj:`1`, mini-batches are pre-calculated
-    and cached in memory.
-    Otherwise, only input nodes and their auxiliary nodes are pre-computed, and
-    mini-batches are collated on-the-fly.
-
-    Args:
-        data (torch_geometric.data.Data): A
-            :class:`~torch_geometric.data.Data` object.
-        batch_order (str): A string indicating the batch order type (one of
-            :obj:`"order"`, :obj:`"sample"` or :obj:`"rand"`).
-            If :obj:`"order"`, calculates the pair-wise KL divergence between
-            every two batches to organize an optimal order.
-            If :obj:`"sample"`, samples the next batch w.r.t. the last one in
-            which a batch with higher KL divergence score is more likely to be
-            sampled.
-            If :obj:`"rand"`, batches are generated randomly.
-        num_partitions (int): The number of partitions.
-        input_nodes (torch.Tensor): A vector containing the set of seed
-            nodes.
-        batch_expand_ratio (float, optional): The ratio between the returned
-            batch size and the original partition size. For example, set it to
-            :obj:`2.0` in case you would like the batch to have double the
-            number of nodes as the size of its partition.
-            (default: :obj:`1.0`)
-        metis_input_node_weight (float, optional): The weights on the input
-            nodes for METIS graph partitioning. (default: :obj:`None`)
-        alpha (float, optional): The teleport probability of the PageRank
-            calculation. (default: :obj:`0.2`)
-        approximate_ppr_iterations (int, optional): The number of power
-            iterations for PageRank calculation. (default: :obj:`50`)
-        return_edge_index_type (str, optional): A string indicating the output
-            type of edge indices (one of :obj:`"edge_index"` or :obj:`"adj"`).
-            If set to :obj:`"adj"`, the :obj:`edge_index` of the batch will
-            be a :class:`torch_sparse.SparseTensor`, otherwise a
-            :class:`torch.Tensor`. (default: :obj:`"edge_index"`)
-        **kwargs (optional): Additional arguments of
-            :class:`torch.utils.data.DataLoader`, such as :obj:`batch_size`,
-            :obj:`shuffle`, :obj:`drop_last` or :obj:`num_workers`.
-    """
     def __init__(
         self,
         data: Data,
@@ -679,7 +590,6 @@ class IBMBBatchLoader(IBMBBaseLoader):
             self.metis_output_weight,
         )
 
-        # get output - auxiliary node pairs
         topk = math.ceil(self.batch_expand_ratio * graph.num_nodes /
                          self.num_partitions)
         batch_wise_out_aux_pairs = create_batchwise_out_aux_pairs(
@@ -700,50 +610,6 @@ class IBMBBatchLoader(IBMBBaseLoader):
 
 
 class IBMBNodeLoader(IBMBBaseLoader):
-    r"""The node-wise influence-based data loader from the
-    `"Influence-Based Mini-Batching for Graph Neural Networks"
-    <https://arxiv.org/abs/2212.09083>`__ paper.
-
-    First, the Personalized PageRank (PPR) score for each input node is
-    computed, for which the :obj:`k` nodes with the highest scores are taken
-    auxiliary nodes.
-    Afterwards, input nodes are merged according to their pair-wise PPR scores.
-
-    Similar to :class:`~torch_geometric.loader.IBMBBatchLoader`, subgraphs are
-    cached in memory for :obj:`batch_size = 1`, and collated on-the-fly
-    otherwise.
-
-    Args:
-        data (torch_geometric.data.Data): A
-            :class:`~torch_geometric.data.Data` object.
-        batch_order (str): A string indicating the batch order type (one of
-            :obj:`"order"`, :obj:`"sample"` or :obj:`"rand"`).
-            If :obj:`"order"`, calculates the pair-wise KL divergence between
-            every two batches to organize an optimal order.
-            If :obj:`"sample"`, samples the next batch w.r.t. the last one in
-            which a batch with higher KL divergence score is more likely to be
-            sampled.
-            If :obj:`"rand"`, batches are generated randomly.
-        input_nodes (torch.Tensor): A vector containing the set of seed
-            nodes.
-        num_auxiliary_nodes (int): The number of auxiliary nodes per input
-            node.
-        num_nodes_per_batch (int): The number of seed nodes per batch.
-        alpha (float, optional): The teleport probability of the PageRank
-            calculation. (default: :obj:`0.2`)
-        eps (float, optional): The threshold for stopping the PPR calculation
-            The smaller :obj`eps` is, the more accurate are the results of
-            PPR calculation, but it also takes longer.
-            (default: :obj:`1e-5`)
-        return_edge_index_type (str, optional): A string indicating the output
-            type of edge indices (one of :obj:`"edge_index"` or :obj:`"adj"`).
-            If set to :obj:`"adj"`, the :obj:`edge_index` of the batch will
-            be a :class:`torch_sparse.SparseTensor`, otherwise a
-            :class:`torch.Tensor`. (default: :obj:`"edge_index"`)
-        **kwargs (optional): Additional arguments of
-            :class:`torch.utils.data.DataLoader`, such as :obj:`batch_size`,
-            :obj:`shuffle`, :obj:`drop_last` or :obj:`num_workers`.
-    """
     def __init__(
         self,
         data: Data,
@@ -856,13 +722,6 @@ class IBMBNodeLoader(IBMBBaseLoader):
 
 
 class IBMBOrderedSampler(torch.utils.data.Sampler[int]):
-    r"""A sampler with given order, specially for IBMB loaders.
-
-    Args:
-        data_source (np.ndarray, torch.Tensor, List): A :obj:`np.ndarray`,
-            :obj:`torch.Tensor`, or :obj:`List` data object. Contains the
-            order of the batches.
-    """
     def __init__(self, data_source: Union[np.ndarray, torch.Tensor,
                                           List]) -> None:
         self.data_source = data_source
@@ -876,16 +735,6 @@ class IBMBOrderedSampler(torch.utils.data.Sampler[int]):
 
 
 class IBMBWeightedSampler(torch.utils.data.Sampler[int]):
-    r"""A weighted sampler wrt the pair wise KL divergence.
-    The very first batch after initialization is sampled randomly,
-    with the next ones being sampled according to the last batch,
-    including the first batch in the next round.
-
-    Args:
-        batch_kl_div (np.ndarray, torch.Tensor): A :obj:`np.ndarray` or
-            :obj:`torch.Tensor`, each element [i, j] contains the pair wise
-            KL divergence between batch i and j.
-    """
     def __init__(self, batch_kl_div: Union[np.ndarray, torch.Tensor]) -> None:
         data_source = np.arange(batch_kl_div.shape[0])
         self.data_source = data_source

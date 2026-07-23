@@ -7,9 +7,7 @@ from torch import Tensor
 
 def _orthogonal_matrix(dim: int) -> Tensor:
     r"""Get an orthogonal matrix by applying QR decomposition."""
-    # Random matrix from normal distribution
     mat = torch.randn((dim, dim))
-    # QR decomposition to two orthogonal matrices
     q, _ = torch.linalg.qr(mat.cpu(), mode='reduced')
     return q.t()
 
@@ -28,9 +26,6 @@ def orthogonal_matrix(num_rows: int, num_cols: int) -> Tensor:
         q = _orthogonal_matrix(num_cols)
         blocks.append(q[:remain_rows])
     mat = torch.cat(blocks)
-    # multiplier = torch.randn((num_rows, num_cols)).norm(dim=1)
-    # scaler = torch.diag(multiplier)
-    # mat = scaler @ mat
     return mat
 
 
@@ -64,25 +59,11 @@ def generalized_kernel(
 
 
 class PerformerProjection(torch.nn.Module):
-    r"""The fast attention that uses a projection matrix
-    from the `"Rethinking Attention with Performers"
-    <https://arxiv.org/abs/2009.14794>`_ paper. This class
-    projects :math:`\mathbf{Q}` and :math:`\mathbf{K}` matrices
-    with specified kernel.
-
-    Args:
-        num_cols (int): Projection matrix number of columns.
-        kernel (Callable, optional): Kernels for generalized attention.
-            If not specified, `ReLU` kernel will be used.
-            (default: :obj:`torch.nn.ReLU()`)
-    """
     def __init__(self, num_cols: int, kernel: Callable = torch.nn.ReLU()):
         super().__init__()
         num_rows = int(num_cols * math.log(num_cols))
         self.num_rows = num_rows
         self.num_cols = num_cols
-        # Generate an orthogonal projection matrix
-        # with the shape (num_rows, num_cols)
         projection_matrix = orthogonal_matrix(self.num_rows, self.num_cols)
         self.register_buffer('projection_matrix', projection_matrix)
         assert kernel is not None
@@ -96,26 +77,6 @@ class PerformerProjection(torch.nn.Module):
 
 
 class PerformerAttention(torch.nn.Module):
-    r"""The linear scaled attention mechanism from the
-    `"Rethinking Attention with Performers"
-    <https://arxiv.org/abs/2009.14794>`_ paper.
-
-    Args:
-        channels (int): Size of each input sample.
-        heads (int, optional): Number of parallel attention heads.
-        head_channels (int, optional): Size of each attention head.
-            (default: :obj:`64.`)
-        kernel (Callable, optional): Kernels for generalized attention.
-            If not specified, `ReLU` kernel will be used.
-            (default: :obj:`torch.nn.ReLU()`)
-        qkv_bias (bool, optional): If specified, add bias to query, key
-            and value in the self attention. (default: :obj:`False`)
-        attn_out_bias (bool, optional): If specified, add bias to the
-            attention output. (default: :obj:`True`)
-        dropout (float, optional): Dropout probability of the final
-            attention output. (default: :obj:`0.0`)
-
-    """
     def __init__(
         self,
         channels: int,
@@ -158,8 +119,6 @@ class PerformerAttention(torch.nn.Module):
         """
         B, N, *_ = x.shape
         q, k, v = self.q(x), self.k(x), self.v(x)
-        # Reshape and permute q, k and v to proper shape
-        # (B, N, num_heads * head_channels) to (b, num_heads, n, head_channels)
         q, k, v = map(
             lambda t: t.reshape(B, N, self.heads, self.head_channels).permute(
                 0, 2, 1, 3), (q, k, v))

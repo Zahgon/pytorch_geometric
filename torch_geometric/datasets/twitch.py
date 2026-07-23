@@ -8,70 +8,6 @@ from torch_geometric.data import Data, InMemoryDataset, download_url
 
 
 class Twitch(InMemoryDataset):
-    r"""The Twitch Gamer networks introduced in the
-    `"Multi-scale Attributed Node Embedding"
-    <https://arxiv.org/abs/1909.13021>`_ paper.
-    Nodes represent gamers on Twitch and edges are followerships between them.
-    Node features represent embeddings of games played by the Twitch users.
-    The task is to predict whether a user streams mature content.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        name (str): The name of the dataset (:obj:`"DE"`, :obj:`"EN"`,
-            :obj:`"ES"`, :obj:`"FR"`, :obj:`"PT"`, :obj:`"RU"`).
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-
-    **STATS:**
-
-    .. list-table::
-        :widths: 10 10 10 10 10
-        :header-rows: 1
-
-        * - Name
-          - #nodes
-          - #edges
-          - #features
-          - #classes
-        * - DE
-          - 9,498
-          - 315,774
-          - 128
-          - 2
-        * - EN
-          - 7,126
-          - 77,774
-          - 128
-          - 2
-        * - ES
-          - 4,648
-          - 123,412
-          - 128
-          - 2
-        * - FR
-          - 6,551
-          - 231,883
-          - 128
-          - 2
-        * - PT
-          - 1,912
-          - 64,510
-          - 128
-          - 2
-        * - RU
-          - 4,385
-          - 78,993
-          - 128
-          - 2
-    """
 
     url = 'https://graphmining.ai/datasets/ptg/twitch'
 
@@ -91,19 +27,19 @@ class Twitch(InMemoryDataset):
 
     @property
     def raw_dir(self) -> str:
-        return osp.join(self.root, self.name, 'raw')
+        pass
 
     @property
     def processed_dir(self) -> str:
-        return osp.join(self.root, self.name, 'processed')
+        pass
 
     @property
     def raw_file_names(self) -> str:
-        return f'{self.name}.npz'
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def download(self) -> None:
         download_url(f'{self.url}/{self.name}.npz', self.raw_dir)

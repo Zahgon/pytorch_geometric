@@ -15,28 +15,6 @@ from torch_geometric.data import (
 
 
 class LastFM(InMemoryDataset):
-    r"""A subset of the last.fm music website keeping track of users' listining
-    information from various sources, as collected in the
-    `"MAGNN: Metapath Aggregated Graph Neural Network for Heterogeneous Graph
-    Embedding" <https://arxiv.org/abs/2002.01680>`_ paper.
-    last.fm is a heterogeneous graph containing three types of entities - users
-    (1,892 nodes), artists (17,632 nodes), and artist tags (1,088 nodes).
-    This dataset can be used for link prediction, and no labels or features are
-    provided.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.HeteroData` object and returns a
-            transformed version. The data object will be transformed before
-            every access. (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.HeteroData` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-    """
     url = 'https://www.dropbox.com/s/jvlbs09pz6zwcka/LastFM_processed.zip?dl=1'
 
     def __init__(
@@ -52,14 +30,11 @@ class LastFM(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> List[str]:
-        return [
-            'adjM.npz', 'node_types.npy', 'train_val_test_neg_user_artist.npz',
-            'train_val_test_pos_user_artist.npz'
-        ]
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def download(self) -> None:
         path = download_url(self.url, self.raw_dir)

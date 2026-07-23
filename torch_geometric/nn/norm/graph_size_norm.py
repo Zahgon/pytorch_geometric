@@ -8,14 +8,6 @@ from torch_geometric.utils import degree
 
 
 class GraphSizeNorm(torch.nn.Module):
-    r"""Applies Graph Size Normalization over each individual graph in a batch
-    of node features as described in the
-    `"Benchmarking Graph Neural Networks" <https://arxiv.org/abs/2003.00982>`_
-    paper.
-
-    .. math::
-        \mathbf{x}^{\prime}_i = \frac{\mathbf{x}_i}{\sqrt{|\mathcal{V}|}}
-    """
     def __init__(self):
         super().__init__()
 

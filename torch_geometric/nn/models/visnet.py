@@ -11,20 +11,6 @@ from torch_geometric.utils import scatter
 
 
 class CosineCutoff(torch.nn.Module):
-    r"""Applies a cosine cutoff to the input distances.
-
-    .. math::
-        \text{cutoffs} =
-        \begin{cases}
-        0.5 * (\cos(\frac{\text{distances} * \pi}{\text{cutoff}}) + 1.0),
-        & \text{if } \text{distances} < \text{cutoff} \\
-        0, & \text{otherwise}
-        \end{cases}
-
-    Args:
-        cutoff (float): A scalar that determines the point at which the cutoff
-            is applied.
-    """
     def __init__(self, cutoff: float) -> None:
         super().__init__()
         self.cutoff = cutoff
@@ -46,20 +32,6 @@ class CosineCutoff(torch.nn.Module):
 
 
 class ExpNormalSmearing(torch.nn.Module):
-    r"""Applies exponential normal smearing to the input distances.
-
-    .. math::
-        \text{smeared\_dist} = \text{CosineCutoff}(\text{dist})
-        * e^{-\beta * (e^{\alpha * (-\text{dist})} - \text{means})^2}
-
-    Args:
-        cutoff (float, optional): A scalar that determines the point at which
-            the cutoff is applied. (default: :obj:`5.0`)
-        num_rbf (int, optional): The number of radial basis functions.
-            (default: :obj:`128`)
-        trainable (bool, optional): If set to :obj:`False`, the means and betas
-            of the RBFs will not be trained. (default: :obj:`True`)
-    """
     def __init__(
         self,
         cutoff: float = 5.0,
@@ -109,18 +81,6 @@ class ExpNormalSmearing(torch.nn.Module):
 
 
 class Sphere(torch.nn.Module):
-    r"""Computes spherical harmonics of the input data.
-
-    This module computes the spherical harmonics up to a given degree
-    :obj:`lmax` for the input tensor of 3D vectors.
-    The vectors are assumed to be given in Cartesian coordinates.
-    See `here <https://en.wikipedia.org/wiki/Table_of_spherical_harmonics>`_
-    for mathematical details.
-
-    Args:
-        lmax (int, optional): The maximum degree of the spherical harmonics.
-            (default: :obj:`2`)
-    """
     def __init__(self, lmax: int = 2) -> None:
         super().__init__()
         self.lmax = lmax
@@ -183,19 +143,6 @@ class Sphere(torch.nn.Module):
 
 
 class VecLayerNorm(torch.nn.Module):
-    r"""Applies layer normalization to the input data.
-
-    This module applies a custom layer normalization to a tensor of vectors.
-    The normalization can either be :obj:`"max_min"` normalization, or no
-    normalization.
-
-    Args:
-        hidden_channels (int): The number of hidden channels in the input.
-        trainable (bool): If set to :obj:`True`, the normalization weights are
-            trainable parameters.
-        norm_type (str, optional): The type of normalization to apply, one of
-            :obj:`"max_min"` or :obj:`None`. (default: :obj:`"max_min"`)
-    """
     def __init__(
         self,
         hidden_channels: int,
@@ -274,21 +221,6 @@ class VecLayerNorm(torch.nn.Module):
 
 
 class Distance(torch.nn.Module):
-    r"""Computes the pairwise distances between atoms in a molecule.
-
-    This module computes the pairwise distances between atoms in a molecule,
-    represented by their positions :obj:`pos`.
-    The distances are computed only between points that are within a certain
-    cutoff radius.
-
-    Args:
-        cutoff (float): The cutoff radius beyond
-            which distances are not computed.
-        max_num_neighbors (int, optional): The maximum number of neighbors
-            considered for each point. (default: :obj:`32`)
-        add_self_loops (bool, optional): If set to :obj:`False`, will not
-            include self-loops. (default: :obj:`True`)
-    """
     def __init__(
         self,
         cutoff: float,
@@ -338,18 +270,6 @@ class Distance(torch.nn.Module):
 
 
 class NeighborEmbedding(MessagePassing):
-    r"""The :class:`NeighborEmbedding` module from the `"Enhancing Geometric
-    Representations for Molecules with Equivariant Vector-Scalar Interactive
-    Message Passing" <https://arxiv.org/abs/2210.16518>`_ paper.
-
-    Args:
-        hidden_channels (int): The number of hidden channels in the node
-            embeddings.
-        num_rbf (int): The number of radial basis functions.
-        cutoff (float): The cutoff distance.
-        max_z (int, optional): The maximum atomic numbers.
-            (default: :obj:`100`)
-    """
     def __init__(
         self,
         hidden_channels: int,
@@ -413,15 +333,6 @@ class NeighborEmbedding(MessagePassing):
 
 
 class EdgeEmbedding(torch.nn.Module):
-    r"""The :class:`EdgeEmbedding` module from the `"Enhancing Geometric
-    Representations for Molecules with Equivariant Vector-Scalar Interactive
-    Message Passing" <https://arxiv.org/abs/2210.16518>`_ paper.
-
-    Args:
-        num_rbf (int): The number of radial basis functions.
-        hidden_channels (int): The number of hidden channels in the node
-            embeddings.
-    """
     def __init__(self, num_rbf: int, hidden_channels: int) -> None:
         super().__init__()
         self.edge_proj = Linear(num_rbf, hidden_channels)
@@ -454,24 +365,6 @@ class EdgeEmbedding(torch.nn.Module):
 
 
 class ViS_MP(MessagePassing):
-    r"""The message passing module without vertex geometric features of the
-    equivariant vector-scalar interactive graph neural network (ViSNet)
-    from the `"Enhancing Geometric Representations for Molecules with
-    Equivariant Vector-Scalar Interactive Message Passing"
-    <https://arxiv.org/abs/2210.16518>`_ paper.
-
-    Args:
-        num_heads (int): The number of attention heads.
-        hidden_channels (int): The number of hidden channels in the node
-            embeddings.
-        cutoff (float): The cutoff distance.
-        vecnorm_type (str, optional): The type of normalization to apply to the
-            vectors.
-        trainable_vecnorm (bool): Whether the normalization weights are
-            trainable.
-        last_layer (bool, optional): Whether this is the last layer in the
-            model. (default: :obj:`False`)
-    """
     def __init__(
         self,
         num_heads: int,
@@ -655,24 +548,6 @@ class ViS_MP(MessagePassing):
 
 
 class ViS_MP_Vertex(ViS_MP):
-    r"""The message passing module with vertex geometric features of the
-    equivariant vector-scalar interactive graph neural network (ViSNet)
-    from the `"Enhancing Geometric Representations for Molecules with
-    Equivariant Vector-Scalar Interactive Message Passing"
-    <https://arxiv.org/abs/2210.16518>`_ paper.
-
-    Args:
-        num_heads (int): The number of attention heads.
-        hidden_channels (int): The number of hidden channels in the node
-            embeddings.
-        cutoff (float): The cutoff distance.
-        vecnorm_type (str, optional): The type of normalization to apply to the
-            vectors.
-        trainable_vecnorm (bool): Whether the normalization weights are
-            trainable.
-        last_layer (bool, optional): Whether this is the last layer in the
-            model. (default: :obj:`False`)
-    """
     def __init__(
         self,
         num_heads: int,
@@ -720,36 +595,6 @@ class ViS_MP_Vertex(ViS_MP):
 
 
 class ViSNetBlock(torch.nn.Module):
-    r"""The representation module of the equivariant vector-scalar
-    interactive graph neural network (ViSNet) from the `"Enhancing Geometric
-    Representations for Molecules with Equivariant Vector-Scalar Interactive
-    Message Passing" <https://arxiv.org/abs/2210.16518>`_ paper.
-
-    Args:
-        lmax (int, optional): The maximum degree of the spherical harmonics.
-            (default: :obj:`1`)
-        vecnorm_type (str, optional): The type of normalization to apply to the
-            vectors. (default: :obj:`None`)
-        trainable_vecnorm (bool, optional):  Whether the normalization weights
-            are trainable. (default: :obj:`False`)
-        num_heads (int, optional): The number of attention heads.
-            (default: :obj:`8`)
-        num_layers (int, optional): The number of layers in the network.
-            (default: :obj:`6`)
-        hidden_channels (int, optional): The number of hidden channels in the
-            node embeddings. (default: :obj:`128`)
-        num_rbf (int, optional): The number of radial basis functions.
-            (default: :obj:`32`)
-        trainable_rbf (bool, optional): Whether the radial basis function
-            parameters are trainable. (default: :obj:`False`)
-        max_z (int, optional): The maximum atomic numbers.
-            (default: :obj:`100`)
-        cutoff (float, optional): The cutoff distance. (default: :obj:`5.0`)
-        max_num_neighbors (int, optional): The maximum number of neighbors
-            considered for each atom. (default: :obj:`32`)
-        vertex (bool, optional): Whether to use vertex geometric features.
-            (default: :obj:`False`)
-    """
     def __init__(
         self,
         lmax: int = 1,
@@ -872,22 +717,6 @@ class ViSNetBlock(torch.nn.Module):
 
 
 class GatedEquivariantBlock(torch.nn.Module):
-    r"""Applies a gated equivariant operation to scalar features and vector
-    features from the `"Enhancing Geometric Representations for Molecules with
-    Equivariant Vector-Scalar Interactive Message Passing"
-    <https://arxiv.org/abs/2210.16518>`_ paper.
-
-    Args:
-        hidden_channels (int): The number of hidden channels in the node
-            embeddings.
-        out_channels (int): The number of output channels.
-        intermediate_channels (int, optional): The number of channels in the
-            intermediate layer, or :obj:`None` to use the same number as
-            :obj:`hidden_channels`. (default: :obj:`None`)
-        scalar_activation (bool, optional): Whether to apply a scalar
-            activation function to the output node features.
-            (default: obj:`False`)
-    """
     def __init__(
         self,
         hidden_channels: int,
@@ -945,13 +774,6 @@ class GatedEquivariantBlock(torch.nn.Module):
 
 
 class EquivariantScalar(torch.nn.Module):
-    r"""Computes final scalar outputs based on node features and vector
-    features.
-
-    Args:
-        hidden_channels (int): The number of hidden channels in the node
-            embeddings.
-    """
     def __init__(self, hidden_channels: int) -> None:
         super().__init__()
 
@@ -992,14 +814,6 @@ class EquivariantScalar(torch.nn.Module):
 
 
 class Atomref(torch.nn.Module):
-    r"""Adds atom reference values to atomic energies.
-
-    Args:
-        atomref (torch.Tensor, optional):  A tensor of atom reference values,
-            or :obj:`None` if not provided. (default: :obj:`None`)
-        max_z (int, optional): The maximum atomic numbers.
-            (default: :obj:`100`)
-    """
     def __init__(
         self,
         atomref: Optional[Tensor] = None,
@@ -1035,47 +849,6 @@ class Atomref(torch.nn.Module):
 
 
 class ViSNet(torch.nn.Module):
-    r"""A :pytorch:`PyTorch` module that implements the equivariant
-    vector-scalar interactive graph neural network (ViSNet) from the
-    `"Enhancing Geometric Representations for Molecules with Equivariant
-    Vector-Scalar Interactive Message Passing"
-    <https://arxiv.org/abs/2210.16518>`_ paper.
-
-    Args:
-        lmax (int, optional): The maximum degree of the spherical harmonics.
-            (default: :obj:`1`)
-        vecnorm_type (str, optional): The type of normalization to apply to the
-            vectors. (default: :obj:`None`)
-        trainable_vecnorm (bool, optional):  Whether the normalization weights
-            are trainable. (default: :obj:`False`)
-        num_heads (int, optional): The number of attention heads.
-            (default: :obj:`8`)
-        num_layers (int, optional): The number of layers in the network.
-            (default: :obj:`6`)
-        hidden_channels (int, optional): The number of hidden channels in the
-            node embeddings. (default: :obj:`128`)
-        num_rbf (int, optional): The number of radial basis functions.
-            (default: :obj:`32`)
-        trainable_rbf (bool, optional): Whether the radial basis function
-            parameters are trainable. (default: :obj:`False`)
-        max_z (int, optional): The maximum atomic numbers.
-            (default: :obj:`100`)
-        cutoff (float, optional): The cutoff distance. (default: :obj:`5.0`)
-        max_num_neighbors (int, optional): The maximum number of neighbors
-            considered for each atom. (default: :obj:`32`)
-        vertex (bool, optional): Whether to use vertex geometric features.
-            (default: :obj:`False`)
-        atomref (torch.Tensor, optional): A tensor of atom reference values,
-            or :obj:`None` if not provided. (default: :obj:`None`)
-        reduce_op (str, optional): The type of reduction operation to apply
-            (:obj:`"sum"`, :obj:`"mean"`). (default: :obj:`"sum"`)
-        mean (float, optional): The mean of the output distribution.
-            (default: :obj:`0.0`)
-        std (float, optional): The standard deviation of the output
-            distribution. (default: :obj:`1.0`)
-        derivative (bool, optional): Whether to compute the derivative of the
-            output with respect to the positions. (default: :obj:`False`)
-    """
     def __init__(
         self,
         lmax: int = 1,

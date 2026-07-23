@@ -19,29 +19,6 @@ def safe_index(lst: List[Any], e: int) -> int:
 
 
 class GitMolDataset(InMemoryDataset):
-    r"""The dataset from the `"GIT-Mol: A Multi-modal Large Language Model
-    for Molecular Science with Graph, Image, and Text"
-    <https://arxiv.org/pdf/2308.06911>`_ paper.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        pre_filter (callable, optional): A function that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a boolean
-            value, indicating whether the data object should be included in the
-            final dataset. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-        split (int, optional): Datasets split, train/valid/test=0/1/2.
-            (default: :obj:`0`)
-    """
 
     raw_url_id = '1loBXabD6ncAFY-vanRsVtRUSFkEtBweg'
 
@@ -82,11 +59,11 @@ class GitMolDataset(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> List[str]:
-        return ['train_3500.pkl', 'valid_450.pkl', 'test_450.pkl']
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return ['train.pt', 'valid.pt', 'test.pt'][self.split]
+        pass
 
     def download(self) -> None:
         file_path = download_google_url(
@@ -178,14 +155,11 @@ class GitMolDataset(InMemoryDataset):
             smiles = r['isosmiles']
             mol = Chem.MolFromSmiles(smiles.strip('\n'))
             if mol is not None:
-                # text
                 summary = r['summary']
-                # image
                 cid = r['cid']
                 img_file = f'{self.raw_dir}/igcdata_toy/imgs/CID_{cid}.png'
                 img = Image.open(img_file).convert('RGB')
                 img = self.img_transform(img).unsqueeze(0)
-                # graph
                 atom_features_list = []
                 for atom in mol.GetAtoms():
                     atom_feature = [

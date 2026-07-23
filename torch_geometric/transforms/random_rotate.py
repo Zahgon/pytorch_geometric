@@ -11,16 +11,6 @@ from torch_geometric.transforms import BaseTransform, LinearTransformation
 
 @functional_transform('random_rotate')
 class RandomRotate(BaseTransform):
-    r"""Rotates node positions around a specific axis by a randomly sampled
-    factor within a given interval (functional name: :obj:`random_rotate`).
-
-    Args:
-        degrees (tuple or float): Rotation interval from which the rotation
-            angle is sampled. If :obj:`degrees` is a number instead of a
-            tuple, the interval is given by :math:`[-\mathrm{degrees},
-            \mathrm{degrees}]`.
-        axis (int, optional): The rotation axis. (default: :obj:`0`)
-    """
     def __init__(
         self,
         degrees: Union[Tuple[float, float], float],

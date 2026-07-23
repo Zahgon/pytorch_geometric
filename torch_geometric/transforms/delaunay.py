@@ -8,7 +8,6 @@ from torch_geometric.transforms import BaseTransform
 
 
 class _QhullTransform(BaseTransform):
-    r"""Q-hull implementation of delaunay triangulation."""
     def forward(self, data: Data) -> Data:
         assert data.pos is not None
         import scipy.spatial
@@ -22,7 +21,6 @@ class _QhullTransform(BaseTransform):
 
 
 class _ShullTransform(BaseTransform):
-    r"""Sweep-hull implementation of delaunay triangulation."""
     def forward(self, data: Data) -> Data:
         assert data.pos is not None
         from torch_delaunay.functional import shull2d
@@ -33,10 +31,6 @@ class _ShullTransform(BaseTransform):
 
 
 class _SequentialTransform(BaseTransform):
-    r"""Runs the first successful transformation.
-
-    All intermediate exceptions are suppressed except the last.
-    """
     def __init__(self, transforms: List[BaseTransform]) -> None:
         assert len(transforms) > 0
         self.transforms = transforms
@@ -53,14 +47,6 @@ class _SequentialTransform(BaseTransform):
 
 @functional_transform('delaunay')
 class Delaunay(BaseTransform):
-    r"""Computes the delaunay triangulation of a set of points
-    (functional name: :obj:`delaunay`).
-
-    .. hint::
-        Consider installing the
-        `torch_delaunay <https://github.com/ybubnov/torch_delaunay>`_ package
-        to speed up computation.
-    """
     def __init__(self) -> None:
         self._transform = _SequentialTransform([
             _ShullTransform(),

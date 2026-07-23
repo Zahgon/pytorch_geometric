@@ -27,45 +27,6 @@ from torch_geometric.typing import EdgeType, NodeType
 
 
 class Explainer:
-    r"""An explainer class for instance-level explanations of Graph Neural
-    Networks.
-
-    Args:
-        model (torch.nn.Module): The model to explain.
-        algorithm (ExplainerAlgorithm): The explanation algorithm.
-        explanation_type (ExplanationType or str): The type of explanation to
-            compute. The possible values are:
-
-                - :obj:`"model"`: Explains the model prediction.
-
-                - :obj:`"phenomenon"`: Explains the phenomenon that the model
-                  is trying to predict.
-
-            In practice, this means that the explanation algorithm will either
-            compute their losses with respect to the model output
-            (:obj:`"model"`) or the target output (:obj:`"phenomenon"`).
-        model_config (ModelConfig): The model configuration.
-            See :class:`~torch_geometric.explain.config.ModelConfig` for
-            available options. (default: :obj:`None`)
-        node_mask_type (MaskType or str, optional): The type of mask to apply
-            on nodes. The possible values are (default: :obj:`None`):
-
-                - :obj:`None`: Will not apply any mask on nodes.
-
-                - :obj:`"object"`: Will mask each node.
-
-                - :obj:`"common_attributes"`: Will mask each feature.
-
-                - :obj:`"attributes"`: Will mask each feature across all nodes.
-
-        edge_mask_type (MaskType or str, optional): The type of mask to apply
-            on edges. Has the sample possible values as :obj:`node_mask_type`.
-            (default: :obj:`None`)
-        threshold_config (ThresholdConfig, optional): The threshold
-            configuration.
-            See :class:`~torch_geometric.explain.config.ThresholdConfig` for
-            available options. (default: :obj:`None`)
-    """
     def __init__(
         self,
         model: torch.nn.Module,
@@ -181,7 +142,6 @@ class Explainer:
                 (default: :obj:`None`)
             **kwargs: additional arguments to pass to the GNN.
         """
-        # Choose the `target` depending on the explanation type:
         prediction: Optional[Tensor] = None
         if self.explanation_type == ExplanationType.phenomenon:
             if target is None:
@@ -213,13 +173,11 @@ class Explainer:
 
         self.model.train(training)
 
-        # Add explainer objectives to the `Explanation` object:
         explanation._model_config = self.model_config
         explanation.prediction = prediction
         explanation.target = target
         explanation.index = index
 
-        # Add model inputs to the `Explanation` object:
         if isinstance(explanation, Explanation):
             explanation._model_args = list(kwargs.keys())
             explanation.x = x
@@ -229,7 +187,6 @@ class Explainer:
                 explanation[key] = arg
 
         elif isinstance(explanation, HeteroExplanation):
-            # TODO Add `explanation._model_args`
 
             assert isinstance(x, dict)
             explanation.set_value_dict('x', x)
@@ -239,9 +196,6 @@ class Explainer:
 
             for key, arg in kwargs.items():  # Add remaining `kwargs`:
                 if isinstance(arg, dict):
-                    # Keyword arguments are likely named `{attr_name}_dict`
-                    # while we only want to assign the `{attr_name}` to the
-                    # `HeteroExplanation` object:
                     key = key[:-5] if key.endswith('_dict') else key
                     explanation.set_value_dict(key, arg)
                 else:
@@ -260,7 +214,6 @@ class Explainer:
         predicted class label.
         """
         if self.model_config.mode == ModelMode.binary_classification:
-            # TODO: Allow customization of the thresholds used below.
             if self.model_config.return_type == ModelReturnType.raw:
                 return (prediction > 0).long().view(-1)
             if self.model_config.return_type == ModelReturnType.probs:

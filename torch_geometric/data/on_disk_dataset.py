@@ -10,40 +10,6 @@ from torch_geometric.data.dataset import Dataset
 
 
 class OnDiskDataset(Dataset):
-    r"""Dataset base class for creating large graph datasets which do not
-    easily fit into CPU memory at once by leveraging a :class:`Database`
-    backend for on-disk storage and access of data objects.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        transform (callable, optional): A function/transform that takes in a
-            :class:`~torch_geometric.data.Data` or
-            :class:`~torch_geometric.data.HeteroData` object and returns a
-            transformed version.
-            The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_filter (callable, optional): A function that takes in a
-            :class:`~torch_geometric.data.Data` or
-            :class:`~torch_geometric.data.HeteroData` object and returns a
-            boolean value, indicating whether the data object should be
-            included in the final dataset. (default: :obj:`None`)
-        backend (str): The :class:`Database` backend to use
-            (one of :obj:`"sqlite"` or :obj:`"rocksdb"`).
-            (default: :obj:`"sqlite"`)
-        schema (Any or Tuple[Any] or Dict[str, Any], optional): The schema of
-            the input data.
-            Can take :obj:`int`, :obj:`float`, :obj:`str`, :obj:`object`, or a
-            dictionary with :obj:`dtype` and :obj:`size` keys (for specifying
-            tensor data) as input, and can be nested as a tuple or dictionary.
-            Specifying the schema will improve efficiency, since by default the
-            database will use python pickling for serializing and
-            deserializing. If specified to anything different than
-            :obj:`object`, implementations of :class:`OnDiskDataset` need to
-            override :meth:`serialize` and :meth:`deserialize` methods.
-            (default: :obj:`object`)
-        log (bool, optional): Whether to print any console output while
-            downloading and processing the dataset. (default: :obj:`True`)
-    """
     BACKENDS = {
         'sqlite': SQLiteDatabase,
         'rocksdb': RocksDatabase,
@@ -73,24 +39,11 @@ class OnDiskDataset(Dataset):
 
     @property
     def processed_file_names(self) -> str:
-        return f'{self.backend}.db'
+        pass
 
     @property
     def db(self) -> Database:
-        r"""Returns the underlying :class:`Database`."""
-        if self._db is not None:
-            return self._db
-
-        kwargs = {}
-        cls = self.BACKENDS[self.backend]
-        if issubclass(cls, SQLiteDatabase):
-            kwargs['name'] = self.__class__.__name__
-
-        os.makedirs(self.processed_dir, exist_ok=True)
-        path = self.processed_paths[0]
-        self._db = cls(path=path, schema=self.schema, **kwargs)
-        self._numel = len(self._db)
-        return self._db
+        pass
 
     def close(self) -> None:
         r"""Closes the connection to the underlying database."""
@@ -146,24 +99,13 @@ class OnDiskDataset(Dataset):
         indices: Union[Iterable[int], Tensor, slice, range],
         batch_size: Optional[int] = None,
     ) -> List[BaseData]:
-        r"""Gets a list of data objects from the specified indices."""
-        if len(indices) == 1:
-            data_list = [self.db.get(indices[0])]
-        else:
-            data_list = self.db.multi_get(indices, batch_size)
-
-        data_list = [self.deserialize(data) for data in data_list]
-        if self.transform is not None:
-            data_list = [self.transform(data) for data in data_list]
-        return data_list
+        pass
 
     def __getitems__(self, indices: List[int]) -> List[BaseData]:
         return self.multi_get(indices)
 
     def len(self) -> int:
-        if self._numel is None:
-            self._numel = len(self.db)
-        return self._numel
+        pass
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}({len(self)})'

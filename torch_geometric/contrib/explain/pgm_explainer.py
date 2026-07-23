@@ -13,37 +13,6 @@ from torch_geometric.utils._subgraph import get_num_hops
 
 
 class PGMExplainer(ExplainerAlgorithm):
-    r"""The PGMExplainer model from the `"PGMExplainer: Probabilistic
-    Graphical Model Explanations  for Graph Neural Networks"
-    <https://arxiv.org/abs/1903.03894>`_ paper.
-
-    The generated :class:`~torch_geometric.explain.Explanation` provides a
-    :obj:`node_mask` and a :obj:`pgm_stats` tensor, which stores the
-    :math:`p`-values of each node as calculated by the Chi-squared test.
-
-    Args:
-        feature_index (List): The indices of the perturbed features. If set
-            to :obj:`None`, all features are perturbed. (default: :obj:`None`)
-        perturb_mode (str, optional): The method to generate the variations in
-            features. One of :obj:`"randint"`, :obj:`"mean"`, :obj:`"zero"`,
-            :obj:`"max"` or :obj:`"uniform"`. (default: :obj:`"randint"`)
-        perturbations_is_positive_only (bool, optional): If set to :obj:`True`,
-            restrict perturbed values to be positive. (default: :obj:`False`)
-        is_perturbation_scaled (bool, optional): If set to :obj:`True`, will
-            normalize the range of the perturbed features.
-            (default: :obj:`False`)
-        num_samples (int, optional): The number of samples of perturbations
-            used to test the significance of nodes to the prediction.
-            (default: :obj:`100`)
-        max_subgraph_size (int, optional): The maximum number of neighbors to
-            consider for the explanation. (default: :obj:`None`)
-        significance_threshold (float, optional): The statistical threshold
-            (:math:`p`-value) for which a node is considered to have an effect
-            on the prediction. (default: :obj:`0.05`)
-        pred_threshold (float, optional): The buffer value (in range
-            :obj:`[0, 1]`) to consider the output from a perturbed data to be
-            different from the original. (default: :obj:`0.1`)
-    """
     def __init__(
         self,
         feature_index: Optional[List] = None,
@@ -207,8 +176,6 @@ class PGMExplainer(ExplainerAlgorithm):
             edge_index=edge_index,
         )
 
-        # note: the PC estimator is in the original code, ie. est= PC(data)
-        # but as it does nothing it is not included here
         data = pd.DataFrame(np.array(samples.detach().cpu()))
 
         p_values = []
@@ -218,19 +185,13 @@ class PGMExplainer(ExplainerAlgorithm):
                 significance_level=self.significance_threshold)
             p_values.append(p)
 
-        # the original code uses number_candidates_nodes = int(top_nodes * 4)
-        # if we consider 'top nodes' to equate to max number of nodes
-        # it seems more correct to limit number_candidates_nodes to this
         candidate_nodes = np.argpartition(
             p_values, self.max_subgraph_size)[0:self.max_subgraph_size]
 
-        # Round 2
         samples = self._batch_perturb_features_on_node(
             indices_to_perturb=candidate_nodes, x=x, edge_index=edge_index,
             model=model, **kwargs)
 
-        # note: the PC estimator is in the original code, ie. est= PC(data)
-        # but as it does nothing it is not included here
         data = pd.DataFrame(np.array(samples.detach().cpu()))
 
         p_values = []
@@ -304,14 +265,12 @@ class PGMExplainer(ExplainerAlgorithm):
         pred_samples = []
 
         for _ in range(self.num_samples):
-            # A subset of neighbors are selected randomly for perturbing:
             seeds = np.random.choice([1, 0], size=(len(neighbors), ))
             x_perturb = self._perturb_features_on_nodes(
                 x=x,
                 index=neighbors[seeds == 1],
             )
 
-            # prediction after perturbation
             pred_perturb = model(x_perturb, edge_index, **kwargs)
             softmax_pred_perturb = torch.softmax(pred_perturb, dim=1)
             sample_bool = np.ones(shape=(len(neighbors), ))
@@ -342,8 +301,6 @@ class PGMExplainer(ExplainerAlgorithm):
         dependent_neighbors_p_values = []
         for node in neighbors:
             if node == index:
-                # null hypothesis is perturbing a particular
-                # node has no effect on result
                 p = 0
             else:
                 _, p, _ = chi_square(

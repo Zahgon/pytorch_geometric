@@ -6,16 +6,6 @@ from torch_geometric.transforms import BaseTransform
 
 @functional_transform('gcn_norm')
 class GCNNorm(BaseTransform):
-    r"""Applies the GCN normalization from the `"Semi-supervised Classification
-    with Graph Convolutional Networks" <https://arxiv.org/abs/1609.02907>`_
-    paper (functional name: :obj:`gcn_norm`).
-
-    .. math::
-        \mathbf{\hat{A}} = \mathbf{\hat{D}}^{-1/2} (\mathbf{A} + \mathbf{I})
-        \mathbf{\hat{D}}^{-1/2}
-
-    where :math:`\hat{D}_{ii} = \sum_{j=0} \hat{A}_{ij} + 1`.
-    """
     def __init__(self, add_self_loops: bool = True):
         self.add_self_loops = add_self_loops
 

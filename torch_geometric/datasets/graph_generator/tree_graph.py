@@ -14,51 +14,10 @@ def tree(
     undirected: bool = False,
     device: Optional[torch.device] = None,
 ) -> Tuple[Tensor, Tensor]:
-    """Generates a tree graph with the given depth and branch size, along with
-    node-level depth indicators.
-
-    Args:
-        depth (int): The depth of the tree.
-        branch (int, optional): The branch size of the tree.
-            (default: :obj:`2`)
-        undirected (bool, optional): If set to :obj:`True`, the tree graph will
-            be undirected. (default: :obj:`False`)
-        device (torch.device, optional): The desired device of the returned
-            tensors. (default: :obj:`None`)
-    """
-    edges: List[Tuple[int, int]] = []
-    depths: List[int] = [0]
-
-    def add_edges(node: int, current_depth: int) -> None:
-        node_count = len(depths)
-
-        if current_depth < depth:
-            for i in range(branch):
-                edges.append((node, node_count + i))
-                depths.append(current_depth + 1)
-
-            for i in range(branch):
-                add_edges(node=node_count + i, current_depth=current_depth + 1)
-
-    add_edges(node=0, current_depth=0)
-
-    edge_index = torch.tensor(edges, device=device).t().contiguous()
-    if undirected:
-        edge_index = to_undirected(edge_index, num_nodes=len(depths))
-
-    return edge_index, torch.tensor(depths, device=device)
+    pass
 
 
 class TreeGraph(GraphGenerator):
-    r"""Generates tree graphs.
-
-    Args:
-        depth (int): The depth of the tree.
-        branch (int, optional): The branch size of the tree.
-            (default: :obj:`2`)
-        undirected (bool, optional): If set to :obj:`True`, the tree graph will
-            be undirected. (default: :obj:`False`)
-    """
     def __init__(
         self,
         depth: int,

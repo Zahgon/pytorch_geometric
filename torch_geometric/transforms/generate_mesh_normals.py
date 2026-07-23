@@ -8,9 +8,6 @@ from torch_geometric.utils import scatter
 
 @functional_transform('generate_mesh_normals')
 class GenerateMeshNormals(BaseTransform):
-    r"""Generate normal vectors for each mesh node based on neighboring
-    faces (functional name: :obj:`generate_mesh_normals`).
-    """
     def forward(self, data: Data) -> Data:
         assert data.pos is not None
         assert data.face is not None

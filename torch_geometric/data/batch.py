@@ -14,9 +14,6 @@ from torch_geometric.data.separate import separate
 
 
 class DynamicInheritance(type):
-    # A meta class that sets the base class of a `Batch` object, e.g.:
-    # * `Batch(Data)` in case `Data` objects are batched together
-    # * `Batch(HeteroData)` in case `HeteroData` objects are batched together
     def __call__(cls, *args: Any, **kwargs: Any) -> Any:
         base_cls = kwargs.pop('_base_cls', Data)
 
@@ -25,10 +22,6 @@ class DynamicInheritance(type):
         else:
             name = f'{base_cls.__name__}{cls.__name__}'
 
-            # NOTE `MetaResolver` is necessary to resolve metaclass conflict
-            # problems between `DynamicInheritance` and the metaclass of
-            # `base_cls`. In particular, it creates a new common metaclass
-            # from the defined metaclasses.
             class MetaResolver(type(cls), type(base_cls)):  # type: ignore
                 pass
 
@@ -55,30 +48,6 @@ class DynamicInheritanceGetter:
 
 
 class Batch(metaclass=DynamicInheritance):
-    r"""A data object describing a batch of graphs as one big (disconnected)
-    graph.
-    Inherits from :class:`torch_geometric.data.Data` or
-    :class:`torch_geometric.data.HeteroData`.
-    In addition, single graphs can be identified via the assignment vector
-    :obj:`batch`, which maps each node to its respective graph identifier.
-
-    :pyg:`PyG` allows modification to the underlying batching procedure by
-    overwriting the :meth:`~Data.__inc__` and :meth:`~Data.__cat_dim__`
-    functionalities.
-    The :meth:`~Data.__inc__` method defines the incremental count between two
-    consecutive graph attributes.
-    By default, :pyg:`PyG` increments attributes by the number of nodes
-    whenever their attribute names contain the substring :obj:`index`
-    (for historical reasons), which comes in handy for attributes such as
-    :obj:`edge_index` or :obj:`node_index`.
-    However, note that this may lead to unexpected behavior for attributes
-    whose names contain the substring :obj:`index` but should not be
-    incremented.
-    To make sure, it is best practice to always double-check the output of
-    batching.
-    Furthermore, :meth:`~Data.__cat_dim__` defines in which dimension graph
-    tensors of the same attribute should be concatenated together.
-    """
     @classmethod
     def from_data_list(
         cls,
@@ -177,37 +146,20 @@ class Batch(metaclass=DynamicInheritance):
             return self.get_example(idx)  # type: ignore
         elif isinstance(idx, str) or (isinstance(idx, tuple)
                                       and isinstance(idx[0], str)):
-            # Accessing attributes or node/edge types:
             return super().__getitem__(idx)  # type: ignore
         else:
             return self.index_select(idx)
 
     def to_data_list(self) -> List[BaseData]:
-        r"""Reconstructs the list of :class:`~torch_geometric.data.Data` or
-        :class:`~torch_geometric.data.HeteroData` objects from the
-        :class:`~torch_geometric.data.Batch` object.
-        The :class:`~torch_geometric.data.Batch` object must have been created
-        via :meth:`from_data_list` in order to be able to reconstruct the
-        initial objects.
-        """
-        return [self.get_example(i) for i in range(self.num_graphs)]
+        pass
 
     @property
     def num_graphs(self) -> int:
-        """Returns the number of graphs in the batch."""
-        if hasattr(self, '_num_graphs'):
-            return self._num_graphs
-        elif hasattr(self, 'ptr'):
-            return self.ptr.numel() - 1
-        elif hasattr(self, 'batch'):
-            return int(self.batch.max()) + 1
-        else:
-            raise ValueError("Can not infer the number of graphs")
+        pass
 
     @property
     def batch_size(self) -> int:
-        r"""Alias for :obj:`num_graphs`."""
-        return self.num_graphs
+        pass
 
     def __len__(self) -> int:
         return self.num_graphs

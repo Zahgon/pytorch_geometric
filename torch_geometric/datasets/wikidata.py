@@ -14,33 +14,6 @@ from torch_geometric.io import fs
 
 
 class Wikidata5M(InMemoryDataset):
-    r"""The Wikidata-5M dataset from the `"KEPLER: A Unified Model for
-    Knowledge Embedding and Pre-trained Language Representation"
-    <https://arxiv.org/abs/1911.06136>`_ paper,
-    containing 4,594,485 entities, 822 relations,
-    20,614,279 train triples, 5,163 validation triples, and 5,133 test triples.
-
-    `Wikidata-5M <https://deepgraphlearning.github.io/project/wikidata5m>`_
-    is a large-scale knowledge graph dataset with aligned corpus
-    extracted form Wikidata.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        setting (str, optional):
-            If :obj:`"transductive"`, loads the transductive dataset.
-            If :obj:`"inductive"`, loads the inductive dataset.
-            (default: :obj:`"transductive"`)
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-    """
     def __init__(
         self,
         root: str,
@@ -72,17 +45,11 @@ class Wikidata5M(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> List[str]:
-        return [
-            'wikidata5m_text.txt.gz',
-            'download',
-            f'wikidata5m_{self.setting}_train.txt',
-            f'wikidata5m_{self.setting}_valid.txt',
-            f'wikidata5m_{self.setting}_test.txt',
-        ]
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return f'{self.setting}_data.pt'
+        pass
 
     def download(self) -> None:
         for url in self.urls:

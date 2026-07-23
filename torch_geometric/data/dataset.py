@@ -28,35 +28,6 @@ MISSING = '???'
 
 
 class Dataset(torch.utils.data.Dataset):
-    r"""Dataset base class for creating graph datasets.
-    See `here <https://pytorch-geometric.readthedocs.io/en/latest/tutorial/
-    create_dataset.html>`__ for the accompanying tutorial.
-
-    Args:
-        root (str, optional): Root directory where the dataset should be saved.
-            (optional: :obj:`None`)
-        transform (callable, optional): A function/transform that takes in a
-            :class:`~torch_geometric.data.Data` or
-            :class:`~torch_geometric.data.HeteroData` object and returns a
-            transformed version.
-            The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            a :class:`~torch_geometric.data.Data` or
-            :class:`~torch_geometric.data.HeteroData` object and returns a
-            transformed version.
-            The data object will be transformed before being saved to disk.
-            (default: :obj:`None`)
-        pre_filter (callable, optional): A function that takes in a
-            :class:`~torch_geometric.data.Data` or
-            :class:`~torch_geometric.data.HeteroData` object and returns a
-            boolean value, indicating whether the data object should be
-            included in the final dataset. (default: :obj:`None`)
-        log (bool, optional): Whether to print any console output while
-            downloading and processing the dataset. (default: :obj:`True`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-    """
     @property
     def raw_file_names(self) -> Union[str, List[str], Tuple[str, ...]]:
         r"""The name of the files in the :obj:`self.raw_dir` folder that must
@@ -120,108 +91,42 @@ class Dataset(torch.utils.data.Dataset):
 
     @property
     def raw_dir(self) -> str:
-        return osp.join(self.root, 'raw')
+        pass
 
     @property
     def processed_dir(self) -> str:
-        return osp.join(self.root, 'processed')
+        pass
 
     @property
     def num_node_features(self) -> int:
-        r"""Returns the number of features per node in the dataset."""
-        data = self[0]
-        # Do not fill cache for `InMemoryDataset`:
-        if hasattr(self, '_data_list') and self._data_list is not None:
-            self._data_list[0] = None
-        data = data[0] if isinstance(data, tuple) else data
-        if hasattr(data, 'num_node_features'):
-            return data.num_node_features
-        raise AttributeError(f"'{data.__class__.__name__}' object has no "
-                             f"attribute 'num_node_features'")
+        pass
 
     @property
     def num_features(self) -> int:
-        r"""Returns the number of features per node in the dataset.
-        Alias for :py:attr:`~num_node_features`.
-        """
-        return self.num_node_features
+        pass
 
     @property
     def num_edge_features(self) -> int:
-        r"""Returns the number of features per edge in the dataset."""
-        data = self[0]
-        # Do not fill cache for `InMemoryDataset`:
-        if hasattr(self, '_data_list') and self._data_list is not None:
-            self._data_list[0] = None
-        data = data[0] if isinstance(data, tuple) else data
-        if hasattr(data, 'num_edge_features'):
-            return data.num_edge_features
-        raise AttributeError(f"'{data.__class__.__name__}' object has no "
-                             f"attribute 'num_edge_features'")
+        pass
 
     def _infer_num_classes(self, y: Optional[Tensor]) -> int:
-        if y is None:
-            return 0
-        elif y.numel() == y.size(0) and not torch.is_floating_point(y):
-            return int(y.max()) + 1
-        elif y.numel() == y.size(0) and torch.is_floating_point(y):
-            num_classes = torch.unique(y).numel()
-            if num_classes > 2:
-                warnings.warn(
-                    "Found floating-point labels while calling "
-                    "`dataset.num_classes`. Returning the number of "
-                    "unique elements. Please make sure that this "
-                    "is expected before proceeding.", stacklevel=2)
-            return num_classes
-        else:
-            return y.size(-1)
+        pass
 
     @property
     def num_classes(self) -> int:
-        r"""Returns the number of classes in the dataset."""
-        # We iterate over the dataset and collect all labels to determine the
-        # maximum number of classes. Importantly, in rare cases, `__getitem__`
-        # may produce a tuple of data objects (e.g., when used in combination
-        # with `RandomLinkSplit`, so we take care of this case here as well:
-        data_list = _get_flattened_data_list([data for data in self])
-        if 'y' in data_list[0] and isinstance(data_list[0].y, Tensor):
-            y = torch.cat([data.y for data in data_list if 'y' in data], dim=0)
-        else:
-            y = torch.as_tensor([data.y for data in data_list if 'y' in data])
-
-        # Do not fill cache for `InMemoryDataset`:
-        if hasattr(self, '_data_list') and self._data_list is not None:
-            self._data_list = self.len() * [None]
-        return self._infer_num_classes(y)
+        pass
 
     @property
     def raw_paths(self) -> List[str]:
-        r"""The absolute filepaths that must be present in order to skip
-        downloading.
-        """
-        files = self.raw_file_names
-        # Prevent a common source of error in which `file_names` are not
-        # defined as a property.
-        if isinstance(files, Callable):
-            files = files()
-        return [osp.join(self.raw_dir, f) for f in to_list(files)]
+        pass
 
     @property
     def processed_paths(self) -> List[str]:
-        r"""The absolute filepaths that must be present in order to skip
-        processing.
-        """
-        files = self.processed_file_names
-        # Prevent a common source of error in which `file_names` are not
-        # defined as a property.
-        if isinstance(files, Callable):
-            files = files()
-        return [osp.join(self.processed_dir, f) for f in to_list(files)]
+        pass
 
     @property
     def has_download(self) -> bool:
-        r"""Checks whether the dataset defines a :meth:`download` method."""
-        return overrides_method(self.__class__, 'download')
+        pass
 
     def _download(self):
         if files_exist(self.raw_paths):  # pragma: no cover
@@ -232,8 +137,7 @@ class Dataset(torch.utils.data.Dataset):
 
     @property
     def has_process(self) -> bool:
-        r"""Checks whether the dataset defines a :meth:`process` method."""
-        return overrides_method(self.__class__, 'process')
+        pass
 
     def _process(self):
         f = osp.join(self.processed_dir, 'pre_transform.pt')
@@ -313,7 +217,6 @@ class Dataset(torch.utils.data.Dataset):
 
         if isinstance(idx, slice):
             start, stop, step = idx.start, idx.stop, idx.step
-            # Allow floating-point slicing, e.g., dataset[:0.9]
             if isinstance(start, float):
                 start = round(start * len(self))
             if isinstance(stop, float):
@@ -369,68 +272,24 @@ class Dataset(torch.utils.data.Dataset):
         return f'{self.__class__.__name__}({arg_repr})'
 
     def get_summary(self) -> Any:
-        r"""Collects summary statistics for the dataset."""
-        from torch_geometric.data.summary import Summary
-        return Summary.from_dataset(self)
+        pass
 
     def print_summary(self, fmt: str = "psql") -> None:
-        r"""Prints summary statistics of the dataset to the console.
-
-        Args:
-            fmt (str, optional): Summary tables format. Available table formats
-                can be found `here <https://github.com/astanin/python-tabulate?
-                tab=readme-ov-file#table-format>`__. (default: :obj:`"psql"`)
-        """
-        print(self.get_summary().format(fmt=fmt))
+        pass
 
     def to_datapipe(self) -> Any:
-        r"""Converts the dataset into a :class:`torch.utils.data.DataPipe`.
-
-        The returned instance can then be used with :pyg:`PyG's` built-in
-        :class:`DataPipes` for batching graphs as follows:
-
-        .. code-block:: python
-
-            from torch_geometric.datasets import QM9
-
-            dp = QM9(root='./data/QM9/').to_datapipe()
-            dp = dp.batch_graphs(batch_size=2, drop_last=True)
-
-            for batch in dp:
-                pass
-
-        See the `PyTorch tutorial
-        <https://pytorch.org/data/main/tutorial.html>`_ for further background
-        on DataPipes.
-        """
-        from torch_geometric.data.datapipes import DatasetAdapter
-
-        return DatasetAdapter(self)
+        pass
 
 
 def overrides_method(cls, method_name: str) -> bool:
-    from torch_geometric.data import InMemoryDataset
-
-    if method_name in cls.__dict__:
-        return True
-
-    out = False
-    for base in cls.__bases__:
-        if base != Dataset and base != InMemoryDataset:
-            out |= overrides_method(base, method_name)
-    return out
+    pass
 
 
 def to_list(value: Any) -> Sequence:
-    if isinstance(value, Sequence) and not isinstance(value, str):
-        return value
-    else:
-        return [value]
+    pass
 
 
 def files_exist(files: List[str]) -> bool:
-    # NOTE: We return `False` in case `files` is empty, leading to a
-    # re-processing of files on every instantiation.
     return len(files) != 0 and all([fs.exists(f) for f in files])
 
 
@@ -441,12 +300,4 @@ def _repr(obj: Any) -> str:
 
 
 def _get_flattened_data_list(data_list: Iterable[Any]) -> List[BaseData]:
-    outs: List[BaseData] = []
-    for data in data_list:
-        if isinstance(data, BaseData):
-            outs.append(data)
-        elif isinstance(data, (tuple, list)):
-            outs.extend(_get_flattened_data_list(data))
-        elif isinstance(data, dict):
-            outs.extend(_get_flattened_data_list(data.values()))
-    return outs
+    pass

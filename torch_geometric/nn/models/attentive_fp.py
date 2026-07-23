@@ -41,10 +41,8 @@ class GATEConv(MessagePassing):
         zeros(self.bias)
 
     def forward(self, x: Tensor, edge_index: Adj, edge_attr: Tensor) -> Tensor:
-        # edge_updater_type: (x: Tensor, edge_attr: Tensor)
         alpha = self.edge_updater(edge_index, x=x, edge_attr=edge_attr)
 
-        # propagate_type: (x: Tensor, alpha: Tensor)
         out = self.propagate(edge_index, x=x, alpha=alpha)
         out = out + self.bias
         return out
@@ -66,23 +64,6 @@ class GATEConv(MessagePassing):
 
 
 class AttentiveFP(torch.nn.Module):
-    r"""The Attentive FP model for molecular representation learning from the
-    `"Pushing the Boundaries of Molecular Representation for Drug Discovery
-    with the Graph Attention Mechanism"
-    <https://pubs.acs.org/doi/10.1021/acs.jmedchem.9b00959>`_ paper, based on
-    graph attention mechanisms.
-
-    Args:
-        in_channels (int): Size of each input sample.
-        hidden_channels (int): Hidden node feature dimensionality.
-        out_channels (int): Size of each output sample.
-        edge_dim (int): Edge feature dimensionality.
-        num_layers (int): Number of GNN layers.
-        num_timesteps (int): Number of iterative refinement steps for global
-            readout.
-        dropout (float, optional): Dropout probability. (default: :obj:`0.0`)
-
-    """
     def __init__(
         self,
         in_channels: int,
@@ -142,7 +123,6 @@ class AttentiveFP(torch.nn.Module):
     def forward(self, x: Tensor, edge_index: Tensor, edge_attr: Tensor,
                 batch: Tensor) -> Tensor:
         """"""  # noqa: D419
-        # Atom Embedding:
         x = F.leaky_relu_(self.lin1(x))
 
         h = F.elu_(self.gate_conv(x, edge_index, edge_attr))
@@ -155,7 +135,6 @@ class AttentiveFP(torch.nn.Module):
             h = F.dropout(h, p=self.dropout, training=self.training)
             x = gru(h, x).relu()
 
-        # Molecule Embedding:
         row = torch.arange(batch.size(0), device=batch.device)
         edge_index = torch.stack([row, batch], dim=0)
 
@@ -165,7 +144,6 @@ class AttentiveFP(torch.nn.Module):
             h = F.dropout(h, p=self.dropout, training=self.training)
             out = self.mol_gru(h, out).relu_()
 
-        # Predictor:
         out = F.dropout(out, p=self.dropout, training=self.training)
         return self.lin2(out)
 

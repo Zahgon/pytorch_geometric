@@ -17,37 +17,6 @@ from torch_geometric.data import (
 
 
 class Teeth3DS(InMemoryDataset):
-    r"""The Teeth3DS+ dataset from the `"An Extended Benchmark for Intra-oral
-    3D Scans Analysis" <https://crns-smartvision.github.io/teeth3ds/>`_ paper.
-
-    This dataset is the first comprehensive public benchmark designed to
-    advance the field of intra-oral 3D scan analysis developed as part of the
-    3DTeethSeg 2022 and 3DTeethLand 2024 MICCAI challenges, aiming to drive
-    research in teeth identification, segmentation, labeling, 3D modeling,
-    and dental landmark identification.
-    The dataset includes at least 1,800 intra-oral scans (containing 23,999
-    annotated teeth) collected from 900 patients, covering both upper and lower
-    jaws separately.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        split (str): The split name (one of :obj:`"Teeth3DS"`,
-            :obj:`"3DTeethSeg22_challenge"` or :obj:`"3DTeethLand_challenge"`).
-        train (bool, optional): If :obj:`True`, loads the training dataset,
-            otherwise the test dataset. (default: :obj:`True`)
-        num_samples (int, optional): Number of points to sample from each mesh.
-            (default: :obj:`30000`)
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-    """
     urls = {
         'data_part_1.zip':
         'https://osf.io/download/qhprs/',
@@ -98,32 +67,15 @@ class Teeth3DS(InMemoryDataset):
 
     @property
     def processed_dir(self) -> str:
-        return os.path.join(self.root, f'processed_{self.split}_{self.mode}')
+        pass
 
     @property
     def raw_file_names(self) -> List[str]:
-        return ['license.txt']
+        pass
 
     @property
     def processed_file_names(self) -> List[str]:
-        # Directory containing train/test split files:
-        split_subdir = 'teeth3ds_sample' if self.split == 'sample' else ''
-        split_dir = osp.join(
-            self.raw_dir,
-            split_subdir,
-            f'{self.split}_train_test_split',
-        )
-
-        split_files = glob(osp.join(split_dir, f'{self.mode}*.txt'))
-
-        # Collect all file names from the split files:
-        combined_list = []
-        for file_path in split_files:
-            with open(file_path) as file:
-                combined_list.extend(file.read().splitlines())
-
-        # Generate the list of processed file paths:
-        return [f'{file_name}.pt' for file_name in combined_list]
+        pass
 
     def download(self) -> None:
         if self.split == 'sample':
@@ -151,13 +103,11 @@ class Teeth3DS(InMemoryDataset):
         mesh = trimesh.load_mesh(file_path)
 
         if isinstance(mesh, list):
-            # Handle the case where a list of Geometry objects is returned
             mesh = mesh[0]
 
         vertices = mesh.vertices
         vertex_normals = mesh.vertex_normals
 
-        # Perform sampling on mesh vertices:
         if len(vertices) < self.num_samples:
             sampled_indices = np.random.choice(
                 len(vertices),
@@ -177,11 +127,9 @@ class Teeth3DS(InMemoryDataset):
                                f"{self.num_samples} points, but got "
                                f"{len(sampled_indices)} for '{file_path}'")
 
-        # Extract features and annotations for the sampled points:
         pos = torch.tensor(vertices[sampled_indices], dtype=torch.float)
         x = torch.tensor(vertex_normals[sampled_indices], dtype=torch.float)
 
-        # Load segmentation annotations:
         seg_annotation_path = file_path.replace('.obj', '.json')
         if osp.exists(seg_annotation_path):
             with open(seg_annotation_path) as f:
@@ -196,10 +144,8 @@ class Teeth3DS(InMemoryDataset):
             y = torch.empty(0, 3)
             instances = torch.empty(0, 3)
 
-        # Load landmarks annotations:
         landmarks_annotation_path = file_path.replace('.obj', '__kpt.json')
 
-        # Parse keypoint annotations into structured tensors:
         keypoints_dict: Dict[str, List] = {
             key: []
             for key in [
@@ -256,7 +202,7 @@ class Teeth3DS(InMemoryDataset):
                 torch.save(data, osp.join(self.processed_dir, file))
 
     def len(self) -> int:
-        return len(self.processed_file_names)
+        pass
 
     def get(self, idx: int) -> Data:
         return torch.load(

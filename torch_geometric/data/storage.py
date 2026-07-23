@@ -52,17 +52,6 @@ class AttrType(Enum):
 
 
 class BaseStorage(MutableMapping):
-    # This class wraps a Python dictionary and extends it as follows:
-    # 1. It allows attribute assignments, e.g.:
-    #    `storage.x = ...` in addition to `storage['x'] = ...`
-    # 2. It allows private attributes that are not exposed to the user, e.g.:
-    #    `storage._{key} = ...` and accessible via `storage._{key}`
-    # 3. It holds an (optional) weak reference to its parent object, e.g.:
-    #    `storage._parent = weakref.ref(parent)`
-    # 4. It allows iterating over only a subset of keys, e.g.:
-    #    `storage.values('x', 'y')` or `storage.items('x', 'y')
-    # 5. It adds additional PyTorch Tensor functionality, e.g.:
-    #    `storage.cpu()`, `storage.cuda()` or `storage.share_memory_()`.
     def __init__(
         self,
         _mapping: Optional[Dict[str, Any]] = None,
@@ -77,11 +66,10 @@ class BaseStorage(MutableMapping):
 
     @property
     def _key(self) -> Any:
-        return None
+        pass
 
     def _pop_cache(self, key: str) -> None:
-        for cache in getattr(self, '_cached_attr', {}).values():
-            cache.discard(key)
+        pass
 
     def __len__(self) -> int:
         return len(self._mapping)
@@ -167,14 +155,7 @@ class BaseStorage(MutableMapping):
     def __repr__(self) -> str:
         return repr(self._mapping)
 
-    # Allow iterating over subsets ############################################
 
-    # In contrast to standard `keys()`, `values()` and `items()` functions of
-    # Python dictionaries, we allow to only iterate over a subset of items
-    # denoted by a list of keys `args`.
-    # This is especially useful for adding PyTorch Tensor functionality to the
-    # storage object, e.g., in case we only want to transfer a subset of keys
-    # to the GPU (i.e. the ones that are relevant to the deep learning model).
 
     def keys(self, *args: str) -> KeysView:  # type: ignore
         return KeysView(self._mapping, *args)
@@ -201,7 +182,6 @@ class BaseStorage(MutableMapping):
             self[key] = recursive_apply(value, func)
         return self
 
-    # Additional functionality ################################################
 
     def get(self, key: str, value: Optional[Any] = None) -> Any:
         return self._mapping.get(key, value)
@@ -209,19 +189,12 @@ class BaseStorage(MutableMapping):
     def to_dict(self) -> Dict[str, Any]:
         r"""Returns a dictionary of stored key/value pairs."""
         out_dict = copy.copy(self._mapping)
-        # Needed to preserve individual `num_nodes` attributes when calling
-        # `BaseData.collate`.
-        # TODO (matthias) Try to make this more generic.
         if '_num_nodes' in self.__dict__:
             out_dict['_num_nodes'] = self.__dict__['_num_nodes']
         return out_dict
 
     def to_namedtuple(self) -> NamedTuple:
-        r"""Returns a :obj:`NamedTuple` of stored key/value pairs."""
-        field_names = list(self.keys())
-        typename = f'{self.__class__.__name__}Tuple'
-        StorageTuple = namedtuple(typename, field_names)  # type: ignore
-        return StorageTuple(*[self[key] for key in field_names])
+        pass
 
     def clone(self, *args: str) -> Self:
         r"""Performs a deep-copy of the object."""
@@ -257,17 +230,10 @@ class BaseStorage(MutableMapping):
         *args: str,
         non_blocking: bool = False,
     ) -> Self:  # pragma: no cover
-        r"""Copies attributes to CUDA memory, either for all attributes or only
-        the ones given in :obj:`*args`.
-        """
-        return self.apply(lambda x: x.cuda(device, non_blocking=non_blocking),
-                          *args)
+        pass
 
     def pin_memory(self, *args: str) -> Self:
-        r"""Copies attributes to pinned memory, either for all attributes or
-        only the ones given in :obj:`*args`.
-        """
-        return self.apply(lambda x: x.pin_memory(), *args)
+        pass
 
     def share_memory_(self, *args: str) -> Self:
         r"""Moves attributes to shared memory, either for all attributes or
@@ -296,13 +262,8 @@ class BaseStorage(MutableMapping):
             lambda x: x.requires_grad_(requires_grad=requires_grad), *args)
 
     def record_stream(self, stream: torch.cuda.Stream, *args: str) -> Self:
-        r"""Ensures that the tensor memory is not reused for another tensor
-        until all current work queued on :obj:`stream` has been completed,
-        either for all attributes or only the ones given in :obj:`*args`.
-        """
-        return self.apply_(lambda x: x.record_stream(stream), *args)
+        pass
 
-    # Time Handling ###########################################################
 
     def _cat_dims(self, keys: Iterable[str]) -> Dict[str, int]:
         return {
@@ -315,11 +276,7 @@ class BaseStorage(MutableMapping):
         keys: Iterable[str],
         index_or_mask: Tensor,
     ) -> Self:
-
-        for key, dim in self._cat_dims(keys).items():
-            self[key] = select(self[key], index_or_mask, dim)
-
-        return self
+        pass
 
     def concat(self, other: Self) -> Self:
         if not (set(self.keys()) == set(other.keys())):
@@ -346,25 +303,10 @@ class BaseStorage(MutableMapping):
         return self
 
     def is_sorted_by_time(self) -> bool:
-        if 'time' in self:
-            return bool(torch.all(self.time[:-1] <= self.time[1:]))
-        return True
+        pass
 
     def sort_by_time(self) -> Self:
-        if self.is_sorted_by_time():
-            return self
-
-        if 'time' in self:
-            _, perm = torch.sort(self.time, stable=True)
-
-            if self.is_node_attr('time'):
-                keys = self.node_attrs()
-            elif self.is_edge_attr('time'):
-                keys = self.edge_attrs()
-
-            self._select(keys, perm)
-
-        return self
+        pass
 
     def snapshot(
         self,
@@ -372,54 +314,23 @@ class BaseStorage(MutableMapping):
         end_time: Union[float, int],
         attr: str = 'time',
     ) -> Self:
-        if attr in self:
-            time = self[attr]
-            mask = (time >= start_time) & (time <= end_time)
-
-            if self.is_node_attr(attr):
-                keys = self.node_attrs()
-            elif self.is_edge_attr(attr):
-                keys = self.edge_attrs()
-
-            self._select(keys, mask)
-
-            if self.is_node_attr(attr) and 'num_nodes' in self:
-                self.num_nodes: Optional[int] = int(mask.sum())
-
-        return self
+        pass
 
     def up_to(self, time: Union[float, int]) -> Self:
-        if 'time' in self:
-            return self.snapshot(self.time.min().item(), time)
-        return self
+        pass
 
 
 class NodeStorage(BaseStorage):
-    r"""A storage for node-level information."""
     @property
     def _key(self) -> NodeType:
-        key = self.__dict__.get('_key', None)
-        if key is None or not isinstance(key, str):
-            raise ValueError("'_key' does not denote a valid node type")
-        return key
+        pass
 
     @property
     def can_infer_num_nodes(self) -> bool:
-        keys = set(self.keys())
-        num_node_keys = {
-            'num_nodes', 'x', 'pos', 'batch', 'adj', 'adj_t', 'edge_index',
-            'face'
-        }
-        if len(keys & num_node_keys) > 0:
-            return True
-        elif len([key for key in keys if 'node' in key]) > 0:
-            return True
-        else:
-            return False
+        pass
 
     @property
     def num_nodes(self) -> Optional[int]:
-        # We sequentially access attributes that reveal the number of nodes.
         if 'num_nodes' in self:
             return self['num_nodes']
         for key, value in self.items():
@@ -471,25 +382,11 @@ class NodeStorage(BaseStorage):
 
     @property
     def num_node_features(self) -> int:
-        x: Optional[Any] = self.get('x')
-        if isinstance(x, Tensor):
-            return 1 if x.dim() == 1 else x.size(-1)
-        if isinstance(x, np.ndarray):
-            return 1 if x.ndim == 1 else x.shape[-1]
-        if isinstance(x, SparseTensor):
-            return 1 if x.dim() == 1 else x.size(-1)
-        if isinstance(x, TensorFrame):
-            return x.num_cols
-
-        tf: Optional[Any] = self.get('tf')
-        if isinstance(tf, TensorFrame):
-            return tf.num_cols
-
-        return 0
+        pass
 
     @property
     def num_features(self) -> int:
-        return self.num_node_features
+        pass
 
     def is_node_attr(self, key: str) -> bool:
         if '_cached_attr' not in self.__dict__:
@@ -531,89 +428,29 @@ class NodeStorage(BaseStorage):
 
 
 class EdgeStorage(BaseStorage):
-    r"""A storage for edge-level information.
-
-    We support multiple ways to store edge connectivity in a
-    :class:`EdgeStorage` object:
-
-    * :obj:`edge_index`: A :class:`torch.LongTensor` holding edge indices in
-      COO format with shape :obj:`[2, num_edges]` (the default format)
-
-    * :obj:`adj`: A :class:`torch_sparse.SparseTensor` holding edge indices in
-      a sparse format, supporting both COO and CSR format.
-
-    * :obj:`adj_t`: A **transposed** :class:`torch_sparse.SparseTensor` holding
-      edge indices in a sparse format, supporting both COO and CSR format.
-      This is the most efficient one for graph-based deep learning models as
-      indices are sorted based on target nodes.
-    """
     @property
     def _key(self) -> EdgeType:
-        key = self.__dict__.get('_key', None)
-        if key is None or not isinstance(key, tuple) or not len(key) == 3:
-            raise ValueError("'_key' does not denote a valid edge type")
-        return key
+        pass
 
     @property
     def edge_index(self) -> Tensor:
-        if 'edge_index' in self:
-            return self['edge_index']
-        if 'adj' in self and isinstance(self.adj, SparseTensor):
-            return torch.stack(self.adj.coo()[:2], dim=0)
-        if 'adj_t' in self and isinstance(self.adj_t, SparseTensor):
-            return torch.stack(self.adj_t.coo()[:2][::-1], dim=0)
-        raise AttributeError(
-            f"'{self.__class__.__name__}' object has no attribute "
-            f"'edge_index', 'adj' or 'adj_t'")
+        pass
 
     @edge_index.setter
     def edge_index(self, edge_index: Optional[Tensor]) -> None:
-        self['edge_index'] = edge_index
+        pass
 
     @property
     def num_edges(self) -> int:
-        # We sequentially access attributes that reveal the number of edges.
-        if 'num_edges' in self:
-            return self['num_edges']
-        for key, value in self.items():
-            if isinstance(value, Tensor) and key in E_KEYS:
-                cat_dim = self._parent().__cat_dim__(key, value, self)
-                return value.size(cat_dim)
-            if isinstance(value, np.ndarray) and key in E_KEYS:
-                cat_dim = self._parent().__cat_dim__(key, value, self)
-                return value.shape[cat_dim]
-            if isinstance(value, TensorFrame) and key in E_KEYS:
-                return value.num_rows
-        for key, value in self.items():
-            if isinstance(value, Tensor) and 'edge' in key:
-                cat_dim = self._parent().__cat_dim__(key, value, self)
-                return value.size(cat_dim)
-            if isinstance(value, np.ndarray) and 'edge' in key:
-                cat_dim = self._parent().__cat_dim__(key, value, self)
-                return value.shape[cat_dim]
-            if isinstance(value, TensorFrame) and 'edge' in key:
-                return value.num_rows
-        for value in self.values('adj', 'adj_t'):
-            if isinstance(value, SparseTensor):
-                return value.nnz()
-            elif is_torch_sparse_tensor(value):
-                return value._nnz()
-        return 0
+        pass
 
     @property
     def num_edge_features(self) -> int:
-        edge_attr: Optional[Any] = self.get('edge_attr')
-        if isinstance(edge_attr, Tensor):
-            return 1 if edge_attr.dim() == 1 else edge_attr.size(-1)
-        if isinstance(edge_attr, np.ndarray):
-            return 1 if edge_attr.ndim == 1 else edge_attr.shape[-1]
-        if isinstance(edge_attr, TensorFrame):
-            return edge_attr.num_cols
-        return 0
+        pass
 
     @property
     def num_features(self) -> int:
-        return self.num_edge_features
+        pass
 
     @overload
     def size(self) -> Tuple[Optional[int], Optional[int]]:
@@ -675,10 +512,7 @@ class EdgeStorage(BaseStorage):
         return [key for key in self.keys() if self.is_edge_attr(key)]
 
     def is_sorted(self, sort_by_row: bool = True) -> bool:
-        if 'edge_index' in self:
-            index = self.edge_index[0] if sort_by_row else self.edge_index[1]
-            return bool(torch.all(index[:-1] <= index[1:]))
-        return True
+        pass
 
     def sort(self, sort_by_row: bool = True) -> Self:
         if 'edge_index' in self:
@@ -757,14 +591,13 @@ class EdgeStorage(BaseStorage):
 
 
 class GlobalStorage(NodeStorage, EdgeStorage):
-    r"""A storage for both node-level and edge-level information."""
     @property
     def _key(self) -> Any:
-        return None
+        pass
 
     @property
     def num_features(self) -> int:
-        return self.num_node_features
+        pass
 
     @overload
     def size(self) -> Tuple[Optional[int], Optional[int]]:

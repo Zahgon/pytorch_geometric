@@ -15,26 +15,6 @@ from torch_geometric.utils import coalesce
 
 
 class AMiner(InMemoryDataset):
-    r"""The heterogeneous AMiner dataset from the `"metapath2vec: Scalable
-    Representation Learning for Heterogeneous Networks"
-    <https://ericdongyx.github.io/papers/
-    KDD17-dong-chawla-swami-metapath2vec.pdf>`_ paper, consisting of nodes from
-    type :obj:`"paper"`, :obj:`"author"` and :obj:`"venue"`.
-    Venue categories and author research interests are available as ground
-    truth labels for a subset of nodes.
-
-    Args:
-        root: Root directory where the dataset should be saved.
-        transform: A function/transform that takes in a
-            :class:`torch_geometric.data.HeteroData` object and returns a
-            transformed version. The data object will be transformed before
-            every access.
-        pre_transform: A function/transform that takes in a
-            :class:`torch_geometric.data.HeteroData` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk.
-        force_reload: Whether to re-process the dataset.
-    """
 
     url = 'https://www.dropbox.com/s/1bnz8r7mofx0osf/net_aminer.zip?dl=1'
     y_url = 'https://www.dropbox.com/s/nkocx16rpl4ydde/label.zip?dl=1'
@@ -52,14 +32,11 @@ class AMiner(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> List[str]:
-        return [
-            'id_author.txt', 'id_conf.txt', 'paper.txt', 'paper_author.txt',
-            'paper_conf.txt', 'label'
-        ]
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def download(self) -> None:
         fs.rm(self.raw_dir)
@@ -76,7 +53,6 @@ class AMiner(InMemoryDataset):
 
         data = HeteroData()
 
-        # Get author labels.
         path = osp.join(self.raw_dir, 'id_author.txt')
         author = pd.read_csv(path, sep='\t', names=['idx', 'name'],
                              index_col=1)
@@ -89,7 +65,6 @@ class AMiner(InMemoryDataset):
         data['author'].y = torch.from_numpy(df['y'].values) - 1
         data['author'].y_index = torch.from_numpy(df['idx'].values)
 
-        # Get venue labels.
         path = osp.join(self.raw_dir, 'id_conf.txt')
         venue = pd.read_csv(path, sep='\t', names=['idx', 'name'], index_col=1)
 
@@ -101,7 +76,6 @@ class AMiner(InMemoryDataset):
         data['venue'].y = torch.from_numpy(df['y'].values) - 1
         data['venue'].y_index = torch.from_numpy(df['idx'].values)
 
-        # Get paper<->author connectivity.
         path = osp.join(self.raw_dir, 'paper_author.txt')
         paper_author = pd.read_csv(path, sep='\t', header=None)
         paper_author = torch.from_numpy(paper_author.values)
@@ -113,7 +87,6 @@ class AMiner(InMemoryDataset):
         data['paper', 'written_by', 'author'].edge_index = paper_author
         data['author', 'writes', 'paper'].edge_index = paper_author.flip([0])
 
-        # Get paper<->venue connectivity.
         path = osp.join(self.raw_dir, 'paper_conf.txt')
         paper_venue = pd.read_csv(path, sep='\t', header=None)
         paper_venue = torch.from_numpy(paper_venue.values)

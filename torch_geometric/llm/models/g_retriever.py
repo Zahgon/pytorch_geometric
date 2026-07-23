@@ -8,37 +8,6 @@ from torch_geometric.utils import scatter
 
 
 class GRetriever(torch.nn.Module):
-    r"""The G-Retriever model from the `"G-Retriever: Retrieval-Augmented
-    Generation for Textual Graph Understanding and Question Answering"
-    <https://arxiv.org/abs/2402.07630>`_ paper.
-
-    Args:
-        llm (LLM): The LLM to use.
-        gnn (torch.nn.Module): The GNN to use.
-        use_lora (bool, optional): If set to :obj:`True`, will use LORA from
-            :obj:`peft` for training the LLM, see
-            `here <https://huggingface.co/docs/peft/en/index>`_ for details.
-            (default: :obj:`False`)
-        mlp_out_tokens (int, optional): Number of LLM prefix tokens to
-            reserve for GNN output. (default: :obj:`1`)
-
-    .. warning::
-        This module has been tested with the following HuggingFace models
-        * :obj:`llm_to_use="meta-llama/Meta-Llama-3.1-8B-Instruct"`
-        * :obj:`llm_to_use="Qwen/Qwen3-0.6B"`
-
-
-        This module should work with any HuggingFace model.
-        See other models at `HuggingFace
-        Models <https://huggingface.co/models>`_
-        and let us know if you
-        encounter any issues.
-
-    .. note::
-        For an example of using :class:`GRetriever`, see
-        `examples/llm/g_retriever.py <https://github.com/pyg-team/
-        pytorch_geometric/blob/master/examples/llm/g_retriever.py>`_.
-    """
     def __init__(
         self,
         llm: LLM,
@@ -103,7 +72,6 @@ class GRetriever(torch.nn.Module):
 
         model_specific_kwargs = {}
 
-        # duck typing for SGFormer to get around circular import
         if (hasattr(self.gnn, 'trans_conv')
                 and hasattr(self.gnn, 'graph_conv')):
             model_specific_kwargs['batch'] = batch
@@ -146,10 +114,8 @@ class GRetriever(torch.nn.Module):
             x = self._align_dtype(x, self.llm_generator)
             xs = x.split(1, dim=0)
 
-            # Handle case where theres more than one embedding for each sample
             xs = [x.squeeze(0) for x in xs]
 
-            # Handle questions without node features:
             batch_unique = batch.unique()
             batch_size = len(question)
             if len(batch_unique) < batch_size:
@@ -211,10 +177,8 @@ class GRetriever(torch.nn.Module):
             x = self._align_dtype(x, self.llm_generator)
             xs = x.split(1, dim=0)
 
-            # Handle case where theres more than one embedding for each sample
             xs = [x.squeeze(0) for x in xs]
 
-            # Handle questions without node features:
             batch_unique = batch.unique()
             batch_size = len(question)
             if len(batch_unique) < batch_size:
@@ -226,10 +190,6 @@ class GRetriever(torch.nn.Module):
         inputs_embeds, attention_mask, _ = self.llm._get_embeds(
             question, additional_text_context, xs)
 
-        # bos_token = self.llm.tokenizer(
-        #     self.llm.tokenizer.bos_token_id,
-        #     add_special_tokens=False,
-        # ).input_ids[0]
 
         with self.llm.autocast_context:
             outputs = self.llm_generator.generate(

@@ -8,28 +8,6 @@ from torch_geometric.utils import scatter
 
 
 class PairNorm(torch.nn.Module):
-    r"""Applies pair normalization over node features as described in the
-    `"PairNorm: Tackling Oversmoothing in GNNs"
-    <https://arxiv.org/abs/1909.12223>`_ paper.
-
-    .. math::
-        \mathbf{x}_i^c &= \mathbf{x}_i - \frac{1}{n}
-        \sum_{i=1}^n \mathbf{x}_i \\
-
-        \mathbf{x}_i^{\prime} &= s \cdot
-        \frac{\mathbf{x}_i^c}{\sqrt{\frac{1}{n} \sum_{i=1}^n
-        {\| \mathbf{x}_i^c \|}^2_2}}
-
-    Args:
-        scale (float, optional): Scaling factor :math:`s` of normalization.
-            (default, :obj:`1.`)
-        scale_individually (bool, optional): If set to :obj:`True`, will
-            compute the scaling step as :math:`\mathbf{x}^{\prime}_i = s \cdot
-            \frac{\mathbf{x}_i^c}{{\| \mathbf{x}_i^c \|}_2}`.
-            (default: :obj:`False`)
-        eps (float, optional): A value added to the denominator for numerical
-            stability. (default: :obj:`1e-5`)
-    """
     def __init__(self, scale: float = 1., scale_individually: bool = False,
                  eps: float = 1e-5):
         super().__init__()

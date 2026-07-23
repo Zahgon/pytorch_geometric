@@ -22,7 +22,6 @@ def filterwarnings(
 
 
 class WarningCache(set):
-    """Cache for warnings."""
     def warn(self, message: str, stacklevel: int = 5) -> None:
         """Trigger warning message."""
         if message not in self:

@@ -24,41 +24,6 @@ from torch_geometric.utils import get_embeddings, get_embeddings_hetero
 
 
 class PGExplainer(ExplainerAlgorithm):
-    r"""The PGExplainer model from the `"Parameterized Explainer for Graph
-    Neural Network" <https://arxiv.org/abs/2011.04573>`_ paper.
-
-    Internally, it utilizes a neural network to identify subgraph structures
-    that play a crucial role in the predictions made by a GNN.
-    Importantly, the :class:`PGExplainer` needs to be trained via
-    :meth:`~PGExplainer.train` before being able to generate explanations:
-
-    .. code-block:: python
-
-        explainer = Explainer(
-            model=model,
-            algorithm=PGExplainer(epochs=30, lr=0.003),
-            explanation_type='phenomenon',
-            edge_mask_type='object',
-            model_config=ModelConfig(...),
-        )
-
-        # Train against a variety of node-level or graph-level predictions:
-        for epoch in range(30):
-            for index in [...]:  # Indices to train against.
-                loss = explainer.algorithm.train(epoch, model, x, edge_index,
-                                                 target=target, index=index)
-
-        # Get the final explanations:
-        explanation = explainer(x, edge_index, target=target, index=0)
-
-    Args:
-        epochs (int): The number of epochs to train.
-        lr (float, optional): The learning rate to apply.
-            (default: :obj:`0.003`).
-        **kwargs (optional): Additional hyper-parameters to override default
-            settings in
-            :attr:`~torch_geometric.explain.algorithm.PGExplainer.coeffs`.
-    """
 
     coeffs = {
         'edge_size': 0.05,
@@ -67,7 +32,6 @@ class PGExplainer(ExplainerAlgorithm):
         'bias': 0.01,
     }
 
-    # NOTE: Add more in the future as needed.
     SUPPORTED_HETERO_MODELS = [
         HGTConv,
         HANConv,
@@ -162,31 +126,22 @@ class PGExplainer(ExplainerAlgorithm):
                 raise ValueError(f"Only scalars are supported for the 'index' "
                                  f"argument in '{self.__class__.__name__}'")
 
-        # Get embeddings based on whether the graph is homogeneous or
-        # heterogeneous
         node_embeddings = self._get_embeddings(model, x, edge_index, **kwargs)
 
-        # Train the model
         self.optimizer.zero_grad()
         temperature = self._get_temperature(epoch)
 
-        # Process embeddings and generate edge masks
         edge_mask = self._generate_edge_masks(node_embeddings, edge_index,
                                               index, temperature)
 
-        # Apply masks to the model
         if self.is_hetero:
             set_hetero_masks(model, edge_mask, edge_index, apply_sigmoid=True)
 
-            # For node-level tasks, we can compute hard masks
             if self.model_config.task_level == ModelTaskLevel.node:
-                # Process each edge type separately
                 for edge_type, mask in edge_mask.items():
-                    # Get the edge indices for this edge type
                     edges = edge_index[edge_type]
                     src_type, _, dst_type = edge_type
 
-                    # Get hard masks for this specific edge type
                     _, hard_mask = self._get_hard_masks(
                         model, index, edges,
                         num_nodes=max(x[src_type].size(0),
@@ -194,30 +149,24 @@ class PGExplainer(ExplainerAlgorithm):
 
                     edge_mask[edge_type] = mask[hard_mask]
         else:
-            # Apply masks for homogeneous graphs
             set_masks(model, edge_mask, edge_index, apply_sigmoid=True)
 
-            # For node-level tasks, we may need to apply hard masks
             hard_edge_mask = None
             if self.model_config.task_level == ModelTaskLevel.node:
                 _, hard_edge_mask = self._get_hard_masks(
                     model, index, edge_index, num_nodes=x.size(0))
                 edge_mask = edge_mask[hard_edge_mask]
 
-        # Forward pass with masks applied
         y_hat, y = model(x, edge_index, **kwargs), target
 
         if index is not None:
             y_hat, y = y_hat[index], y[index]
 
-        # Calculate loss
         loss = self._loss(y_hat, y, edge_mask)
 
-        # Backward pass and optimization
         loss.backward()
         self.optimizer.step()
 
-        # Clean up
         clear_masks(model)
         self._curr_epoch = epoch
 
@@ -277,15 +226,11 @@ class PGExplainer(ExplainerAlgorithm):
                 raise ValueError(f"Only scalars are supported for the 'index' "
                                  f"argument in '{self.__class__.__name__}'")
 
-        # Get embeddings
         node_embeddings = self._get_embeddings(model, x, edge_index, **kwargs)
 
-        # Generate explanations
         if self.is_hetero:
-            # Generate edge masks for each edge type
             edge_masks = {}
 
-            # Generate masks for each edge type
             for edge_type, edge_idx in edge_index.items():
                 src_node_type, _, dst_node_type = edge_type
 
@@ -296,8 +241,6 @@ class PGExplainer(ExplainerAlgorithm):
                                                  edge_idx, index)
                 logits = self.mlp(inputs).view(-1)
 
-                # For node-level explanations, get hard masks for this
-                # specific edge type
                 hard_edge_mask = None
                 if self.model_config.task_level == ModelTaskLevel.node:
                     _, hard_edge_mask = self._get_hard_masks(
@@ -305,7 +248,6 @@ class PGExplainer(ExplainerAlgorithm):
                         num_nodes=max(x[src_node_type].size(0),
                                       x[dst_node_type].size(0)))
 
-                # Apply hard mask if available and it has any True values
                 edge_masks[edge_type] = self._post_process_mask(
                     logits, hard_edge_mask, apply_sigmoid=True)
 
@@ -315,7 +257,6 @@ class PGExplainer(ExplainerAlgorithm):
         else:
             hard_edge_mask = None
             if self.model_config.task_level == ModelTaskLevel.node:
-                # We need to compute hard masks to properly clean up edges
                 _, hard_edge_mask = self._get_hard_masks(
                     model, index, edge_index, num_nodes=x.size(0))
 
@@ -351,7 +292,6 @@ class PGExplainer(ExplainerAlgorithm):
 
         return True
 
-    ###########################################################################
 
     def _get_embeddings(self, model: torch.nn.Module, x: Union[Tensor,
                                                                Dict[NodeType,
@@ -360,7 +300,6 @@ class PGExplainer(ExplainerAlgorithm):
                         **kwargs) -> Union[Tensor, Dict[NodeType, Tensor]]:
         """Get embeddings from the model based on input type."""
         if self.is_hetero:
-            # For heterogeneous graphs, get embeddings for each node type
             embeddings_dict = get_embeddings_hetero(
                 model,
                 self.SUPPORTED_HETERO_MODELS,
@@ -369,13 +308,11 @@ class PGExplainer(ExplainerAlgorithm):
                 **kwargs,
             )
 
-            # Use the last layer's embeddings for each node type
             last_embedding_dict = {
                 node_type: embs[-1] if embs and len(embs) > 0 else None
                 for node_type, embs in embeddings_dict.items()
             }
 
-            # Skip if no embeddings were captured
             if not any(emb is not None
                        for emb in last_embedding_dict.values()):
                 raise ValueError(
@@ -384,7 +321,6 @@ class PGExplainer(ExplainerAlgorithm):
 
             return last_embedding_dict
         else:
-            # For homogeneous graphs, get embeddings directly
             return get_embeddings(model, x, edge_index, **kwargs)[-1]
 
     def _generate_edge_masks(
@@ -396,21 +332,18 @@ class PGExplainer(ExplainerAlgorithm):
             temperature: float) -> Union[Tensor, Dict[EdgeType, Tensor]]:
         """Generate edge masks based on embeddings."""
         if self.is_hetero:
-            # For heterogeneous graphs, generate masks for each edge type
             edge_masks = {}
 
             for edge_type, edge_idx in edge_index.items():
                 src, _, dst = edge_type
 
                 assert src in emb and dst in emb
-                # Generate inputs for this edge type
                 inputs = self._get_inputs_hetero(emb, edge_type, edge_idx,
                                                  index)
                 logits = self.mlp(inputs).view(-1)
                 edge_masks[edge_type] = self._concrete_sample(
                     logits, temperature)
 
-            # Ensure we have at least one valid edge mask
             if not edge_masks:
                 raise ValueError(
                     "Could not generate edge masks for any edge type. "
@@ -418,7 +351,6 @@ class PGExplainer(ExplainerAlgorithm):
 
             return edge_masks
         else:
-            # For homogeneous graphs, generate a single mask
             inputs = self._get_inputs(emb, edge_index, index)
             logits = self.mlp(inputs).view(-1)
             return self._concrete_sample(logits, temperature)
@@ -436,17 +368,13 @@ class PGExplainer(ExplainerAlgorithm):
                            index: Optional[int] = None) -> Tensor:
         src, _, dst = edge_type
 
-        # Get embeddings for source and destination nodes
         src_emb = embedding_dict[src]
         dst_emb = embedding_dict[dst]
 
-        # Source and destination node embeddings
         zs = [src_emb[edge_index[0]], dst_emb[edge_index[1]]]
 
-        # For node-level explanations, add the target node embedding
         if self.model_config.task_level == ModelTaskLevel.node:
             assert index is not None
-            # Assuming index refers to a node of type 'src'
             target_emb = src_emb[index].view(1, -1).repeat(zs[0].size(0), 1)
             zs.append(target_emb)
 
@@ -464,10 +392,8 @@ class PGExplainer(ExplainerAlgorithm):
 
     def _loss(self, y_hat: Tensor, y: Tensor,
               edge_mask: Union[Tensor, Dict[EdgeType, Tensor]]) -> Tensor:
-        # Calculate base loss based on model configuration
         loss = self._calculate_base_loss(y_hat, y)
 
-        # Apply regularization based on graph type
         if self.is_hetero:
             loss = self._apply_hetero_regularization(loss, edge_mask)
         else:
@@ -502,13 +428,10 @@ class PGExplainer(ExplainerAlgorithm):
 
     def _add_mask_regularization(self, loss: Tensor, mask: Tensor) -> Tensor:
         """Add size and entropy regularization for a mask."""
-        # Apply sigmoid for mask values
         mask = mask.sigmoid()
 
-        # Size regularization
         size_loss = mask.sum() * self.coeffs['edge_size']
 
-        # Entropy regularization
         masked = 0.99 * mask + 0.005
         mask_ent = -masked * masked.log() - (1 - masked) * (1 - masked).log()
         mask_ent_loss = mask_ent.mean() * self.coeffs['edge_ent']

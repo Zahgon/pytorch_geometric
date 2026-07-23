@@ -6,80 +6,42 @@ from torch_geometric.utils.mixin import CastMixin
 
 
 class ExplanationType(Enum):
-    """Enum class for the explanation type."""
     model = 'model'
     phenomenon = 'phenomenon'
 
 
 class MaskType(Enum):
-    """Enum class for the mask type."""
     object = 'object'
     common_attributes = 'common_attributes'
     attributes = 'attributes'
 
 
 class ModelMode(Enum):
-    """Enum class for the model return type."""
     binary_classification = 'binary_classification'
     multiclass_classification = 'multiclass_classification'
     regression = 'regression'
 
 
 class ModelTaskLevel(Enum):
-    """Enum class for the model task level."""
     node = 'node'
     edge = 'edge'
     graph = 'graph'
 
 
 class ModelReturnType(Enum):
-    """Enum class for the model return type."""
     raw = 'raw'
     probs = 'probs'
     log_probs = 'log_probs'
 
 
 class ThresholdType(Enum):
-    """Enum class for the threshold type."""
     hard = 'hard'
     topk = 'topk'
     topk_hard = 'topk_hard'
-    # connected = 'connected'  # TODO
 
 
 @dataclass
 class ExplainerConfig(CastMixin):
-    r"""Configuration class to store and validate high level explanation
-    parameters.
-
-    Args:
-        explanation_type (ExplanationType or str): The type of explanation to
-            compute. The possible values are:
-
-                - :obj:`"model"`: Explains the model prediction.
-
-                - :obj:`"phenomenon"`: Explains the phenomenon that the model
-                  is trying to predict.
-
-            In practice, this means that the explanation algorithm will either
-            compute their losses with respect to the model output
-            (:obj:`"model"`) or the target output (:obj:`"phenomenon"`).
-
-        node_mask_type (MaskType or str, optional): The type of mask to apply
-            on nodes. The possible values are (default: :obj:`None`):
-
-                - :obj:`None`: Will not apply any mask on nodes.
-
-                - :obj:`"object"`: Will mask each node.
-
-                - :obj:`"common_attributes"`: Will mask each feature.
-
-                - :obj:`"attributes"`: Will mask each feature across all nodes.
-
-        edge_mask_type (MaskType or str, optional): The type of mask to apply
-            on edges. Has the sample possible values as :obj:`node_mask_type`.
-            (default: :obj:`None`)
-    """
     explanation_type: ExplanationType
     node_mask_type: Optional[MaskType]
     edge_mask_type: Optional[MaskType]
@@ -110,38 +72,6 @@ class ExplainerConfig(CastMixin):
 
 @dataclass
 class ModelConfig(CastMixin):
-    r"""Configuration class to store model parameters.
-
-    Args:
-        mode (ModelMode or str): The mode of the model. The possible values
-            are:
-
-                - :obj:`"binary_classification"`: A binary classification
-                  model.
-
-                - :obj:`"multiclass_classification"`: A multiclass
-                  classification model.
-
-                - :obj:`"regression"`: A regression model.
-
-        task_level (ModelTaskLevel or str): The task-level of the model.
-            The possible values are:
-
-                - :obj:`"node"`: A node-level prediction model.
-
-                - :obj:`"edge"`: An edge-level prediction model.
-
-                - :obj:`"graph"`: A graph-level prediction model.
-
-        return_type (ModelReturnType or str, optional): The return type of the
-            model. The possible values are (default: :obj:`None`):
-
-                - :obj:`"raw"`: The model returns raw values.
-
-                - :obj:`"probs"`: The model returns probabilities.
-
-                - :obj:`"log_probs"`: The model returns log-probabilities.
-    """
     mode: ModelMode
     task_level: ModelTaskLevel
     return_type: ModelReturnType
@@ -174,28 +104,6 @@ class ModelConfig(CastMixin):
 
 @dataclass
 class ThresholdConfig(CastMixin):
-    r"""Configuration class to store and validate threshold parameters.
-
-    Args:
-        threshold_type (ThresholdType or str): The type of threshold to apply.
-            The possible values are:
-
-                - :obj:`None`: No threshold is applied.
-
-                - :obj:`"hard"`: A hard threshold is applied to each mask.
-                  The elements of the mask with a value below the :obj:`value`
-                  are set to :obj:`0`, the others are set to :obj:`1`.
-
-                - :obj:`"topk"`: A soft threshold is applied to each mask.
-                  The top obj:`value` elements of each mask are kept, the
-                  others are set to :obj:`0`.
-
-                - :obj:`"topk_hard"`: Same as :obj:`"topk"` but values are set
-                  to :obj:`1` for all elements which are kept.
-
-        value (int or float, optional): The value to use when thresholding.
-            (default: :obj:`None`)
-    """
     type: ThresholdType
     value: Union[float, int]
 

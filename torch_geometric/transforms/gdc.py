@@ -20,59 +20,6 @@ from torch_geometric.utils import (
 
 @functional_transform('gdc')
 class GDC(BaseTransform):
-    r"""Processes the graph via Graph Diffusion Convolution (GDC) from the
-    `"Diffusion Improves Graph Learning" <https://arxiv.org/abs/1911.05485>`_
-    paper (functional name: :obj:`gdc`).
-
-    .. note::
-
-        The paper offers additional advice on how to choose the
-        hyperparameters.
-        For an example of using GCN with GDC, see `examples/gcn.py
-        <https://github.com/pyg-team/pytorch_geometric/blob/master/examples/
-        gcn.py>`_.
-
-    Args:
-        self_loop_weight (float, optional): Weight of the added self-loop.
-            Set to :obj:`None` to add no self-loops. (default: :obj:`1`)
-        normalization_in (str, optional): Normalization of the transition
-            matrix on the original (input) graph. Possible values:
-            :obj:`"sym"`, :obj:`"col"`, and :obj:`"row"`.
-            See :func:`GDC.transition_matrix` for details.
-            (default: :obj:`"sym"`)
-        normalization_out (str, optional): Normalization of the transition
-            matrix on the transformed GDC (output) graph. Possible values:
-            :obj:`"sym"`, :obj:`"col"`, :obj:`"row"`, and :obj:`None`.
-            See :func:`GDC.transition_matrix` for details.
-            (default: :obj:`"col"`)
-        diffusion_kwargs (dict, optional): Dictionary containing the parameters
-            for diffusion.
-            `method` specifies the diffusion method (:obj:`"ppr"`,
-            :obj:`"heat"` or :obj:`"coeff"`).
-            Each diffusion method requires different additional parameters.
-            See :func:`GDC.diffusion_matrix_exact` or
-            :func:`GDC.diffusion_matrix_approx` for details.
-            (default: :obj:`dict(method='ppr', alpha=0.15)`)
-        sparsification_kwargs (dict, optional): Dictionary containing the
-            parameters for sparsification.
-            `method` specifies the sparsification method (:obj:`"threshold"` or
-            :obj:`"topk"`).
-            Each sparsification method requires different additional
-            parameters.
-            See :func:`GDC.sparsify_dense` for details.
-            (default: :obj:`dict(method='threshold', avg_degree=64)`)
-        exact (bool, optional): Whether to exactly calculate the diffusion
-            matrix.
-            Note that the exact variants are not scalable.
-            They densify the adjacency matrix and calculate either its inverse
-            or its matrix exponential.
-            However, the approximate variants do not support edge weights and
-            currently only personalized PageRank and sparsification by
-            threshold are implemented as fast, approximate versions.
-            (default: :obj:`True`)
-
-    :rtype: :class:`torch_geometric.data.Data`
-    """
     def __init__(
         self,
         self_loop_weight: float = 1.,
@@ -233,7 +180,6 @@ class GDC(BaseTransform):
         :rtype: (:class:`Tensor`)
         """
         if method == 'ppr':
-            # α (I_n + (α - 1) A)^-1
             edge_weight = (kwargs['alpha'] - 1) * edge_weight
             edge_index, edge_weight = add_self_loops(edge_index, edge_weight,
                                                      fill_value=1,
@@ -242,7 +188,6 @@ class GDC(BaseTransform):
             diff_matrix = kwargs['alpha'] * torch.inverse(mat)
 
         elif method == 'heat':
-            # exp(t (A - I_n))
             edge_index, edge_weight = add_self_loops(edge_index, edge_weight,
                                                      fill_value=-1,
                                                      num_nodes=num_nodes)
@@ -300,7 +245,6 @@ class GDC(BaseTransform):
         """
         if method == 'ppr':
             if normalization == 'sym':
-                # Calculate original degrees.
                 _, col = edge_index
                 deg = scatter(edge_weight, col, 0, num_nodes, reduce='sum')
 
@@ -316,12 +260,6 @@ class GDC(BaseTransform):
                     edge_index.flip([0]), edge_weight, num_nodes)
 
             if normalization == 'sym':
-                # We can change the normalization from row-normalized to
-                # symmetric by multiplying the resulting matrix with D^{1/2}
-                # from the left and D^{-1/2} from the right.
-                # Since we use the original degrees for this it will be like
-                # we had used symmetric normalization from the beginning
-                # (except for errors due to approximation).
                 row, col = edge_index
                 deg_inv = deg.sqrt()
                 deg_inv_sqrt = deg.pow(-0.5)

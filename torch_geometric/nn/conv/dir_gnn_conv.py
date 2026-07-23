@@ -7,22 +7,6 @@ from torch_geometric.nn.conv import MessagePassing
 
 
 class DirGNNConv(torch.nn.Module):
-    r"""A generic wrapper for computing graph convolution on directed
-    graphs as described in the `"Edge Directionality Improves Learning on
-    Heterophilic Graphs" <https://arxiv.org/abs/2305.10498>`_ paper.
-    :class:`DirGNNConv` will pass messages both from source nodes to target
-    nodes and from target nodes to source nodes.
-
-    Args:
-        conv (MessagePassing): The underlying
-            :class:`~torch_geometric.nn.conv.MessagePassing` layer to use.
-        alpha (float, optional): The alpha coefficient used to weight the
-            aggregations of in- and out-edges as part of a convex combination.
-            (default: :obj:`0.5`)
-        root_weight (bool, optional): If set to :obj:`True`, the layer will add
-            transformed root node features to the output.
-            (default: :obj:`True`)
-    """
     def __init__(
         self,
         conv: MessagePassing,

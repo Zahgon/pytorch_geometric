@@ -9,27 +9,6 @@ from torch_geometric.utils import scatter
 
 
 class RECT_L(torch.nn.Module):
-    r"""The RECT model, *i.e.* its supervised RECT-L part, from the
-    `"Network Embedding with Completely-imbalanced Labels"
-    <https://arxiv.org/abs/2007.03545>`_ paper.
-    In particular, a GCN model is trained that reconstructs semantic class
-    knowledge.
-
-    .. note::
-
-        For an example of using RECT, see `examples/rect.py
-        <https://github.com/pyg-team/pytorch_geometric/blob/master/examples/
-        rect.py>`_.
-
-    Args:
-        in_channels (int): Size of each input sample.
-        hidden_channels (int): Intermediate size of each sample.
-        normalize (bool, optional): Whether to add self-loops and compute
-            symmetric normalization coefficients on-the-fly.
-            (default: :obj:`True`)
-        dropout (float, optional): The dropout probability.
-            (default: :obj:`0.0`)
-    """
     def __init__(self, in_channels: int, hidden_channels: int,
                  normalize: bool = True, dropout: float = 0.0):
         super().__init__()
@@ -76,11 +55,7 @@ class RECT_L(torch.nn.Module):
         y: Tensor,
         mask: Tensor,
     ) -> Tensor:
-        r"""Replaces the original labels by their class-centers."""
-        with torch.no_grad():
-            y = y[mask]
-            mean = scatter(x[mask], y, dim=0, reduce='mean')
-            return mean[y]
+        pass
 
     def __repr__(self) -> str:
         return (f'{self.__class__.__name__}({self.in_channels}, '

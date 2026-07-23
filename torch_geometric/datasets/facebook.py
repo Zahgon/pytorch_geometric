@@ -7,25 +7,6 @@ from torch_geometric.data import Data, InMemoryDataset, download_url
 
 
 class FacebookPagePage(InMemoryDataset):
-    r"""The Facebook Page-Page network dataset introduced in the
-    `"Multi-scale Attributed Node Embedding"
-    <https://arxiv.org/abs/1909.13021>`_ paper.
-    Nodes represent verified pages on Facebook and edges are mutual likes.
-    It contains 22,470 nodes, 342,004 edges, 128 node features and 4 classes.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-    """
 
     url = 'https://graphmining.ai/datasets/ptg/facebook.npz'
 
@@ -42,11 +23,11 @@ class FacebookPagePage(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> str:
-        return 'facebook.npz'
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def download(self) -> None:
         download_url(self.url, self.raw_dir)

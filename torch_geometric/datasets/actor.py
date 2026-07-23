@@ -8,42 +8,6 @@ from torch_geometric.utils import coalesce
 
 
 class Actor(InMemoryDataset):
-    r"""The actor-only induced subgraph of the film-director-actor-writer
-    network used in the
-    `"Geom-GCN: Geometric Graph Convolutional Networks"
-    <https://openreview.net/forum?id=S1e2agrFvS>`_ paper.
-    Each node corresponds to an actor, and the edge between two nodes denotes
-    co-occurrence on the same Wikipedia page.
-    Node features correspond to some keywords in the Wikipedia pages.
-    The task is to classify the nodes into five categories in term of words of
-    actor's Wikipedia.
-
-    Args:
-        root: Root directory where the dataset should be saved.
-        transform: A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-        pre_transform: A function/transform that takes in an
-            :class:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before being saved to
-            disk.
-        force_reload: Whether to re-process the dataset.
-
-    **STATS:**
-
-    .. list-table::
-        :widths: 10 10 10 10
-        :header-rows: 1
-
-        * - #nodes
-          - #edges
-          - #features
-          - #classes
-        * - 7,600
-          - 30,019
-          - 932
-          - 5
-    """
 
     url = 'https://raw.githubusercontent.com/graphdml-uiuc-jlu/geom-gcn/master'
 
@@ -60,12 +24,11 @@ class Actor(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> List[str]:
-        return ['out1_node_feature_label.txt', 'out1_graph_edges.txt'
-                ] + [f'film_split_0.6_0.2_{i}.npz' for i in range(10)]
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def download(self) -> None:
         for f in self.raw_file_names[:2]:

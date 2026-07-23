@@ -8,27 +8,6 @@ from torch_geometric.utils import coalesce
 
 
 class Airports(InMemoryDataset):
-    r"""The Airports dataset from the `"struc2vec: Learning Node
-    Representations from Structural Identity"
-    <https://arxiv.org/abs/1704.03165>`_ paper, where nodes denote airports
-    and labels correspond to activity levels.
-    Features are given by one-hot encoded node identifiers, as described in the
-    `"GraLSP: Graph Neural Networks with Local Structural Patterns"
-    <https://arxiv.org/abs/1911.07675>`_ paper.
-
-    Args:
-        root: Root directory where the dataset should be saved.
-        name: The name of the dataset (:obj:`"USA"`, :obj:`"Brazil"`,
-            :obj:`"Europe"`).
-        transform: A function/transform that takes in an
-            :class:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-        pre_transform (callable, optional): A function/transform that takes in
-            :class:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk.
-        force_reload: Whether to re-process the dataset.
-    """
     edge_url = ('https://github.com/leoribeiro/struc2vec/'
                 'raw/master/graph/{}-airports.edgelist')
     label_url = ('https://github.com/leoribeiro/struc2vec/'
@@ -50,22 +29,19 @@ class Airports(InMemoryDataset):
 
     @property
     def raw_dir(self) -> str:
-        return osp.join(self.root, self.name, 'raw')
+        pass
 
     @property
     def processed_dir(self) -> str:
-        return osp.join(self.root, self.name, 'processed')
+        pass
 
     @property
     def raw_file_names(self) -> List[str]:
-        return [
-            f'{self.name}-airports.edgelist',
-            f'labels-{self.name}-airports.txt',
-        ]
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def download(self) -> None:
         download_url(self.edge_url.format(self.name), self.raw_dir)

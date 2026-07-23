@@ -10,65 +10,6 @@ from torch_geometric.typing import OptTensor
 
 
 class SAGPooling(torch.nn.Module):
-    r"""The self-attention pooling operator from the `"Self-Attention Graph
-    Pooling" <https://arxiv.org/abs/1904.08082>`_ and `"Understanding
-    Attention and Generalization in Graph Neural Networks"
-    <https://arxiv.org/abs/1905.02850>`_ papers.
-
-    If :obj:`min_score` :math:`\tilde{\alpha}` is :obj:`None`, computes:
-
-        .. math::
-            \mathbf{y} &= \textrm{GNN}(\mathbf{X}, \mathbf{A})
-
-            \mathbf{i} &= \mathrm{top}_k(\mathbf{y})
-
-            \mathbf{X}^{\prime} &= (\mathbf{X} \odot
-            \mathrm{tanh}(\mathbf{y}))_{\mathbf{i}}
-
-            \mathbf{A}^{\prime} &= \mathbf{A}_{\mathbf{i},\mathbf{i}}
-
-    If :obj:`min_score` :math:`\tilde{\alpha}` is a value in :obj:`[0, 1]`,
-    computes:
-
-        .. math::
-            \mathbf{y} &= \mathrm{softmax}(\textrm{GNN}(\mathbf{X},\mathbf{A}))
-
-            \mathbf{i} &= \mathbf{y}_i > \tilde{\alpha}
-
-            \mathbf{X}^{\prime} &= (\mathbf{X} \odot \mathbf{y})_{\mathbf{i}}
-
-            \mathbf{A}^{\prime} &= \mathbf{A}_{\mathbf{i},\mathbf{i}}.
-
-    Projections scores are learned based on a graph neural network layer.
-
-    Args:
-        in_channels (int): Size of each input sample.
-        ratio (float or int): Graph pooling ratio, which is used to compute
-            :math:`k = \lceil \mathrm{ratio} \cdot N \rceil`, or the value
-            of :math:`k` itself, depending on whether the type of :obj:`ratio`
-            is :obj:`float` or :obj:`int`.
-            This value is ignored if :obj:`min_score` is not :obj:`None`.
-            (default: :obj:`0.5`)
-        GNN (torch.nn.Module, optional): A graph neural network layer for
-            calculating projection scores (one of
-            :class:`torch_geometric.nn.conv.GraphConv`,
-            :class:`torch_geometric.nn.conv.GCNConv`,
-            :class:`torch_geometric.nn.conv.GATConv` or
-            :class:`torch_geometric.nn.conv.SAGEConv`). (default:
-            :class:`torch_geometric.nn.conv.GraphConv`)
-        min_score (float, optional): Minimal node score :math:`\tilde{\alpha}`
-            which is used to compute indices of pooled nodes
-            :math:`\mathbf{i} = \mathbf{y}_i > \tilde{\alpha}`.
-            When this value is not :obj:`None`, the :obj:`ratio` argument is
-            ignored. (default: :obj:`None`)
-        multiplier (float, optional): Coefficient by which features gets
-            multiplied after pooling. This can be useful for large graphs and
-            when :obj:`min_score` is used. (default: :obj:`1`)
-        nonlinearity (str or callable, optional): The non-linearity to use.
-            (default: :obj:`"tanh"`)
-        **kwargs (optional): Additional parameters for initializing the graph
-            neural network layer.
-    """
     def __init__(
         self,
         in_channels: int,

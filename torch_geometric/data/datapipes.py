@@ -71,10 +71,10 @@ class DatasetAdapter(IterDataPipe):
         self.range = range(len(self))
 
     def is_shardable(self) -> bool:
-        return True
+        pass
 
     def apply_sharding(self, num_shards: int, shard_idx: int) -> None:
-        self.range = range(shard_idx, len(self), num_shards)
+        pass
 
     def __iter__(self) -> Iterator:
         for i in self.range:

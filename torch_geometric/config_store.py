@@ -167,18 +167,10 @@ def map_annotation(
         assert origin is not None
         args = tuple(map_annotation(a, mapping) for a in args)
         if type(annotation).__name__ == 'GenericAlias':
-            # If annotated with `list[...]` or `dict[...]`:
             annotation = origin[args]
         elif origin is Union:
-            # If annotated with `typing.Union[...]` or `typing.Optional[...]`.
-            # Rebuild instead of mutating `__args__`, which is read-only on
-            # Python >= 3.14 (`typing.Union` instances no longer allow
-            # in-place attribute assignment).
             annotation = Union[args]
         else:
-            # If annotated with `typing.List[...]` or `typing.Dict[...]`.
-            # Rebuild via `copy_with` rather than mutating `__args__`, which is
-            # read-only on Python >= 3.14.
             annotation = annotation.copy_with(tuple(args))
 
         return annotation
@@ -268,8 +260,6 @@ def to_dataclass(
         annotation = map_annotation(annotation, mapping=MAPPING)
 
         if annotation != inspect.Parameter.empty:
-            # `Union` types are not supported (except for `Optional`).
-            # As such, we replace them with either `Any` or `Optional[Any]`.
             origin = getattr(annotation, '__origin__', None)
             args = getattr(annotation, '__args__', [])
             if origin == Union and type(None) in args and len(args) > 2:
@@ -286,15 +276,9 @@ def to_dataclass(
             annotation = Any
 
         if str(default) == "<required parameter>":
-            # Fix `torch.optim.SGD.lr = _RequiredParameter()`:
-            # https://github.com/pytorch/hydra-torch/blob/main/
-            # hydra-configs-torch/hydra_configs/torch/optim/sgd.py
             default = field(default=MISSING)
         elif default != inspect.Parameter.empty:
             if isinstance(default, (list, dict)):
-                # Avoid late binding of default values inside a loop:
-                # https://stackoverflow.com/questions/3431676/
-                # creating-functions-in-a-loop
                 def wrapper(default: Any) -> Callable[[], Any]:
                     return lambda: default
 
@@ -370,13 +354,11 @@ def register(
         return data_cls
 
     def bounded_register(cls: Any) -> Any:  # Other-wise, return a decorator:
-        register(cls=cls, data_cls=data_cls, group=group, **kwargs)
-        return cls
+        pass
 
     return bounded_register
 
 
-###############################################################################
 
 
 @dataclass
@@ -417,7 +399,6 @@ def fill_config_store() -> None:
 
     config_store = get_config_store()
 
-    # Register `torch_geometric.transforms` ###################################
     transforms = torch_geometric.transforms
     for cls_name in set(transforms.__all__) - {
             'BaseTransform',
@@ -427,12 +408,8 @@ def fill_config_store() -> None:
             'AddMetaPaths',  # TODO
     }:
         cls = to_dataclass(getattr(transforms, cls_name), base_cls=Transform)
-        # We use an explicit additional nesting level inside each config to
-        # allow for applying multiple transformations.
-        # See: hydra.cc/docs/patterns/select_multiple_configs_from_config_group
         config_store.store(cls_name, group='transform', node={cls_name: cls})
 
-    # Register `torch_geometric.datasets` #####################################
     datasets = torch_geometric.datasets
     map_dataset_args: Dict[str, Any] = {
         'transform': (Dict[str, Transform], field(default_factory=dict)),
@@ -445,13 +422,11 @@ def fill_config_store() -> None:
                            exclude_args=['pre_filter'])
         config_store.store(cls_name, group='dataset', node=cls)
 
-    # Register `torch_geometric.models` #######################################
     models = torch_geometric.nn.models.basic_gnn
     for cls_name in set(models.__all__) - set():
         cls = to_dataclass(getattr(models, cls_name), base_cls=Model)
         config_store.store(cls_name, group='model', node=cls)
 
-    # Register `torch.optim.Optimizer` ########################################
     for cls_name in {
             key
             for key, cls in torch.optim.__dict__.items()
@@ -463,7 +438,6 @@ def fill_config_store() -> None:
                            exclude_args=['params'])
         config_store.store(cls_name, group='optimizer', node=cls)
 
-    # Register `torch.optim.lr_scheduler` #####################################
     for cls_name in {
             key
             for key, cls in torch.optim.lr_scheduler.__dict__.items()
@@ -479,5 +453,4 @@ def fill_config_store() -> None:
                            base_cls=LRScheduler, exclude_args=['optimizer'])
         config_store.store(cls_name, group='lr_scheduler', node=cls)
 
-    # Register global schema ##################################################
     config_store.store('config', node=Config)

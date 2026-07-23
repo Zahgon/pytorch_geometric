@@ -15,38 +15,6 @@ from torch_geometric.utils import coalesce
 
 
 class Reddit(InMemoryDataset):
-    r"""The Reddit dataset from the `"Inductive Representation Learning on
-    Large Graphs" <https://arxiv.org/abs/1706.02216>`_ paper, containing
-    Reddit posts belonging to different communities.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-
-    **STATS:**
-
-    .. list-table::
-        :widths: 10 10 10 10
-        :header-rows: 1
-
-        * - #nodes
-          - #edges
-          - #features
-          - #classes
-        * - 232,965
-          - 114,615,892
-          - 602
-          - 41
-    """
 
     url = 'https://data.dgl.ai/dataset/reddit.zip'
 
@@ -63,11 +31,11 @@ class Reddit(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> List[str]:
-        return ['reddit_data.npz', 'reddit_graph.npz']
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def download(self) -> None:
         path = download_url(self.url, self.raw_dir)

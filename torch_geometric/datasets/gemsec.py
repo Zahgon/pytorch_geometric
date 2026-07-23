@@ -8,28 +8,6 @@ from torch_geometric.data import Data, InMemoryDataset, download_url
 
 
 class GemsecDeezer(InMemoryDataset):
-    r"""The Deezer User Network datasets introduced in the
-    `"GEMSEC: Graph Embedding with Self Clustering"
-    <https://arxiv.org/abs/1802.03997>`_ paper.
-    Nodes represent Deezer user and edges are mutual friendships.
-    The task is multi-label multi-class node classification about
-    the genres liked by the users.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        name (str): The name of the dataset (:obj:`"HU"`, :obj:`"HR"`,
-            :obj:`"RO"`).
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-    """
 
     url = 'https://graphmining.ai/datasets/ptg/gemsec'
 
@@ -49,19 +27,19 @@ class GemsecDeezer(InMemoryDataset):
 
     @property
     def raw_dir(self) -> str:
-        return osp.join(self.root, self.name, 'raw')
+        pass
 
     @property
     def processed_dir(self) -> str:
-        return osp.join(self.root, self.name, 'processed')
+        pass
 
     @property
     def raw_file_names(self) -> str:
-        return f'{self.name}.npz'
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def download(self) -> None:
         download_url(osp.join(self.url, self.name + '.npz'), self.raw_dir)

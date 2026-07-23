@@ -9,23 +9,6 @@ from torch_geometric.utils import sort_edge_index
 
 
 class FusedGATConv(GATConv):  # pragma: no cover
-    r"""The fused graph attention operator from the
-    `"Understanding GNN Computational Graph: A Coordinated Computation, IO, and
-    Memory Perspective"
-    <https://proceedings.mlsys.org/paper/2022/file/
-    9a1158154dfa42caddbd0694a4e9bdc8-Paper.pdf>`_ paper.
-
-    :class:`FusedGATConv` is an optimized version of
-    :class:`~torch_geometric.nn.conv.GATConv` based on the :obj:`dgNN` package
-    that fuses message passing computation for accelerated execution and lower
-    memory footprint.
-
-    .. note::
-
-        This implementation is based on the :obj:`dgNN` package.
-        See `here <https://github.com/dgSPARSE/dgNN>`__ for instructions on how
-        to install.
-    """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -48,27 +31,7 @@ class FusedGATConv(GATConv):  # pragma: no cover
         edge_index: Tensor,
         size: Optional[Tuple[int, int]] = None,
     ) -> Tuple[Tuple[Tensor, Tensor], Tuple[Tensor, Tensor], Tensor]:
-        r"""Converts an :obj:`edge_index` representation of a graph to the
-        desired input format of :class:`FusedGATConv`.
-
-        Args:
-            edge_index (torch.Tensor): The edge indices.
-            size ((int, int), optional): The shape of :obj:`edge_index` in each
-                dimension. (default: :obj:`None`)
-        """
-        edge_index = edge_index.to(torch.int)
-
-        edge_index = sort_edge_index(edge_index, sort_by_row=True)
-        rowptr = index2ptr(edge_index[0], size=size[0] if size else None)
-        col = edge_index[1]
-
-        device = edge_index.device
-        perm = torch.arange(edge_index.size(1), dtype=torch.int, device=device)
-        edge_index, perm = sort_edge_index(edge_index, perm, sort_by_row=False)
-        row = edge_index[0]
-        colptr = index2ptr(edge_index[1], size=size[1] if size else None)
-
-        return (rowptr, col), (row, colptr), perm
+        pass
 
     def forward(
         self,

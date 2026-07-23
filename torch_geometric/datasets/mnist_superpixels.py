@@ -11,48 +11,6 @@ from torch_geometric.io import fs
 
 
 class MNISTSuperpixels(InMemoryDataset):
-    r"""MNIST superpixels dataset from the `"Geometric Deep Learning on
-    Graphs and Manifolds Using Mixture Model CNNs"
-    <https://arxiv.org/abs/1611.08402>`_ paper, containing 70,000 graphs with
-    75 nodes each.
-    Every graph is labeled by one of 10 classes.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        train (bool, optional): If :obj:`True`, loads the training dataset,
-            otherwise the test dataset. (default: :obj:`True`)
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        pre_filter (callable, optional): A function that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a boolean
-            value, indicating whether the data object should be included in the
-            final dataset. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-
-    **STATS:**
-
-    .. list-table::
-        :widths: 10 10 10 10 10
-        :header-rows: 1
-
-        * - #graphs
-          - #nodes
-          - #edges
-          - #features
-          - #classes
-        * - 70,000
-          - 75
-          - ~1,393.0
-          - 1
-          - 10
-    """
 
     url = 'https://data.pyg.org/datasets/MNISTSuperpixels.zip'
 
@@ -72,11 +30,11 @@ class MNISTSuperpixels(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> str:
-        return 'MNISTSuperpixels.pt'
+        pass
 
     @property
     def processed_file_names(self) -> List[str]:
-        return ['train_data.pt', 'test_data.pt']
+        pass
 
     def download(self) -> None:
         path = download_url(self.url, self.raw_dir)

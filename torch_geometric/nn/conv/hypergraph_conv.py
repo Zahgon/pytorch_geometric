@@ -13,67 +13,6 @@ from torch_geometric.utils import scatter, softmax
 
 
 class HypergraphConv(MessagePassing):
-    r"""The hypergraph convolutional operator from the `"Hypergraph Convolution
-    and Hypergraph Attention" <https://arxiv.org/abs/1901.08150>`_ paper.
-
-    .. math::
-        \mathbf{X}^{\prime} = \mathbf{D}^{-1} \mathbf{H} \mathbf{W}
-        \mathbf{B}^{-1} \mathbf{H}^{\top} \mathbf{X} \mathbf{\Theta}
-
-    where :math:`\mathbf{H} \in {\{ 0, 1 \}}^{N \times M}` is the incidence
-    matrix, :math:`\mathbf{W} \in \mathbb{R}^M` is the diagonal hyperedge
-    weight matrix, and
-    :math:`\mathbf{D}` and :math:`\mathbf{B}` are the corresponding degree
-    matrices.
-
-    For example, in the hypergraph scenario
-    :math:`\mathcal{G} = (\mathcal{V}, \mathcal{E})` with
-    :math:`\mathcal{V} = \{ 0, 1, 2, 3 \}` and
-    :math:`\mathcal{E} = \{ \{ 0, 1, 2 \}, \{ 1, 2, 3 \} \}`, the
-    :obj:`hyperedge_index` is represented as:
-
-    .. code-block:: python
-
-        hyperedge_index = torch.tensor([
-            [0, 1, 2, 1, 2, 3],
-            [0, 0, 0, 1, 1, 1],
-        ])
-
-    Args:
-        in_channels (int): Size of each input sample, or :obj:`-1` to derive
-            the size from the first input(s) to the forward method.
-        out_channels (int): Size of each output sample.
-        use_attention (bool, optional): If set to :obj:`True`, attention
-            will be added to this layer. (default: :obj:`False`)
-        attention_mode (str, optional): The mode on how to compute attention.
-            If set to :obj:`"node"`, will compute attention scores of nodes
-            within all nodes belonging to the same hyperedge.
-            If set to :obj:`"edge"`, will compute attention scores of nodes
-            across all edges holding this node belongs to.
-            (default: :obj:`"node"`)
-        heads (int, optional): Number of multi-head-attentions.
-            (default: :obj:`1`)
-        concat (bool, optional): If set to :obj:`False`, the multi-head
-            attentions are averaged instead of concatenated.
-            (default: :obj:`True`)
-        negative_slope (float, optional): LeakyReLU angle of the negative
-            slope. (default: :obj:`0.2`)
-        dropout (float, optional): Dropout probability of the normalized
-            attention coefficients which exposes each node to a stochastically
-            sampled neighborhood during training. (default: :obj:`0`)
-        bias (bool, optional): If set to :obj:`False`, the layer will not learn
-            an additive bias. (default: :obj:`True`)
-        **kwargs (optional): Additional arguments of
-            :class:`torch_geometric.nn.conv.MessagePassing`.
-
-    Shapes:
-        - **input:**
-          node features :math:`(|\mathcal{V}|, F_{in})`,
-          hyperedge indices :math:`(|\mathcal{V}|, |\mathcal{E}|)`,
-          hyperedge weights :math:`(|\mathcal{E}|)` *(optional)*
-          hyperedge features :math:`(|\mathcal{E}|, D)` *(optional)*
-        - **output:** node features :math:`(|\mathcal{V}|, F_{out})`
-    """
     def __init__(
         self,
         in_channels: int,

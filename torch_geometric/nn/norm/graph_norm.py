@@ -9,26 +9,6 @@ from torch_geometric.utils import scatter
 
 
 class GraphNorm(torch.nn.Module):
-    r"""Applies graph normalization over individual graphs as described in the
-    `"GraphNorm: A Principled Approach to Accelerating Graph Neural Network
-    Training" <https://arxiv.org/abs/2009.03294>`_ paper.
-
-    .. math::
-        \mathbf{x}^{\prime}_i = \frac{\mathbf{x} - \alpha \odot
-        \textrm{E}[\mathbf{x}]}
-        {\sqrt{\textrm{Var}[\mathbf{x} - \alpha \odot \textrm{E}[\mathbf{x}]]
-        + \epsilon}} \odot \gamma + \beta
-
-    where :math:`\alpha` denotes parameters that learn how much information
-    to keep in the mean.
-
-    Args:
-        in_channels (int): Size of each input sample.
-        eps (float, optional): A value added to the denominator for numerical
-            stability. (default: :obj:`1e-5`)
-        device (torch.device, optional): The device to use for the module.
-            (default: :obj:`None`)
-    """
     def __init__(self, in_channels: int, eps: float = 1e-5,
                  device: Optional[torch.device] = None):
         super().__init__()

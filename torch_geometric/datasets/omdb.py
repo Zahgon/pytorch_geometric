@@ -8,28 +8,6 @@ from torch_geometric.data import Data, InMemoryDataset, extract_tar
 
 
 class OMDB(InMemoryDataset):
-    r"""The `Organic Materials Database (OMDB)
-    <https://omdb.mathub.io/dataset>`__ of bulk organic crystals.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        train (bool, optional): If :obj:`True`, loads the training dataset,
-            otherwise the test dataset. (default: :obj:`True`)
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        pre_filter (callable, optional): A function that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a boolean
-            value, indicating whether the data object should be included in the
-            final dataset. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-    """
 
     url = 'https://omdb.mathub.io/dataset'
 
@@ -49,11 +27,11 @@ class OMDB(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> str:
-        return 'OMDB-GAP1_v1.1.tar.gz'
+        pass
 
     @property
     def processed_file_names(self) -> List[str]:
-        return ['train_data.pt', 'test_data.pt']
+        pass
 
     def download(self) -> None:
         raise RuntimeError(

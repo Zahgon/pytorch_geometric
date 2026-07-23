@@ -20,51 +20,10 @@ from torch_geometric.io import fs
 
 
 class PascalVOCKeypoints(InMemoryDataset):
-    r"""The Pascal VOC 2011 dataset with Berkely annotations of keypoints from
-    the `"Poselets: Body Part Detectors Trained Using 3D Human Pose
-    Annotations" <https://www2.eecs.berkeley.edu/Research/Projects/CS/vision/
-    human/ poselets_iccv09.pdf>`_ paper, containing 0 to 23 keypoints per
-    example over 20 categories.
-    The dataset is pre-filtered to exclude difficult, occluded and truncated
-    objects.
-    The keypoints contain interpolated features from a pre-trained VGG16 model
-    on ImageNet (:obj:`relu4_2` and :obj:`relu5_1`).
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        category (str): The category of the images (one of
-            :obj:`"Aeroplane"`, :obj:`"Bicycle"`, :obj:`"Bird"`,
-            :obj:`"Boat"`, :obj:`"Bottle"`, :obj:`"Bus"`, :obj:`"Car"`,
-            :obj:`"Cat"`, :obj:`"Chair"`, :obj:`"Diningtable"`, :obj:`"Dog"`,
-            :obj:`"Horse"`, :obj:`"Motorbike"`, :obj:`"Person"`,
-            :obj:`"Pottedplant"`, :obj:`"Sheep"`, :obj:`"Sofa"`,
-            :obj:`"Train"`, :obj:`"TVMonitor"`)
-        train (bool, optional): If :obj:`True`, loads the training dataset,
-            otherwise the test dataset. (default: :obj:`True`)
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        pre_filter (callable, optional): A function that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a boolean
-            value, indicating whether the data object should be included in the
-            final dataset. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-        device (str or torch.device, optional): The device to use for
-            processing the raw data. If set to :obj:`None`, will utilize
-            GPU-processing if available. (default: :obj:`None`)
-    """
     image_url = ('http://host.robots.ox.ac.uk/pascal/VOC/voc2011/'
                  'VOCtrainval_25-May-2011.tar')
     annotation_url = ('https://www2.eecs.berkeley.edu/Research/Projects/CS/'
                       'vision/shape/poselets/voc2011_keypoints_Feb2012.tgz')
-    # annotation_url = 'http://www.roemisch-drei.de/pascal_annotations.tar'
-    # split_url = 'http://cvgl.stanford.edu/projects/ucn/voc2011_pairs.npz'
     split_url = ('https://github.com/Thinklab-SJTU/PCA-GM/raw/master/data/'
                  'PascalVOC/voc2011_pairs.npz')
 
@@ -100,19 +59,19 @@ class PascalVOCKeypoints(InMemoryDataset):
 
     @property
     def raw_dir(self) -> str:
-        return osp.join(self.root, 'raw')
+        pass
 
     @property
     def processed_dir(self) -> str:
-        return osp.join(self.root, self.category.capitalize(), 'processed')
+        pass
 
     @property
     def raw_file_names(self) -> List[str]:
-        return ['images', 'annotations', 'splits.npz']
+        pass
 
     @property
     def processed_file_names(self) -> List[str]:
-        return ['training.pt', 'test.pt']
+        pass
 
     def download(self) -> None:
         path = download_url(self.image_url, self.raw_dir)
@@ -225,8 +184,6 @@ class PascalVOCKeypoints(InMemoryDataset):
             if pos.numel() == 0:
                 continue  # These examples do not make any sense anyway...
 
-            # Add a small offset to the bounding because some keypoints lay
-            # outside the bounding box intervals.
             box = (
                 min(int(pos[:, 0].min().floor()), box[0]) - 16,
                 min(int(pos[:, 1].min().floor()), box[1]) - 16,
@@ -234,7 +191,6 @@ class PascalVOCKeypoints(InMemoryDataset):
                 max(int(pos[:, 1].max().ceil()), box[3]) + 16,
             )
 
-            # Rescale keypoints.
             pos[:, 0] = (pos[:, 0] - box[0]) * 256.0 / (box[2] - box[0])
             pos[:, 1] = (pos[:, 1] - box[1]) * 256.0 / (box[3] - box[1])
 

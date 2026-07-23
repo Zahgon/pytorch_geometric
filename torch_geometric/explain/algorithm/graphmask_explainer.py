@@ -37,42 +37,6 @@ def explain_message(self, out: Tensor, x_i: Tensor, x_j: Tensor) -> Tensor:
 
 
 class GraphMaskExplainer(ExplainerAlgorithm):
-    r"""The GraphMask-Explainer model from the `"Interpreting Graph Neural
-    Networks for NLP With Differentiable Edge Masking"
-    <https://arxiv.org/abs/2010.00577>`_ paper for identifying layer-wise
-    compact subgraph structures and node features that play a crucial role in
-    the predictions made by a GNN.
-
-    .. note::
-        For an example of using :class:`GraphMaskExplainer`,
-        see `examples/explain/graphmask_explainer.py
-        <https://github.com/pyg-team/pytorch_geometric/blob/master/examples/
-        /explain/graphmask_explainer.py>`_.
-
-        A working real-time example of :class:`GraphMaskExplainer` in the form
-        of a deployed app can be accessed `here
-        <https://graph-explainability.streamlit.app/>`_.
-
-    Args:
-        num_layers (int): The number of layers to use.
-        epochs (int, optional): The number of epochs to train.
-            (default: :obj:`100`)
-        lr (float, optional): The learning rate to apply.
-            (default: :obj:`0.01`)
-        penalty_scaling (int, optional): Scaling value of penalty term. Value
-            must lie between 0 and 10. (default: :obj:`5`)
-        lambda_optimizer_lr (float, optional): The learning rate to optimize
-            the Lagrange multiplier. (default: :obj:`1e-2`)
-        init_lambda (float, optional): The Lagrange multiplier. Value must lie
-            between :obj:`0` and `1`. (default: :obj:`0.55`)
-        allowance (float, optional): A float value between :obj:`0` and
-            :obj:`1` denotes tolerance level. (default: :obj:`0.03`)
-        log (bool, optional): If set to :obj:`False`, will not log any
-            learning progress. (default: :obj:`True`)
-        **kwargs (optional): Additional hyper-parameters to override default
-            settings in
-            :attr:`~torch_geometric.nn.models.GraphMaskExplainer.coeffs`.
-    """
     coeffs = {
         'node_feat_size': 1.0,
         'node_feat_reduction': 'mean',

@@ -12,55 +12,6 @@ from torch_geometric.utils import is_sparse, to_edge_index
 
 
 class LightGCN(torch.nn.Module):
-    r"""The LightGCN model from the `"LightGCN: Simplifying and Powering
-    Graph Convolution Network for Recommendation"
-    <https://arxiv.org/abs/2002.02126>`_ paper.
-
-    :class:`~torch_geometric.nn.models.LightGCN` learns embeddings by linearly
-    propagating them on the underlying graph, and uses the weighted sum of the
-    embeddings learned at all layers as the final embedding
-
-    .. math::
-        \textbf{x}_i = \sum_{l=0}^{L} \alpha_l \textbf{x}^{(l)}_i,
-
-    where each layer's embedding is computed as
-
-    .. math::
-        \mathbf{x}^{(l+1)}_i = \sum_{j \in \mathcal{N}(i)}
-        \frac{1}{\sqrt{\deg(i)\deg(j)}}\mathbf{x}^{(l)}_j.
-
-    Two prediction heads and training objectives are provided:
-    **link prediction** (via
-    :meth:`~torch_geometric.nn.models.LightGCN.link_pred_loss` and
-    :meth:`~torch_geometric.nn.models.LightGCN.predict_link`) and
-    **recommendation** (via
-    :meth:`~torch_geometric.nn.models.LightGCN.recommendation_loss` and
-    :meth:`~torch_geometric.nn.models.LightGCN.recommend`).
-
-    .. note::
-
-        Embeddings are propagated according to the graph connectivity specified
-        by :obj:`edge_index` while rankings or link probabilities are computed
-        according to the edges specified by :obj:`edge_label_index`.
-
-    .. note::
-
-        For an example of using :class:`LightGCN`, see `examples/lightgcn.py
-        <https://github.com/pyg-team/pytorch_geometric/blob/master/examples/
-        lightgcn.py>`_.
-
-    Args:
-        num_nodes (int): The number of nodes in the graph.
-        embedding_dim (int): The dimensionality of node embeddings.
-        num_layers (int): The number of
-            :class:`~torch_geometric.nn.conv.LGConv` layers.
-        alpha (float or torch.Tensor, optional): The scalar or vector
-            specifying the re-weighting coefficients for aggregating the final
-            embedding. If set to :obj:`None`, the uniform initialization of
-            :obj:`1 / (num_layers + 1)` is used. (default: :obj:`None`)
-        **kwargs (optional): Additional arguments of the underlying
-            :class:`~torch_geometric.nn.conv.LGConv` layers.
-    """
     def __init__(
         self,
         num_nodes: int,
@@ -148,22 +99,7 @@ class LightGCN(torch.nn.Module):
         edge_weight: OptTensor = None,
         prob: bool = False,
     ) -> Tensor:
-        r"""Predict links between nodes specified in :obj:`edge_label_index`.
-
-        Args:
-            edge_index (torch.Tensor or SparseTensor): Edge tensor specifying
-                the connectivity of the graph.
-            edge_label_index (torch.Tensor, optional): Edge tensor specifying
-                the node pairs for which to compute probabilities.
-                If :obj:`edge_label_index` is set to :obj:`None`, all edges in
-                :obj:`edge_index` will be used instead. (default: :obj:`None`)
-            edge_weight (torch.Tensor, optional): The weight of each edge in
-                :obj:`edge_index`. (default: :obj:`None`)
-            prob (bool, optional): Whether probabilities should be returned.
-                (default: :obj:`False`)
-        """
-        pred = self(edge_index, edge_label_index, edge_weight).sigmoid()
-        return pred if prob else pred.round()
+        pass
 
     def recommend(
         self,
@@ -174,54 +110,11 @@ class LightGCN(torch.nn.Module):
         k: int = 1,
         sorted: bool = True,
     ) -> Tensor:
-        r"""Get top-:math:`k` recommendations for nodes in :obj:`src_index`.
-
-        Args:
-            edge_index (torch.Tensor or SparseTensor): Edge tensor specifying
-                the connectivity of the graph.
-            edge_weight (torch.Tensor, optional): The weight of each edge in
-                :obj:`edge_index`. (default: :obj:`None`)
-            src_index (torch.Tensor, optional): Node indices for which
-                recommendations should be generated.
-                If set to :obj:`None`, all nodes will be used.
-                (default: :obj:`None`)
-            dst_index (torch.Tensor, optional): Node indices which represent
-                the possible recommendation choices.
-                If set to :obj:`None`, all nodes will be used.
-                (default: :obj:`None`)
-            k (int, optional): Number of recommendations. (default: :obj:`1`)
-            sorted (bool, optional): Whether to sort the recommendations
-                by score. (default: :obj:`True`)
-        """
-        out_src = out_dst = self.get_embedding(edge_index, edge_weight)
-
-        if src_index is not None:
-            out_src = out_src[src_index]
-
-        if dst_index is not None:
-            out_dst = out_dst[dst_index]
-
-        pred = out_src @ out_dst.t()
-        top_index = pred.topk(k, dim=-1, sorted=sorted).indices
-
-        if dst_index is not None:  # Map local top-indices to original indices.
-            top_index = dst_index[top_index.view(-1)].view(*top_index.size())
-
-        return top_index
+        pass
 
     def link_pred_loss(self, pred: Tensor, edge_label: Tensor,
                        **kwargs) -> Tensor:
-        r"""Computes the model loss for a link prediction objective via the
-        :class:`torch.nn.BCEWithLogitsLoss`.
-
-        Args:
-            pred (torch.Tensor): The predictions.
-            edge_label (torch.Tensor): The ground-truth edge labels.
-            **kwargs (optional): Additional arguments of the underlying
-                :class:`torch.nn.BCEWithLogitsLoss` loss function.
-        """
-        loss_fn = torch.nn.BCEWithLogitsLoss(**kwargs)
-        return loss_fn(pred, edge_label.to(pred.dtype))
+        pass
 
     def recommendation_loss(
         self,
@@ -231,32 +124,7 @@ class LightGCN(torch.nn.Module):
         lambda_reg: float = 1e-4,
         **kwargs,
     ) -> Tensor:
-        r"""Computes the model loss for a ranking objective via the Bayesian
-        Personalized Ranking (BPR) loss.
-
-        .. note::
-
-            The i-th entry in the :obj:`pos_edge_rank` vector and i-th entry
-            in the :obj:`neg_edge_rank` entry must correspond to ranks of
-            positive and negative edges of the same entity (*e.g.*, user).
-
-        Args:
-            pos_edge_rank (torch.Tensor): Positive edge rankings.
-            neg_edge_rank (torch.Tensor): Negative edge rankings.
-            node_id (torch.Tensor): The indices of the nodes involved for
-                deriving a prediction for both positive and negative edges.
-                If set to :obj:`None`, all nodes will be used.
-            lambda_reg (int, optional): The :math:`L_2` regularization strength
-                of the Bayesian Personalized Ranking (BPR) loss.
-                (default: :obj:`1e-4`)
-            **kwargs (optional): Additional arguments of the underlying
-                :class:`torch_geometric.nn.models.lightgcn.BPRLoss` loss
-                function.
-        """
-        loss_fn = BPRLoss(lambda_reg, **kwargs)
-        emb = self.embedding.weight
-        emb = emb if node_id is None else emb[node_id]
-        return loss_fn(pos_edge_rank, neg_edge_rank, emb)
+        pass
 
     def __repr__(self) -> str:
         return (f'{self.__class__.__name__}({self.num_nodes}, '
@@ -264,26 +132,6 @@ class LightGCN(torch.nn.Module):
 
 
 class BPRLoss(_Loss):
-    r"""The Bayesian Personalized Ranking (BPR) loss.
-
-    The BPR loss is a pairwise loss that encourages the prediction of an
-    observed entry to be higher than its unobserved counterparts
-    (see `here <https://arxiv.org/abs/2002.02126>`__).
-
-    .. math::
-        L_{\text{BPR}} = - \sum_{u=1}^{M} \sum_{i \in \mathcal{N}_u}
-        \sum_{j \not\in \mathcal{N}_u} \ln \sigma(\hat{y}_{ui} - \hat{y}_{uj})
-        + \lambda \vert\vert \textbf{x}^{(0)} \vert\vert^2
-
-    where :math:`\lambda` controls the :math:`L_2` regularization strength.
-    We compute the mean BPR loss for simplicity.
-
-    Args:
-        lambda_reg (float, optional): The :math:`L_2` regularization strength
-            (default: 0).
-        **kwargs (optional): Additional arguments of the underlying
-            :class:`torch.nn.modules.loss._Loss` class.
-    """
     __constants__ = ['lambda_reg']
     lambda_reg: float
 

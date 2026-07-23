@@ -10,23 +10,6 @@ from torch_geometric.utils import add_remaining_self_loops
 
 @functional_transform('add_remaining_self_loops')
 class AddRemainingSelfLoops(BaseTransform):
-    r"""Adds remaining self-loops to the given homogeneous or heterogeneous
-    graph (functional name: :obj:`add_remaining_self_loops`).
-
-    Args:
-        attr (str, optional): The name of the attribute of edge weights
-            or multi-dimensional edge features to pass to
-            :meth:`torch_geometric.utils.add_remaining_self_loops`.
-            (default: :obj:`"edge_weight"`)
-        fill_value (float or Tensor or str, optional): The way to generate
-            edge features of self-loops (in case :obj:`attr != None`).
-            If given as :obj:`float` or :class:`torch.Tensor`, edge features of
-            self-loops will be directly given by :obj:`fill_value`.
-            If given as :obj:`str`, edge features of self-loops are computed by
-            aggregating all features of edges that point to the specific node,
-            according to a reduce operation. (:obj:`"add"`, :obj:`"mean"`,
-            :obj:`"min"`, :obj:`"max"`, :obj:`"mul"`). (default: :obj:`1.`)
-    """
     def __init__(
         self,
         attr: str = 'edge_weight',

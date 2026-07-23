@@ -7,13 +7,6 @@ from torch_geometric.transforms import BaseTransform
 
 @functional_transform('svd_feature_reduction')
 class SVDFeatureReduction(BaseTransform):
-    r"""Dimensionality reduction of node features via Singular Value
-    Decomposition (SVD) (functional name: :obj:`svd_feature_reduction`).
-
-    Args:
-        out_channels (int): The dimensionality of node features after
-            reduction.
-    """
     def __init__(self, out_channels: int):
         self.out_channels = out_channels
 

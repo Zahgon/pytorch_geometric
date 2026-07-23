@@ -9,16 +9,6 @@ from torch_geometric.nn.pool.select import SelectOutput
 
 @dataclass(init=False)
 class ConnectOutput:
-    r"""The output of the :class:`Connect` method, which holds the coarsened
-    graph structure, and optional pooled edge features and batch vectors.
-
-    Args:
-        edge_index (torch.Tensor): The edge indices of the cooarsened graph.
-        edge_attr (torch.Tensor, optional): The pooled edge features of the
-            coarsened graph. (default: :obj:`None`)
-        batch (torch.Tensor, optional): The pooled batch vector of the
-            coarsened graph. (default: :obj:`None`)
-    """
     edge_index: Tensor
     edge_attr: Optional[Tensor] = None
     batch: Optional[Tensor] = None
@@ -52,16 +42,6 @@ ConnectOutput = torch.jit.script(ConnectOutput)
 
 
 class Connect(torch.nn.Module):
-    r"""An abstract base class for implementing custom edge connection
-    operators as described in the `"Understanding Pooling in Graph Neural
-    Networks" <https://arxiv.org/abs/1905.05178>`_ paper.
-
-    Specifically, :class:`Connect` determines for each pair of supernodes the
-    presence or abscene of an edge based on the existing edges between the
-    nodes in the two supernodes.
-    The operator also computes pooled edge features and batch vectors
-    (if present).
-    """
     def reset_parameters(self):
         r"""Resets all learnable parameters of the module."""
 

@@ -6,48 +6,6 @@ from torch_geometric.io import read_npz
 
 
 class Amazon(InMemoryDataset):
-    r"""The Amazon Computers and Amazon Photo networks from the
-    `"Pitfalls of Graph Neural Network Evaluation"
-    <https://arxiv.org/abs/1811.05868>`_ paper.
-    Nodes represent goods and edges represent that two goods are frequently
-    bought together.
-    Given product reviews as bag-of-words node features, the task is to
-    map goods to their respective product category.
-
-    Args:
-        root: Root directory where the dataset should be saved.
-        name: The name of the dataset (:obj:`"Computers"`, :obj:`"Photo"`).
-        transform: A function/transform that takes in a
-            :class:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-        pre_transform: A function/transform that takes in an
-            :class:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk.
-        force_reload: Whether to re-process the dataset.
-
-    **STATS:**
-
-    .. list-table::
-        :widths: 10 10 10 10 10
-        :header-rows: 1
-
-        * - Name
-          - #nodes
-          - #edges
-          - #features
-          - #classes
-        * - Computers
-          - 13,752
-          - 491,722
-          - 767
-          - 10
-        * - Photo
-          - 7,650
-          - 238,162
-          - 745
-          - 8
-    """
 
     url = 'https://github.com/shchur/gnn-benchmark/raw/master/data/npz/'
 
@@ -67,19 +25,19 @@ class Amazon(InMemoryDataset):
 
     @property
     def raw_dir(self) -> str:
-        return osp.join(self.root, self.name.capitalize(), 'raw')
+        pass
 
     @property
     def processed_dir(self) -> str:
-        return osp.join(self.root, self.name.capitalize(), 'processed')
+        pass
 
     @property
     def raw_file_names(self) -> str:
-        return f'amazon_electronics_{self.name.lower()}.npz'
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def download(self) -> None:
         download_url(self.url + self.raw_file_names, self.raw_dir)

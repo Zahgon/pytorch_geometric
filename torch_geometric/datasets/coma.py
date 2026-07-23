@@ -9,57 +9,6 @@ from torch_geometric.io import read_ply
 
 
 class CoMA(InMemoryDataset):
-    r"""The CoMA 3D faces dataset from the `"Generating 3D faces using
-    Convolutional Mesh Autoencoders" <https://arxiv.org/abs/1807.10267>`_
-    paper, containing 20,466 meshes of extreme expressions captured over 12
-    different subjects.
-
-    .. note::
-
-        Data objects hold mesh faces instead of edge indices.
-        To convert the mesh to a graph, use the
-        :obj:`torch_geometric.transforms.FaceToEdge` as :obj:`pre_transform`.
-        To convert the mesh to a point cloud, use the
-        :obj:`torch_geometric.transforms.SamplePoints` as :obj:`transform` to
-        sample a fixed number of points on the mesh faces according to their
-        face area.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        train (bool, optional): If :obj:`True`, loads the training dataset,
-            otherwise the test dataset. (default: :obj:`True`)
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        pre_filter (callable, optional): A function that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a boolean
-            value, indicating whether the data object should be included in the
-            final dataset. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-
-    **STATS:**
-
-    .. list-table::
-        :widths: 10 10 10 10 10
-        :header-rows: 1
-
-        * - #graphs
-          - #nodes
-          - #edges
-          - #features
-          - #classes
-        * - 20,465
-          - 5,023
-          - 29,990
-          - 3
-          - 12
-    """
 
     url = 'https://coma.is.tue.mpg.de/'
 
@@ -94,11 +43,11 @@ class CoMA(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> str:
-        return 'COMA_data.zip'
+        pass
 
     @property
     def processed_file_names(self) -> List[str]:
-        return ['training.pt', 'test.pt']
+        pass
 
     def download(self) -> None:
         raise RuntimeError(

@@ -9,29 +9,6 @@ from torch_geometric.utils import scatter
 
 @functional_transform('sign')
 class SIGN(BaseTransform):
-    r"""The Scalable Inception Graph Neural Network module (SIGN) from the
-    `"SIGN: Scalable Inception Graph Neural Networks"
-    <https://arxiv.org/abs/2004.11198>`_ paper (functional name: :obj:`sign`),
-    which precomputes the fixed representations.
-
-    .. math::
-        \mathbf{X}^{(i)} = {\left( \mathbf{D}^{-1/2} \mathbf{A}
-        \mathbf{D}^{-1/2} \right)}^i \mathbf{X}
-
-    for :math:`i \in \{ 1, \ldots, K \}` and saves them in
-    :obj:`data.x1`, :obj:`data.x2`, ...
-
-    .. note::
-
-        Since intermediate node representations are pre-computed, this operator
-        is able to scale well to large graphs via classic mini-batching.
-        For an example of using SIGN, see `examples/sign.py
-        <https://github.com/pyg-team/pytorch_geometric/blob/master/examples/
-        sign.py>`_.
-
-    Args:
-        K (int): The number of hops/layer.
-    """
     def __init__(self, K: int) -> None:
         self.K = K
 

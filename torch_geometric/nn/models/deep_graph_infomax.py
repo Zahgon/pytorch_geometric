@@ -11,18 +11,6 @@ EPS = 1e-15
 
 
 class DeepGraphInfomax(torch.nn.Module):
-    r"""The Deep Graph Infomax model from the
-    `"Deep Graph Infomax" <https://arxiv.org/abs/1809.10341>`_
-    paper based on user-defined encoder and summary model :math:`\mathcal{E}`
-    and :math:`\mathcal{R}` respectively, and a corruption function
-    :math:`\mathcal{C}`.
-
-    Args:
-        hidden_channels (int): The latent space dimensionality.
-        encoder (torch.nn.Module): The encoder module :math:`\mathcal{E}`.
-        summary (callable): The readout function :math:`\mathcal{R}`.
-        corruption (callable): The corruption function :math:`\mathcal{C}`.
-    """
     def __init__(
         self,
         hidden_channels: int,

@@ -19,25 +19,6 @@ class UnpoolInfo(NamedTuple):
 
 
 class ClusterPooling(torch.nn.Module):
-    r"""The cluster pooling operator from the `"Edge-Based Graph Component
-    Pooling" <https://arxiv.org/abs/2409.11856>`_ paper.
-    :class:`ClusterPooling` computes a score for each edge.
-    Based on the selected edges, graph clusters are calculated and compressed
-    to one node using the injective :obj:`"sum"` aggregation function.
-    Edges are remapped based on the nodes created by each cluster and the
-    original edges.
-
-    Args:
-        in_channels (int): Size of each input sample.
-        edge_score_method (str, optional): The function to apply
-            to compute the edge score from raw edge scores (:obj:`"tanh"`,
-            :obj:`"sigmoid"`, :obj:`"log_softmax"`). (default: :obj:`"tanh"`)
-        dropout (float, optional): The probability with
-            which to drop edge scores during training. (default: :obj:`0.0`)
-        threshold (float, optional): The threshold of edge scores. If set to
-            :obj:`None`, will be automatically inferred depending on
-            :obj:`edge_score_method`. (default: :obj:`None`)
-    """
     def __init__(
         self,
         in_channels: int,

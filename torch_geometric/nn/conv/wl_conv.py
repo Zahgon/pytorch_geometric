@@ -14,23 +14,6 @@ from torch_geometric.utils import (
 
 
 class WLConv(torch.nn.Module):
-    r"""The Weisfeiler Lehman (WL) operator from the `"A Reduction of a Graph
-    to a Canonical Form and an Algebra Arising During this Reduction"
-    <https://www.iti.zcu.cz/wl2018/pdf/wl_paper_translation.pdf>`_ paper.
-
-    :class:`WLConv` iteratively refines node colorings according to:
-
-    .. math::
-        \mathbf{x}^{\prime}_i = \textrm{hash} \left( \mathbf{x}_i, \{
-        \mathbf{x}_j \colon j \in \mathcal{N}(i) \} \right)
-
-    Shapes:
-        - **input:**
-          node coloring :math:`(|\mathcal{V}|, F_{in})` *(one-hot encodings)*
-          or :math:`(|\mathcal{V}|)` *(integer-based)*,
-          edge indices :math:`(2, |\mathcal{E}|)`
-        - **output:** node coloring :math:`(|\mathcal{V}|)` *(integer-based)*
-    """
     def __init__(self):
         super().__init__()
         self.hashmap = {}
@@ -56,7 +39,6 @@ class WLConv(torch.nn.Module):
                                          sort_by_row=False)
             row, col = edge_index[0], edge_index[1]
 
-        # `col` is sorted, so we can use it to `split` neighbors to groups:
         deg = degree(col, x.size(0), dtype=torch.long).tolist()
 
         out = []
@@ -70,22 +52,4 @@ class WLConv(torch.nn.Module):
 
     def histogram(self, x: Tensor, batch: Optional[Tensor] = None,
                   norm: bool = False) -> Tensor:
-        r"""Given a node coloring :obj:`x`, computes the color histograms of
-        the respective graphs (separated by :obj:`batch`).
-        """
-        if batch is None:
-            batch = torch.zeros(x.size(0), dtype=torch.long, device=x.device)
-
-        num_colors = len(self.hashmap)
-        batch_size = int(batch.max()) + 1
-
-        index = batch * num_colors + x
-        out = scatter(torch.ones_like(index), index, dim=0,
-                      dim_size=num_colors * batch_size, reduce='sum')
-        out = out.view(batch_size, num_colors)
-
-        if norm:
-            out = out.to(torch.float)
-            out /= out.norm(dim=-1, keepdim=True)
-
-        return out
+        pass

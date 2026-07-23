@@ -22,38 +22,21 @@ class Signature(NamedTuple):
 
 
 class Inspector:
-    r"""Inspects a given class and collects information about its instance
-    methods.
-
-    Args:
-        cls (Type): The class to inspect.
-    """
     def __init__(self, cls: Type):
         self._cls = cls
         self._signature_dict: Dict[str, Signature] = {}
         self._source_dict: Dict[str, str] = {}
 
     def _get_modules(self, cls: Type) -> List[str]:
-        from torch_geometric.nn import MessagePassing
-
-        modules: List[str] = []
-        for base_cls in cls.__bases__:
-            if base_cls not in {object, torch.nn.Module, MessagePassing}:
-                modules.extend(self._get_modules(base_cls))
-
-        modules.append(cls.__module__)
-        return modules
+        pass
 
     @property
     def _modules(self) -> List[str]:
-        return self._get_modules(self._cls)
+        pass
 
     @property
     def _globals(self) -> Dict[str, Any]:
-        out: Dict[str, Any] = {}
-        for module in self._modules:
-            out.update(sys.modules[module].__dict__)
-        return out
+        pass
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}({self._cls.__name__})'
@@ -78,7 +61,6 @@ class Inspector:
             return False
         return not getattr(func, '__isabstractmethod__', False)
 
-    # Inspecting Method Signatures ############################################
 
     def inspect_signature(
         self,
@@ -109,7 +91,6 @@ class Inspector:
                 continue
 
             param_type = param.annotation
-            # Mimic TorchScript to auto-infer `Tensor` on non-present types:
             param_type = Tensor if param_type is inspect._empty else param_type
 
             param_dict[param.name] = Parameter(
@@ -120,7 +101,6 @@ class Inspector:
             )
 
         return_type = signature.return_annotation
-        # Mimic TorchScript to auto-infer `Tensor` on non-present types:
         return_type = Tensor if return_type is inspect._empty else return_type
 
         self._signature_dict[func.__name__] = Signature(
@@ -168,13 +148,7 @@ class Inspector:
         self,
         func: Union[Callable, str],
     ) -> Optional[Signature]:
-        r"""Removes the inspected function signature :obj:`func`.
-
-        Args:
-            func (callabel or str): The function.
-        """
-        func_name = func if isinstance(func, str) else func.__name__
-        return self._signature_dict.pop(func_name, None)
+        pass
 
     def get_param_dict(
         self,
@@ -257,15 +231,7 @@ class Inspector:
         funcs: List[Union[Callable, str]],
         exclude: Optional[List[str]] = None,
     ) -> List[Parameter]:
-        r"""Returns the union of parameters of all inspected functions in
-        :obj:`funcs`.
-
-        Args:
-            funcs (list[str or callable]): The functions.
-            exclude (list[str], optional): The parameter names to exclude.
-                (default: :obj:`None`)
-        """
-        return list(self.get_flat_param_dict(funcs, exclude).values())
+        pass
 
     def get_param_names(
         self,
@@ -318,7 +284,6 @@ class Inspector:
                 out_dict[param.name] = kwargs[param.name]
         return out_dict
 
-    # Inspecting Method Bodies ################################################
 
     def get_source(self, cls: Optional[Type] = None) -> str:
         r"""Returns the source code of :obj:`cls`."""
@@ -353,12 +318,7 @@ class Inspector:
         func_name = func if isinstance(func, str) else func.__name__
         param_dict: Dict[str, Parameter] = {}
 
-        # Three ways to specify the parameters of an unknown function header:
-        # 1. Defined as class attributes in `{func_name}_type`.
-        # 2. Defined via type annotations in `# {func_name}_type: (...)`.
-        # 3. Defined via parsing of the function call.
 
-        # (1) Find class attribute:
         if hasattr(self._cls, f'{func_name}_type'):
             type_dict = getattr(self._cls, f'{func_name}_type')
             if not isinstance(type_dict, dict):
@@ -374,7 +334,6 @@ class Inspector:
                 )
             return param_dict
 
-        # (2) Find type annotation:
         for cls in self._cls.__mro__:
             source = self.get_source(cls)
             match = find_parenthesis_content(source, f'{func_name}_type:')
@@ -394,7 +353,6 @@ class Inspector:
                     )
                 return param_dict
 
-        # (3) Parse the function call:
         for cls in self._cls.__mro__:
             source = self.get_source(cls)
             source = remove_comments(source)
@@ -462,9 +420,6 @@ def type_repr(obj: Any, _globals: Dict[str, Any]) -> str:
         if all(isinstance(arg, typing.TypeVar) for arg in args):
             return _get_name(name, obj.__module__)
 
-        # Convert `Union[*, None]` to `Optional[*]`.
-        # This is only necessary for old Python versions, e.g. 3.8.
-        # TODO Only convert to `Optional` if `Optional` is importable.
         if (name == 'Union' and len(args) == 2
                 and any([arg is type(None) for arg in args])):
             name = 'Optional'
@@ -501,7 +456,6 @@ def find_parenthesis_content(source: str, prefix: str) -> Optional[str]:
             depth -= 1
         if depth == 0:
             content = source[1:end]
-            # Properly handle line breaks and multiple white-spaces:
             content = content.replace('\n', ' ')
             content = content.replace('#', ' ')
             content = re.sub(' +', ' ', content)

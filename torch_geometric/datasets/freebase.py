@@ -6,37 +6,6 @@ from torch_geometric.data import Data, InMemoryDataset, download_url
 
 
 class FB15k_237(InMemoryDataset):
-    r"""The FB15K237 dataset from the `"Translating Embeddings for Modeling
-    Multi-Relational Data"
-    <https://papers.nips.cc/paper/5071-translating-embeddings-for-modeling
-    -multi-relational-data>`_ paper,
-    containing 14,541 entities, 237 relations and 310,116 fact triples.
-
-    .. note::
-
-        The original :class:`FB15k` dataset suffers from major test leakage
-        through inverse relations, where a large number of test triples could
-        be obtained by inverting triples in the training set.
-        In order to create a dataset without this characteristic, the
-        :class:`~torch_geometric.datasets.FB15k_237` describes a subset of
-        :class:`FB15k` where inverse relations are removed.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        split (str, optional): If :obj:`"train"`, loads the training dataset.
-            If :obj:`"val"`, loads the validation dataset.
-            If :obj:`"test"`, loads the test dataset. (default: :obj:`"train"`)
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-    """
     url = ('https://raw.githubusercontent.com/villmow/'
            'datasets_knowledge_embedding/master/FB15k-237')
 
@@ -59,11 +28,11 @@ class FB15k_237(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> List[str]:
-        return ['train.txt', 'valid.txt', 'test.txt']
+        pass
 
     @property
     def processed_file_names(self) -> List[str]:
-        return ['train_data.pt', 'val_data.pt', 'test_data.pt']
+        pass
 
     def download(self) -> None:
         for filename in self.raw_file_names:

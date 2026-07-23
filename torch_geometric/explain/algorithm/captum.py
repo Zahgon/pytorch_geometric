@@ -18,14 +18,13 @@ from torch_geometric.typing import EdgeType, Metadata, NodeType
 
 
 class MaskLevelType(Enum):
-    """Enum class for the mask level type."""
     node = 'node'
     edge = 'edge'
     node_and_edge = 'node_and_edge'
 
     @property
     def with_edge(self) -> bool:
-        return self in [MaskLevelType.edge, MaskLevelType.node_and_edge]
+        pass
 
 
 class CaptumModel(torch.nn.Module):
@@ -45,9 +44,6 @@ class CaptumModel(torch.nn.Module):
 
     def forward(self, mask, *args):
         """"""  # noqa: D419
-        # The mask tensor, which comes from Captum's attribution methods,
-        # contains the number of samples in dimension 0. Since we are
-        # working with only one sample, we squeeze the tensors below.
         assert mask.shape[0] == 1, "Dimension 0 of input should be 1"
         if self.mask_type == MaskLevelType.edge:
             assert len(args) >= 2, "Expects at least x and edge_index as args."
@@ -57,7 +53,6 @@ class CaptumModel(torch.nn.Module):
             assert args[0].shape[0] == 1, "Dimension 0 of input should be 1"
             assert len(args[1:]) >= 1, "Expects at least edge_index as args."
 
-        # Set edge mask:
         if self.mask_type == MaskLevelType.edge:
             set_masks(self.model, mask.squeeze(0), args[1],
                       apply_sigmoid=False)
@@ -84,7 +79,6 @@ class CaptumModel(torch.nn.Module):
                     or self.output_idx.dim() == 0):
                 x = x.unsqueeze(0)
 
-        # Convert binary classification to multi-class classification:
         if (self.model_config is not None
                 and self.model_config.mode == ModelMode.binary_classification):
             assert self.model_config.return_type == ModelReturnType.probs
@@ -94,7 +88,6 @@ class CaptumModel(torch.nn.Module):
         return x
 
 
-# TODO(jinu) Is there any point of inheriting from `CaptumModel`
 class CaptumHeteroModel(CaptumModel):
     def __init__(
         self,
@@ -142,7 +135,6 @@ class CaptumHeteroModel(CaptumModel):
         return x_dict, edge_index_dict, edge_mask_dict
 
     def forward(self, *args):
-        # Validate args:
         if self.mask_type == MaskLevelType.node:
             assert len(args) >= self.num_node_types + 1
             len_remaining_args = len(args) - (self.num_node_types + 1)
@@ -154,7 +146,6 @@ class CaptumHeteroModel(CaptumModel):
             len_remaining_args = len(args) - (self.num_node_types +
                                               self.num_edge_types + 1)
 
-        # Get main args:
         (x_dict, edge_index_dict,
          edge_mask_dict) = self._captum_data_to_hetero_data(*args)
 
@@ -162,7 +153,6 @@ class CaptumHeteroModel(CaptumModel):
             set_hetero_masks(self.model, edge_mask_dict, edge_index_dict)
 
         if len_remaining_args > 0:
-            # If there are args other than `x_dict` and `edge_index_dict`
             x = self.model(x_dict, edge_index_dict,
                            *args[-len_remaining_args:])
         else:

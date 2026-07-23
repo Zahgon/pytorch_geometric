@@ -10,46 +10,6 @@ from torch_geometric.io import fs, read_off, read_txt_array
 
 
 class SHREC2016(InMemoryDataset):
-    r"""The SHREC 2016 partial matching dataset from the `"SHREC'16: Partial
-    Matching of Deformable Shapes"
-    <http://www.dais.unive.it/~shrec2016/shrec16-partial.pdf>`_ paper.
-    The reference shape can be referenced via :obj:`dataset.ref`.
-
-    .. note::
-
-        Data objects hold mesh faces instead of edge indices.
-        To convert the mesh to a graph, use the
-        :obj:`torch_geometric.transforms.FaceToEdge` as :obj:`pre_transform`.
-        To convert the mesh to a point cloud, use the
-        :obj:`torch_geometric.transforms.SamplePoints` as :obj:`transform` to
-        sample a fixed number of points on the mesh faces according to their
-        face area.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        partiality (str): The partiality of the dataset (one of :obj:`"Holes"`,
-            :obj:`"Cuts"`).
-        category (str): The category of the dataset (one of
-            :obj:`"Cat"`, :obj:`"Centaur"`, :obj:`"David"`, :obj:`"Dog"`,
-            :obj:`"Horse"`, :obj:`"Michael"`, :obj:`"Victoria"`,
-            :obj:`"Wolf"`).
-        train (bool, optional): If :obj:`True`, loads the training dataset,
-            otherwise the test dataset. (default: :obj:`True`)
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        pre_filter (callable, optional): A function that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a boolean
-            value, indicating whether the data object should be included in the
-            final dataset. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-    """
 
     train_url = ('http://www.dais.unive.it/~shrec2016/data/'
                  'shrec2016_PartialDeformableShapes.zip')
@@ -85,19 +45,15 @@ class SHREC2016(InMemoryDataset):
 
     @property
     def ref(self) -> str:
-        ref = self.__ref__
-        if self.transform is not None:
-            ref = self.transform(ref)
-        return ref
+        pass
 
     @property
     def raw_file_names(self) -> List[str]:
-        return ['training', 'test']
+        pass
 
     @property
     def processed_file_names(self) -> List[str]:
-        name = f'{self.part}_{self.cat}.pt'
-        return [f'{i}_{name}' for i in ['ref', 'training', 'test']]
+        pass
 
     def download(self) -> None:
         path = download_url(self.train_url, self.raw_dir)

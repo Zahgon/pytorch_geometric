@@ -31,21 +31,6 @@ def get_mask_size(
 
 @functional_transform('index_to_mask')
 class IndexToMask(BaseTransform):
-    r"""Converts indices to a mask representation
-    (functional name: :obj:`index_to_mask`).
-
-    Args:
-        attrs (str, [str], optional): If given, will only perform index to mask
-            conversion for the given attributes. If omitted, will infer the
-            attributes from the suffix :obj:`_index`. (default: :obj:`None`)
-        sizes (int, [int], optional): The size of the mask. If set to
-            :obj:`None`, an automatically sized tensor is returned. The number
-            of nodes will be used by default, except for edge attributes which
-            will use the number of edges as the mask size.
-            (default: :obj:`None`)
-        replace (bool, optional): if set to :obj:`True` replaces the index
-            attributes with mask tensors. (default: :obj:`False`)
-    """
     def __init__(
         self,
         attrs: Optional[Union[str, List[str]]] = None,
@@ -96,16 +81,6 @@ class IndexToMask(BaseTransform):
 
 @functional_transform('mask_to_index')
 class MaskToIndex(BaseTransform):
-    r"""Converts a mask to an index representation
-    (functional name: :obj:`mask_to_index`).
-
-    Args:
-        attrs (str, [str], optional): If given, will only perform mask to index
-            conversion for the given attributes.  If omitted, will infer the
-            attributes from the suffix :obj:`_mask` (default: :obj:`None`)
-        replace (bool, optional): if set to :obj:`True` replaces the mask
-            attributes with index tensors. (default: :obj:`False`)
-    """
     def __init__(
         self,
         attrs: Optional[Union[str, List[str]]] = None,

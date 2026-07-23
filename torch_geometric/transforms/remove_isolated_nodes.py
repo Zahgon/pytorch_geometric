@@ -11,14 +11,10 @@ from torch_geometric.transforms import BaseTransform
 
 @functional_transform('remove_isolated_nodes')
 class RemoveIsolatedNodes(BaseTransform):
-    r"""Removes isolated nodes from the graph
-    (functional name: :obj:`remove_isolated_nodes`).
-    """
     def forward(
         self,
         data: Union[Data, HeteroData],
     ) -> Union[Data, HeteroData]:
-        # Gather all nodes that occur in at least one edge (across all types):
         n_ids_dict = defaultdict(list)
         for edge_store in data.edge_stores:
             if 'edge_index' not in edge_store:

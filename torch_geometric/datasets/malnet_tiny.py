@@ -15,35 +15,6 @@ from torch_geometric.io import fs
 
 
 class MalNetTiny(InMemoryDataset):
-    r"""The MalNet Tiny dataset from the
-    `"A Large-Scale Database for Graph Representation Learning"
-    <https://openreview.net/pdf?id=1xDTDk3XPW>`_ paper.
-    :class:`MalNetTiny` contains 5,000 malicious and benign software function
-    call graphs across 5 different types. Each graph contains at most 5k nodes.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        split (str, optional): If :obj:`"train"`, loads the training dataset.
-            If :obj:`"val"`, loads the validation dataset.
-            If :obj:`"trainval"`, loads the training and validation dataset.
-            If :obj:`"test"`, loads the test dataset.
-            If :obj:`None`, loads the entire dataset.
-            (default: :obj:`None`)
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        pre_filter (callable, optional): A function that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a boolean
-            value, indicating whether the data object should be included in the
-            final dataset. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-    """
     data_url = ('http://malnet.cc.gatech.edu/'
                 'graph-data/malnet-graphs-tiny.tar.gz')
     split_url = 'http://malnet.cc.gatech.edu/split-info/split_info_tiny.zip'
@@ -78,11 +49,11 @@ class MalNetTiny(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> List[str]:
-        return ['malnet-graphs-tiny', osp.join('split_info_tiny', 'type')]
+        pass
 
     @property
     def processed_file_names(self) -> List[str]:
-        return ['data.pt', 'split_slices.pt']
+        pass
 
     def download(self) -> None:
         path = download_url(self.data_url, self.raw_dir)

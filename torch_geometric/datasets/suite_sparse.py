@@ -9,25 +9,6 @@ from torch_geometric.io import fs
 
 
 class SuiteSparseMatrixCollection(InMemoryDataset):
-    r"""A suite of sparse matrix benchmarks known as the `Suite Sparse Matrix
-    Collection <https://sparse.tamu.edu>`_ collected from a wide range of
-    applications.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        group (str): The group of the sparse matrix.
-        name (str): The name of the sparse matrix.
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-    """
 
     url = 'https://sparse.tamu.edu/mat/{}/{}.mat'
 
@@ -48,19 +29,19 @@ class SuiteSparseMatrixCollection(InMemoryDataset):
 
     @property
     def raw_dir(self) -> str:
-        return osp.join(self.root, self.group, self.name, 'raw')
+        pass
 
     @property
     def processed_dir(self) -> str:
-        return osp.join(self.root, self.group, self.name, 'processed')
+        pass
 
     @property
     def raw_file_names(self) -> str:
-        return f'{self.name}.mat'
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def download(self) -> None:
         fs.cp(self.url.format(self.group, self.name), self.raw_dir)

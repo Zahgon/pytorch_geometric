@@ -17,41 +17,6 @@ from torch_geometric.utils import (
 
 @functional_transform('to_sparse_tensor')
 class ToSparseTensor(BaseTransform):
-    r"""Converts the :obj:`edge_index` attributes of a homogeneous or
-    heterogeneous data object into a **transposed**
-    :class:`torch_sparse.SparseTensor` or :pytorch:`PyTorch`
-    :class:`torch.sparse.Tensor` object with key :obj:`adj_t`
-    (functional name: :obj:`to_sparse_tensor`).
-
-    .. note::
-
-        In case of composing multiple transforms, it is best to convert the
-        :obj:`data` object via :class:`ToSparseTensor` as late as possible,
-        since there exist some transforms that are only able to operate on
-        :obj:`data.edge_index` for now.
-
-    Args:
-        attr (str, optional): The name of the attribute to add as a value to
-            the :class:`~torch_sparse.SparseTensor` or
-            :class:`torch.sparse.Tensor` object (if present).
-            (default: :obj:`edge_weight`)
-        remove_edge_index (bool, optional): If set to :obj:`False`, the
-            :obj:`edge_index` tensor will not be removed.
-            (default: :obj:`True`)
-        fill_cache (bool, optional): If set to :obj:`True`, will fill the
-            underlying :class:`torch_sparse.SparseTensor` cache (if used).
-            (default: :obj:`True`)
-        layout (torch.layout, optional): Specifies the layout of the returned
-            sparse tensor (:obj:`None`, :obj:`torch.sparse_coo` or
-            :obj:`torch.sparse_csr`).
-            If set to :obj:`None` and the :obj:`torch_sparse` dependency is
-            installed, will convert :obj:`edge_index` into a
-            :class:`torch_sparse.SparseTensor` object.
-            If set to :obj:`None` and the :obj:`torch_sparse` dependency is
-            not installed, will convert :obj:`edge_index` into a
-            :class:`torch.sparse.Tensor` object with layout
-            :obj:`torch.sparse_csr`. (default: :obj:`None`)
-    """
     def __init__(
         self,
         attr: Optional[str] = 'edge_weight',
@@ -111,7 +76,6 @@ class ToSparseTensor(BaseTransform):
                     trust_data=True,
                 )
 
-            # TODO Multi-dimensional edge attributes only supported for COO.
             elif ((edge_weight is not None and edge_weight.dim() > 1)
                   or layout == torch.sparse_coo):
                 assert size[0] is not None and size[1] is not None
@@ -135,7 +99,6 @@ class ToSparseTensor(BaseTransform):
                     del store[self.attr]
 
             if self.fill_cache and isinstance(store.adj_t, SparseTensor):
-                # Pre-process some important attributes.
                 store.adj_t.storage.rowptr()
                 store.adj_t.storage.csr2csc()
 

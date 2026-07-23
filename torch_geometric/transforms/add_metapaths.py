@@ -14,89 +14,6 @@ from torch_geometric.utils import coalesce, degree
 
 @functional_transform('add_metapaths')
 class AddMetaPaths(BaseTransform):
-    r"""Adds additional edge types to a
-    :class:`~torch_geometric.data.HeteroData` object between the source node
-    type and the destination node type of a given :obj:`metapath`, as described
-    in the `"Heterogenous Graph Attention Networks"
-    <https://arxiv.org/abs/1903.07293>`_ paper
-    (functional name: :obj:`add_metapaths`).
-
-    Meta-path based neighbors can exploit different aspects of structure
-    information in heterogeneous graphs.
-    Formally, a metapath is a path of the form
-
-    .. math::
-
-        \mathcal{V}_1 \xrightarrow{R_1} \mathcal{V}_2 \xrightarrow{R_2} \ldots
-        \xrightarrow{R_{\ell-1}} \mathcal{V}_{\ell}
-
-    in which :math:`\mathcal{V}_i` represents node types, and :math:`R_j`
-    represents the edge type connecting two node types.
-    The added edge type is given by the sequential multiplication  of
-    adjacency matrices along the metapath, and is added to the
-    :class:`~torch_geometric.data.HeteroData` object as edge type
-    :obj:`(src_node_type, "metapath_*", dst_node_type)`, where
-    :obj:`src_node_type` and :obj:`dst_node_type` denote :math:`\mathcal{V}_1`
-    and :math:`\mathcal{V}_{\ell}`, respectively.
-
-    In addition, a :obj:`metapath_dict` object is added to the
-    :class:`~torch_geometric.data.HeteroData` object which maps the
-    metapath-based edge type to its original metapath.
-
-    .. code-block:: python
-
-        from torch_geometric.datasets import DBLP
-        from torch_geometric.data import HeteroData
-        from torch_geometric.transforms import AddMetaPaths
-
-        data = DBLP(root)[0]
-        # 4 node types: "paper", "author", "conference", and "term"
-        # 6 edge types: ("paper","author"), ("author", "paper"),
-        #               ("paper, "term"), ("paper", "conference"),
-        #               ("term, "paper"), ("conference", "paper")
-
-        # Add two metapaths:
-        # 1. From "paper" to "paper" through "conference"
-        # 2. From "author" to "conference" through "paper"
-        metapaths = [[("paper", "conference"), ("conference", "paper")],
-                     [("author", "paper"), ("paper", "conference")]]
-        data = AddMetaPaths(metapaths)(data)
-
-        print(data.edge_types)
-        >>> [("author", "to", "paper"), ("paper", "to", "author"),
-             ("paper", "to", "term"), ("paper", "to", "conference"),
-             ("term", "to", "paper"), ("conference", "to", "paper"),
-             ("paper", "metapath_0", "paper"),
-             ("author", "metapath_1", "conference")]
-
-        print(data.metapath_dict)
-        >>> {("paper", "metapath_0", "paper"): [("paper", "conference"),
-                                                ("conference", "paper")],
-             ("author", "metapath_1", "conference"): [("author", "paper"),
-                                                      ("paper", "conference")]}
-
-    Args:
-        metapaths (List[List[Tuple[str, str, str]]]): The metapaths described
-            by a list of lists of
-            :obj:`(src_node_type, rel_type, dst_node_type)` tuples.
-        drop_orig_edge_types (bool, optional): If set to :obj:`True`, existing
-            edge types will be dropped. (default: :obj:`False`)
-        keep_same_node_type (bool, optional): If set to :obj:`True`, existing
-            edge types between the same node type are not dropped even in case
-            :obj:`drop_orig_edge_types` is set to :obj:`True`.
-            (default: :obj:`False`)
-        drop_unconnected_node_types (bool, optional): If set to :obj:`True`,
-            will drop node types not connected by any edge type.
-            (default: :obj:`False`)
-        max_sample (int, optional): If set, will sample at maximum
-            :obj:`max_sample` neighbors within metapaths. Useful in order to
-            tackle very dense metapath edges. (default: :obj:`None`)
-        weighted (bool, optional): If set to :obj:`True`, computes weights for
-            each metapath edge and stores them in :obj:`edge_weight`. The
-            weight of each metapath edge is computed as the number of metapaths
-            from the start to the end of the metapath edge.
-            (default :obj:`False`)
-    """
     def __init__(
         self,
         metapaths: List[List[EdgeType]],
@@ -213,31 +130,6 @@ class AddMetaPaths(BaseTransform):
 
 @functional_transform('add_random_metapaths')
 class AddRandomMetaPaths(BaseTransform):
-    r"""Adds additional edge types similar to :class:`AddMetaPaths`.
-    The key difference is that the added edge type is given by
-    multiple random walks along the metapath.
-    One might want to increase the number of random walks
-    via :obj:`walks_per_node` to achieve competitive performance with
-    :class:`AddMetaPaths`.
-
-    Args:
-        metapaths (List[List[Tuple[str, str, str]]]): The metapaths described
-            by a list of lists of
-            :obj:`(src_node_type, rel_type, dst_node_type)` tuples.
-        drop_orig_edge_types (bool, optional): If set to :obj:`True`, existing
-            edge types will be dropped. (default: :obj:`False`)
-        keep_same_node_type (bool, optional): If set to :obj:`True`, existing
-            edge types between the same node type are not dropped even in case
-            :obj:`drop_orig_edge_types` is set to :obj:`True`.
-            (default: :obj:`False`)
-        drop_unconnected_node_types (bool, optional): If set to :obj:`True`,
-            will drop node types not connected by any edge type.
-            (default: :obj:`False`)
-        walks_per_node (int, List[int], optional): The number of random walks
-            for each starting node in a metapath. (default: :obj:`1`)
-        sample_ratio (float, optional): The ratio of source nodes to start
-            random walks from. (default: :obj:`1.0`)
-    """
     def __init__(
         self,
         metapaths: List[List[EdgeType]],
@@ -338,7 +230,6 @@ def postprocess(
             else:
                 del data[i]
 
-    # Remove nodes not connected by any edge type:
     if drop_unconnected_node_types:
         new_edge_types = data.edge_types
         node_types = data.node_types

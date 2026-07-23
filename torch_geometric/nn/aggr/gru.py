@@ -8,28 +8,6 @@ from torch_geometric.nn.aggr import Aggregation
 
 
 class GRUAggregation(Aggregation):
-    r"""Performs GRU aggregation in which the elements to aggregate are
-    interpreted as a sequence, as described in the `"Graph Neural Networks
-    with Adaptive Readouts" <https://arxiv.org/abs/2211.04952>`_ paper.
-
-    .. note::
-
-        :class:`GRUAggregation` requires sorted indices :obj:`index` as input.
-        Specifically, if you use this aggregation as part of
-        :class:`~torch_geometric.nn.conv.MessagePassing`, ensure that
-        :obj:`edge_index` is sorted by destination nodes, either by manually
-        sorting edge indices via :meth:`~torch_geometric.utils.sort_edge_index`
-        or by calling :meth:`torch_geometric.data.Data.sort`.
-
-    .. warning::
-
-        :class:`GRUAggregation` is not a permutation-invariant operator.
-
-    Args:
-        in_channels (int): Size of each input sample.
-        out_channels (int): Size of each output sample.
-        **kwargs (optional): Additional arguments of :class:`torch.nn.GRU`.
-    """
     def __init__(self, in_channels: int, out_channels: int, **kwargs):
         super().__init__()
         self.in_channels = in_channels

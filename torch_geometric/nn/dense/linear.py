@@ -57,34 +57,6 @@ def reset_bias_(bias: Optional[Tensor], in_channels: int,
 
 
 class Linear(torch.nn.Module):
-    r"""Applies a linear transformation to the incoming data.
-
-    .. math::
-        \mathbf{x}^{\prime} = \mathbf{x} \mathbf{W}^{\top} + \mathbf{b}
-
-    In contrast to :class:`torch.nn.Linear`, it supports lazy initialization
-    and customizable weight and bias initialization.
-
-    Args:
-        in_channels (int): Size of each input sample. Will be initialized
-            lazily in case it is given as :obj:`-1`.
-        out_channels (int): Size of each output sample.
-        bias (bool, optional): If set to :obj:`False`, the layer will not learn
-            an additive bias. (default: :obj:`True`)
-        weight_initializer (str, optional): The initializer for the weight
-            matrix (:obj:`"glorot"`, :obj:`"uniform"`, :obj:`"kaiming_uniform"`
-            or :obj:`None`).
-            If set to :obj:`None`, will match default weight initialization of
-            :class:`torch.nn.Linear`. (default: :obj:`None`)
-        bias_initializer (str, optional): The initializer for the bias vector
-            (:obj:`"zeros"` or :obj:`None`).
-            If set to :obj:`None`, will match default bias initialization of
-            :class:`torch.nn.Linear`. (default: :obj:`None`)
-
-    Shapes:
-        - **input:** features :math:`(*, F_{in})`
-        - **output:** features :math:`(*, F_{out})`
-    """
     def __init__(
         self,
         in_channels: int,
@@ -128,43 +100,13 @@ class Linear(torch.nn.Module):
 
     @torch.no_grad()
     def initialize_parameters(self, module, input):
-        if is_uninitialized_parameter(self.weight):
-            self.in_channels = input[0].size(-1)
-            self.weight.materialize((self.out_channels, self.in_channels))
-            self.reset_parameters()
-        self._hook.remove()
-        delattr(self, '_hook')
+        pass
 
     def _save_to_state_dict(self, destination, prefix, keep_vars):
-        if (is_uninitialized_parameter(self.weight)
-                or torch.onnx.is_in_onnx_export() or keep_vars):
-            destination[prefix + 'weight'] = self.weight
-        else:
-            destination[prefix + 'weight'] = self.weight.detach()
-        if self.bias is not None:
-            if torch.onnx.is_in_onnx_export() or keep_vars:
-                destination[prefix + 'bias'] = self.bias
-            else:
-                destination[prefix + 'bias'] = self.bias.detach()
+        pass
 
     def _load_from_state_dict(self, state_dict, prefix, *args, **kwargs):
-        weight = state_dict.get(prefix + 'weight', None)
-
-        if weight is not None and is_uninitialized_parameter(weight):
-            self.in_channels = -1
-            self.weight = torch.nn.parameter.UninitializedParameter()
-            if not hasattr(self, '_hook'):
-                self._hook = self.register_forward_pre_hook(
-                    self.initialize_parameters)
-
-        elif weight is not None and is_uninitialized_parameter(self.weight):
-            self.in_channels = weight.size(-1)
-            self.weight.materialize((self.out_channels, self.in_channels))
-            if hasattr(self, '_hook'):
-                self._hook.remove()
-                delattr(self, '_hook')
-
-        super()._load_from_state_dict(state_dict, prefix, *args, **kwargs)
+        pass
 
     def __repr__(self) -> str:
         return (f'{self.__class__.__name__}({self.in_channels}, '
@@ -172,36 +114,6 @@ class Linear(torch.nn.Module):
 
 
 class HeteroLinear(torch.nn.Module):
-    r"""Applies separate linear transformations to the incoming data according
-    to types.
-
-    For type :math:`\kappa`, it computes
-
-    .. math::
-        \mathbf{x}^{\prime}_{\kappa} = \mathbf{x}_{\kappa}
-        \mathbf{W}^{\top}_{\kappa} + \mathbf{b}_{\kappa}.
-
-    It supports lazy initialization and customizable weight and bias
-    initialization.
-
-    Args:
-        in_channels (int): Size of each input sample. Will be initialized
-            lazily in case it is given as :obj:`-1`.
-        out_channels (int): Size of each output sample.
-        num_types (int): The number of types.
-        is_sorted (bool, optional): If set to :obj:`True`, assumes that
-            :obj:`type_vec` is sorted. This avoids internal re-sorting of the
-            data and can improve runtime and memory efficiency.
-            (default: :obj:`False`)
-        **kwargs (optional): Additional arguments of
-            :class:`torch_geometric.nn.Linear`.
-
-    Shapes:
-        - **input:**
-          features :math:`(*, F_{in})`,
-          type vector :math:`(*)`
-        - **output:** features :math:`(*, F_{out})`
-    """
     _timing_cache: Dict[int, Tuple[float, float]]
 
     def __init__(
@@ -233,7 +145,6 @@ class HeteroLinear(torch.nn.Module):
         else:
             self.register_parameter('bias', None)
 
-        # Timing cache for benchmarking naive vs. segment matmul usage:
         self._timing_cache: Dict[int, Tuple[float, float]] = {}
 
         self.reset_parameters()
@@ -303,7 +214,6 @@ class HeteroLinear(torch.nn.Module):
             if (torch_geometric.typing.WITH_SEGMM and not is_compiling()
                     and not torch.jit.is_scripting()):
 
-                # Use "magnitude" of number of rows as timing key:
                 key = math.floor(math.log10(x.size(0)))
                 if key not in self._timing_cache:
                     self._update_timing_cache(x, type_ptr, key)
@@ -330,13 +240,7 @@ class HeteroLinear(torch.nn.Module):
 
     @torch.no_grad()
     def initialize_parameters(self, module, input):
-        if is_uninitialized_parameter(self.weight):
-            self.in_channels = input[0].size(-1)
-            self.weight.materialize(
-                (self.num_types, self.in_channels, self.out_channels))
-            self.reset_parameters()
-        self._hook.remove()
-        delattr(self, '_hook')
+        pass
 
     def __repr__(self) -> str:
         return (f'{self.__class__.__name__}({self.in_channels}, '
@@ -345,28 +249,6 @@ class HeteroLinear(torch.nn.Module):
 
 
 class HeteroDictLinear(torch.nn.Module):
-    r"""Applies separate linear transformations to the incoming data
-    dictionary.
-
-    For key :math:`\kappa`, it computes
-
-    .. math::
-        \mathbf{x}^{\prime}_{\kappa} = \mathbf{x}_{\kappa}
-        \mathbf{W}^{\top}_{\kappa} + \mathbf{b}_{\kappa}.
-
-    It supports lazy initialization and customizable weight and bias
-    initialization.
-
-    Args:
-        in_channels (int or Dict[Any, int]): Size of each input sample. If
-            passed an integer, :obj:`types` will be a mandatory argument.
-            initialized lazily in case it is given as :obj:`-1`.
-        out_channels (int): Size of each output sample.
-        types (List[Any], optional): The keys of the input dictionary.
-            (default: :obj:`None`)
-        **kwargs (optional): Additional arguments of
-            :class:`torch_geometric.nn.Linear`.
-    """
     def __init__(
         self,
         in_channels: Union[int, Dict[Any, int]],
@@ -428,8 +310,6 @@ class HeteroDictLinear(torch.nn.Module):
         """
         out_dict = {}
 
-        # Only apply fused kernel for more than 10 types, otherwise use
-        # sequential computation (which is generally faster for these cases).
         use_segment_matmul = torch_geometric.backend.use_segment_matmul
         if use_segment_matmul is None:
             use_segment_matmul = len(x_dict) >= 10
@@ -456,14 +336,7 @@ class HeteroDictLinear(torch.nn.Module):
 
     @torch.no_grad()
     def initialize_parameters(self, module, input):
-        for key, x in input[0].items():
-            lin = self.lins[key]
-            if is_uninitialized_parameter(lin.weight):
-                self.lins[key].initialize_parameters(None, x)
-                self.lins[key].reset_parameters()
-        self._hook.remove()
-        self.in_channels = {key: x.size(-1) for key, x in input[0].items()}
-        delattr(self, '_hook')
+        pass
 
     def __repr__(self) -> str:
         return (f'{self.__class__.__name__}({self.in_channels}, '

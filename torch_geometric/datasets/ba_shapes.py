@@ -18,27 +18,6 @@ def house() -> Tuple[Tensor, Tensor]:
 @deprecated("use 'datasets.ExplainerDataset' in combination with "
             "'datasets.graph_generator.BAGraph' instead")
 class BAShapes(InMemoryDataset):
-    r"""The BA-Shapes dataset from the `"GNNExplainer: Generating Explanations
-    for Graph Neural Networks" <https://arxiv.org/abs/1903.03894>`__ paper,
-    containing a Barabasi-Albert (BA) graph with 300 nodes and a set of 80
-    "house"-structured graphs connected to it.
-
-    .. warning::
-
-        :class:`BAShapes` is deprecated and will be removed in a future
-        release. Use :class:`ExplainerDataset` in combination with
-        :class:`torch_geometric.datasets.graph_generator.BAGraph` instead.
-
-    Args:
-        connection_distribution: Specifies how the houses and the BA graph get
-            connected. Valid inputs are :obj:`"random"`
-            (random BA graph nodes are selected for connection to the houses),
-            and :obj:`"uniform"` (uniformly distributed BA graph nodes are
-            selected for connection to the houses).
-        transform: A function/transform that takes in a
-            :class:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-    """
     def __init__(
         self,
         connection_distribution: str = "random",
@@ -47,13 +26,11 @@ class BAShapes(InMemoryDataset):
         super().__init__(None, transform)
         assert connection_distribution in ['random', 'uniform']
 
-        # Build the Barabasi-Albert graph:
         num_nodes = 300
         edge_index = barabasi_albert_graph(num_nodes, num_edges=5)
         edge_label = torch.zeros(edge_index.size(1), dtype=torch.int64)
         node_label = torch.zeros(num_nodes, dtype=torch.int64)
 
-        # Select nodes to connect shapes:
         num_houses = 80
         if connection_distribution == 'random':
             connecting_nodes = torch.randperm(num_nodes)[:num_houses]
@@ -61,7 +38,6 @@ class BAShapes(InMemoryDataset):
             step = num_nodes // num_houses
             connecting_nodes = torch.arange(0, num_nodes, step)
 
-        # Connect houses to Barabasi-Albert graph:
         edge_indices = [edge_index]
         edge_labels = [edge_label]
         node_labels = [node_label]

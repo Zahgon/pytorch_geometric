@@ -13,21 +13,8 @@ from torch_geometric.isinstance import is_torch_instance
 
 
 class ConfigMixin:
-    r"""Enables a class to serialize/deserialize itself to a dataclass."""
     def config(self) -> Any:
-        r"""Creates a serializable configuration of the class."""
-        data_cls = dataclass_from_class(self.__class__)
-        if data_cls is None:
-            raise ValueError(f"Could not find the configuration class that "
-                             f"belongs to '{self.__class__.__name__}'. Please "
-                             f"register it in the configuration store.")
-
-        kwargs: Dict[str, Any] = {}
-        for field in fields(data_cls):
-            if not hasattr(self, field.name):
-                continue
-            kwargs[field.name] = _recursive_config(getattr(self, field.name))
-        return data_cls(**kwargs)
+        pass
 
     @classmethod
     def from_config(cls, cfg: Any, *args: Any, **kwargs: Any) -> Any:
@@ -69,15 +56,7 @@ class ConfigMixin:
 
 
 def _recursive_config(value: Any) -> Any:
-    if isinstance(value, ConfigMixin):
-        return value.config()
-    if is_torch_instance(value, ConfigMixin):
-        return value.config()
-    if isinstance(value, (tuple, list, ModuleList)):
-        return [_recursive_config(v) for v in value]
-    if isinstance(value, (dict, ModuleDict)):
-        return {k: _recursive_config(v) for k, v in value.items()}
-    return value
+    pass
 
 
 def _recursive_from_config(value: Any) -> Any:

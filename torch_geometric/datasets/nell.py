@@ -7,46 +7,6 @@ from torch_geometric.io import fs, read_planetoid_data
 
 
 class NELL(InMemoryDataset):
-    r"""The NELL dataset, a knowledge graph from the
-    `"Toward an Architecture for Never-Ending Language Learning"
-    <https://www.cs.cmu.edu/~acarlson/papers/carlson-aaai10.pdf>`_ paper.
-    The dataset is processed as in the
-    `"Revisiting Semi-Supervised Learning with Graph Embeddings"
-    <https://arxiv.org/abs/1603.08861>`_ paper.
-
-    .. note::
-
-        Entity nodes are described by sparse feature vectors of type
-        :class:`torch.sparse_csr_tensor`.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-
-    **STATS:**
-
-    .. list-table::
-        :widths: 10 10 10 10
-        :header-rows: 1
-
-        * - #nodes
-          - #edges
-          - #features
-          - #classes
-        * - 65,755
-          - 251,550
-          - 61,278
-          - 186
-    """
 
     url = 'http://www.cs.cmu.edu/~zhiliny/data/nell_data.tar.gz'
 
@@ -63,12 +23,11 @@ class NELL(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> List[str]:
-        names = ['x', 'tx', 'allx', 'y', 'ty', 'ally', 'graph', 'test.index']
-        return [f'ind.nell.0.001.{name}' for name in names]
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def download(self) -> None:
         path = download_url(self.url, self.root)

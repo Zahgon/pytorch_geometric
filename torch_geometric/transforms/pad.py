@@ -13,7 +13,6 @@ from torch_geometric.typing import EdgeType, NodeType
 
 
 class Padding(ABC):
-    r"""An abstract class for specifying padding values."""
     @abstractmethod
     def get_value(
         self,
@@ -25,12 +24,6 @@ class Padding(ABC):
 
 @dataclass(init=False)
 class UniformPadding(Padding):
-    r"""Uniform padding independent of attribute name or node/edge type.
-
-    Args:
-        value (int or float, optional): The value to be used for padding.
-            (default: :obj:`0.0`)
-    """
     value: Union[int, float] = 0.0
 
     def __init__(self, value: Union[int, float] = 0.0):
@@ -50,7 +43,6 @@ class UniformPadding(Padding):
 
 @dataclass(init=False)
 class MappingPadding(Padding):
-    r"""An abstract class for specifying different padding values."""
     values: Dict[Any, Padding]
     default: UniformPadding
 
@@ -77,14 +69,6 @@ class MappingPadding(Padding):
 
 
 class AttrNamePadding(MappingPadding):
-    r"""Padding dependent on attribute names.
-
-    Args:
-        values (dict): The mapping from attribute names to padding values.
-        default (int or float, optional): The padding value to use for
-            attribute names not specified in :obj:`values`.
-            (default: :obj:`0.0`)
-    """
     def validate_key_value(self, key: Any, value: Any) -> None:
         if not isinstance(key, str):
             raise ValueError(f"Expected the attribute name '{key}' to be a "
@@ -104,13 +88,6 @@ class AttrNamePadding(MappingPadding):
 
 
 class NodeTypePadding(MappingPadding):
-    r"""Padding dependent on node types.
-
-    Args:
-        values (dict): The mapping from node types to padding values.
-        default (int or float, optional): The padding value to use for node
-            types not specified in :obj:`values`. (default: :obj:`0.0`)
-    """
     def validate_key_value(self, key: Any, value: Any) -> None:
         if not isinstance(key, str):
             raise ValueError(f"Expected the node type '{key}' to be a string "
@@ -131,13 +108,6 @@ class NodeTypePadding(MappingPadding):
 
 
 class EdgeTypePadding(MappingPadding):
-    r"""Padding dependent on node types.
-
-    Args:
-        values (dict): The mapping from edge types to padding values.
-        default (int or float, optional): The padding value to use for edge
-            types not specified in :obj:`values`. (default: :obj:`0.0`)
-    """
     def validate_key_value(self, key: Any, value: Any) -> None:
         if not isinstance(key, tuple):
             raise ValueError(f"Expected the edge type '{key}' to be a tuple "
@@ -207,113 +177,6 @@ class _NumEdges:
 
 @functional_transform('pad')
 class Pad(BaseTransform):
-    r"""Applies padding to enforce consistent tensor shapes
-    (functional name: :obj:`pad`).
-
-    This transform will pad node and edge features up to a maximum allowed size
-    in the node or edge feature dimension. By default :obj:`0.0` is used as the
-    padding value and can be configured by setting :obj:`node_pad_value` and
-    :obj:`edge_pad_value`.
-
-    In case of applying :class:`Pad` to a :class:`~torch_geometric.data.Data`
-    object, the :obj:`node_pad_value` value (or :obj:`edge_pad_value`) can be
-    either:
-
-    * an int, float or object of :class:`UniformPadding` class for cases when
-      all attributes are going to be padded with the same value;
-    * an object of :class:`AttrNamePadding` class for cases when padding is
-      going to differ based on attribute names.
-
-    In case of applying :class:`Pad` to a
-    :class:`~torch_geometric.data.HeteroData` object, the :obj:`node_pad_value`
-    value (or :obj:`edge_pad_value`) can be either:
-
-    * an int, float or object of :class:`UniformPadding` class for cases when
-      all attributes of all node (or edge) stores are going to be padded with
-      the same value;
-    * an object of :class:`AttrNamePadding` class for cases when padding is
-      going to differ based on attribute names (but not based on node or edge
-      types);
-    * an object of class :class:`NodeTypePadding` or :class:`EdgeTypePadding`
-      for cases when padding values are going to differ based on node or edge
-      types. Padding values can also differ based on attribute names for a
-      given node or edge type by using :class:`AttrNamePadding` objects as
-      values of its `values` argument.
-
-    Note that in order to allow for consistent padding across all graphs in a
-    dataset, below conditions must be met:
-
-    * if :obj:`max_num_nodes` is a single value, it must be greater than or
-      equal to the maximum number of nodes of any graph in the dataset;
-    * if :obj:`max_num_nodes` is a dictionary, value for every node type must
-      be greater than or equal to the maximum number of this type nodes of any
-      graph in the dataset.
-
-    Example below shows how to create a :class:`Pad` transform for an
-    :class:`~torch_geometric.data.HeteroData` object. The object is padded to
-    have :obj:`10` nodes of type :obj:`v0`, :obj:`20` nodes of type :obj:`v1`
-    and :obj:`30` nodes of type :obj:`v2`.
-    It is padded to have :obj:`80` edges of type :obj:`('v0', 'e0', 'v1')`.
-    All the attributes of the :obj:`v0` nodes are padded using a value of
-    :obj:`3.0`.
-    The :obj:`x` attribute of the :obj:`v1` node type is padded using a value
-    of :obj:`-1.0`, and the other attributes of this node type are padded using
-    a value of :obj:`0.5`.
-    All the attributes of node types other than :obj:`v0` and :obj:`v1` are
-    padded using a value of :obj:`1.0`.
-    All the attributes of the :obj:`('v0', 'e0', 'v1')` edge type are padded
-    using a value of :obj:`3.5`.
-    The :obj:`edge_attr` attributes of the :obj:`('v1', 'e0', 'v0')` edge type
-    are padded using a value of :obj:`-1.5`, and any other attributes of this
-    edge type are padded using a value of :obj:`5.5`.
-    All the attributes of edge types other than these two are padded using a
-    value of :obj:`1.5`.
-
-    .. code-block:: python
-
-        num_nodes = {'v0': 10, 'v1': 20, 'v2':30}
-        num_edges = {('v0', 'e0', 'v1'): 80}
-
-        node_padding = NodeTypePadding({
-            'v0': 3.0,
-            'v1': AttrNamePadding({'x': -1.0}, default=0.5),
-        }, default=1.0)
-
-        edge_padding = EdgeTypePadding({
-            ('v0', 'e0', 'v1'): 3.5,
-            ('v1', 'e0', 'v0'): AttrNamePadding({'edge_attr': -1.5},
-                                                default=5.5),
-        }, default=1.5)
-
-        transform = Pad(num_nodes, num_edges, node_padding, edge_padding)
-
-    Args:
-        max_num_nodes (int or dict): The number of nodes after padding.
-            In heterogeneous graphs, may also take in a dictionary denoting the
-            number of nodes for specific node types.
-        max_num_edges (int or dict, optional): The number of edges after
-            padding.
-            In heterogeneous graphs, may also take in a dictionary denoting the
-            number of edges for specific edge types. (default: :obj:`None`)
-        node_pad_value (int or float or Padding, optional): The fill value to
-            use for node features. (default: :obj:`0.0`)
-        edge_pad_value (int or float or Padding, optional): The fill value to
-            use for edge features. (default: :obj:`0.0`)
-            The :obj:`edge_index` tensor is padded with with the index of the
-            first padded node (which represents a set of self-loops on the
-            padded node). (default: :obj:`0.0`)
-        mask_pad_value (bool, optional): The fill value to use for
-            :obj:`train_mask`, :obj:`val_mask` and :obj:`test_mask` attributes
-            (default: :obj:`False`).
-        add_pad_mask (bool, optional): If set to :obj:`True`, will attach
-            node-level :obj:`pad_node_mask` and edge-level :obj:`pad_edge_mask`
-            attributes to the output which indicates which elements in the data
-            are real (represented by :obj:`True`) and which were added as a
-            result of padding (represented by :obj:`False`).
-            (default: :obj:`False`)
-        exclude_keys ([str], optional): Keys to be removed
-            from the input data object. (default: :obj:`None`)
-    """
     def __init__(
         self,
         max_num_nodes: Union[int, Dict[NodeType, int]],
@@ -348,11 +211,7 @@ class Pad(BaseTransform):
         self.exclude_keys = set(exclude_keys or [])
 
     def __should_pad_node_attr(self, attr_name: str) -> bool:
-        if attr_name in self.node_additional_attrs_pad:
-            return True
-        if self.exclude_keys is None or attr_name not in self.exclude_keys:
-            return True
-        return False
+        pass
 
     def __should_pad_edge_attr(self, attr_name: str) -> bool:
         if self.max_num_edges.value is None:

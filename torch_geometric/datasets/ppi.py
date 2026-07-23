@@ -17,49 +17,6 @@ from torch_geometric.utils import remove_self_loops
 
 
 class PPI(InMemoryDataset):
-    r"""The protein-protein interaction networks from the `"Predicting
-    Multicellular Function through Multi-layer Tissue Networks"
-    <https://arxiv.org/abs/1707.04638>`_ paper, containing positional gene
-    sets, motif gene sets and immunological signatures as features (50 in
-    total) and gene ontology sets as labels (121 in total).
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        split (str, optional): If :obj:`"train"`, loads the training dataset.
-            If :obj:`"val"`, loads the validation dataset.
-            If :obj:`"test"`, loads the test dataset. (default: :obj:`"train"`)
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        pre_filter (callable, optional): A function that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a boolean
-            value, indicating whether the data object should be included in the
-            final dataset. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-
-    **STATS:**
-
-    .. list-table::
-        :widths: 10 10 10 10 10
-        :header-rows: 1
-
-        * - #graphs
-          - #nodes
-          - #edges
-          - #features
-          - #tasks
-        * - 20
-          - ~2,245.3
-          - ~61,318.4
-          - 50
-          - 121
-    """
 
     url = 'https://data.dgl.ai/dataset/ppi.zip'
 
@@ -87,13 +44,11 @@ class PPI(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> List[str]:
-        splits = ['train', 'valid', 'test']
-        files = ['feats.npy', 'graph_id.npy', 'graph.json', 'labels.npy']
-        return [f'{split}_{name}' for split, name in product(splits, files)]
+        pass
 
     @property
     def processed_file_names(self) -> List[str]:
-        return ['train.pt', 'val.pt', 'test.pt']
+        pass
 
     def download(self) -> None:
         path = download_url(self.url, self.root)

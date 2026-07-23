@@ -9,31 +9,6 @@ from torch_geometric.utils import softmax
 
 
 class AttentionalAggregation(Aggregation):
-    r"""The soft attention aggregation layer from the `"Graph Matching Networks
-    for Learning the Similarity of Graph Structured Objects"
-    <https://arxiv.org/abs/1904.12787>`_ paper.
-
-    .. math::
-        \mathbf{r}_i = \sum_{n=1}^{N_i} \mathrm{softmax} \left(
-        h_{\mathrm{gate}} ( \mathbf{x}_n ) \right) \cdot
-        h_{\mathbf{\Theta}} ( \mathbf{x}_n ),
-
-    where :math:`h_{\mathrm{gate}} \colon \mathbb{R}^F \to
-    \mathbb{R}` and :math:`h_{\mathbf{\Theta}}` denote neural networks, *i.e.*
-    MLPs.
-
-    Args:
-        gate_nn (torch.nn.Module): A neural network :math:`h_{\mathrm{gate}}`
-            that computes attention scores by mapping node features :obj:`x` of
-            shape :obj:`[-1, in_channels]` to shape :obj:`[-1, 1]` (for
-            node-level gating) or :obj:`[1, out_channels]` (for feature-level
-            gating), *e.g.*, defined by :class:`torch.nn.Sequential`.
-        nn (torch.nn.Module, optional): A neural network
-            :math:`h_{\mathbf{\Theta}}` that maps node features :obj:`x` of
-            shape :obj:`[-1, in_channels]` to shape :obj:`[-1, out_channels]`
-            before combining them with the attention scores, *e.g.*, defined by
-            :class:`torch.nn.Sequential`. (default: :obj:`None`)
-    """
     def __init__(
         self,
         gate_nn: torch.nn.Module,

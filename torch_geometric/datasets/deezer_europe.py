@@ -7,26 +7,6 @@ from torch_geometric.data import Data, InMemoryDataset, download_url
 
 
 class DeezerEurope(InMemoryDataset):
-    r"""The Deezer Europe dataset introduced in the `"Characteristic Functions
-    on Graphs: Birds of a Feather, from Statistical Descriptors to Parametric
-    Models" <https://arxiv.org/abs/2005.07959>`_ paper.
-    Nodes represent European users of Deezer and edges are mutual follower
-    relationships.
-    It contains 28,281 nodes, 185,504 edges, 128 node features and 2 classes.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-    """
 
     url = 'https://graphmining.ai/datasets/ptg/deezer_europe.npz'
 
@@ -43,11 +23,11 @@ class DeezerEurope(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> str:
-        return 'deezer_europe.npz'
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def download(self) -> None:
         download_url(self.url, self.raw_dir)

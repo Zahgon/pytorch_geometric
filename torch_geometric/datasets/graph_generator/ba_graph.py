@@ -4,14 +4,6 @@ from torch_geometric.utils import barabasi_albert_graph
 
 
 class BAGraph(GraphGenerator):
-    r"""Generates random Barabasi-Albert (BA) graphs.
-    See :meth:`~torch_geometric.utils.barabasi_albert_graph` for more
-    information.
-
-    Args:
-        num_nodes (int): The number of nodes.
-        num_edges (int): The number of edges from a new node to existing nodes.
-    """
     def __init__(self, num_nodes: int, num_edges: int):
         super().__init__()
         self.num_nodes = num_nodes

@@ -8,15 +8,6 @@ from torch_geometric.utils import grid
 
 
 class GridGraph(GraphGenerator):
-    r"""Generates two-dimensional grid graphs.
-    See :meth:`~torch_geometric.utils.grid` for more information.
-
-    Args:
-        height (int): The height of the grid.
-        width (int): The width of the grid.
-        dtype (:obj:`torch.dtype`, optional): The desired data type of the
-            returned position tensor. (default: :obj:`None`)
-    """
     def __init__(
         self,
         height: int,

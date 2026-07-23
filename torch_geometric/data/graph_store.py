@@ -1,21 +1,3 @@
-r"""This class defines the abstraction for a backend-agnostic graph store. The
-goal of the graph store is to abstract away all graph edge index memory
-management so that varying implementations can allow for independent scale-out.
-
-This particular graph store abstraction makes a few key assumptions:
-* The edge indices we care about storing are represented either in COO, CSC,
-  or CSR format. They can be uniquely identified by an edge type (in PyG,
-  this is a tuple of the source node, relation type, and destination node).
-* Edge indices are static once they are stored in the graph. That is, we do not
-  support dynamic modification of edge indices once they have been inserted
-  into the graph store.
-
-It is the job of a graph store implementer class to handle these assumptions
-properly. For example, a simple in-memory graph store implementation may
-concatenate all metadata values with an edge index and use this as a unique
-index in a KV store. More complicated implementations may choose to partition
-the graph in interesting manners based on the provided metadata.
-"""
 import copy
 from abc import ABC, abstractmethod
 from collections import defaultdict
@@ -30,15 +12,6 @@ from torch_geometric.typing import EdgeTensorType, EdgeType, OptTensor
 from torch_geometric.utils import index_sort
 from torch_geometric.utils.mixin import CastMixin
 
-# The output of converting between two types in the GraphStore is a Tuple of
-# dictionaries: row, col, and perm. The dictionaries are keyed by the edge
-# type of the input edge attribute.
-#   * The row dictionary contains the row tensor for COO, the row pointer for
-#     CSR, or the row tensor for CSC
-#   * The col dictionary contains the col tensor for COO, the col tensor for
-#     CSR, or the col pointer for CSC
-#   * The perm dictionary contains the permutation of edges that was applied
-#     in converting between formats, if applicable.
 ConversionOutputType = Tuple[Dict[EdgeType, Tensor], Dict[EdgeType, Tensor],
                              Dict[EdgeType, OptTensor]]
 
@@ -51,31 +24,15 @@ class EdgeLayout(Enum):
 
 @dataclass
 class EdgeAttr(CastMixin):
-    r"""Defines the attributes of a :obj:`GraphStore` edge.
-    It holds all the parameters necessary to uniquely identify an edge from
-    the :class:`GraphStore`.
 
-    Note that the order of the attributes is important; this is the order in
-    which attributes must be provided for indexing calls. :class:`GraphStore`
-    implementations can define a different ordering by overriding
-    :meth:`EdgeAttr.__init__`.
-    """
-
-    # The type of the edge:
     edge_type: EdgeType
 
-    # The layout of the edge representation:
     layout: EdgeLayout
 
-    # Whether the edge index is sorted by destination node. Useful for
-    # avoiding sorting costs when performing neighbor sampling, and only
-    # meaningful for COO (CSC is sorted and CSR is not sorted by definition):
     is_sorted: bool = False
 
-    # The number of source and destination nodes in this edge type:
     size: Optional[Tuple[int, int]] = None
 
-    # NOTE we define __init__ to force-cast layout
     def __init__(
         self,
         edge_type: EdgeType,
@@ -99,18 +56,10 @@ class EdgeAttr(CastMixin):
 
 
 class GraphStore(ABC):
-    r"""An abstract base class to access edges from a remote graph store.
-
-    Args:
-        edge_attr_cls (EdgeAttr, optional): A user-defined
-            :class:`EdgeAttr` class to customize the required attributes and
-            their ordering to uniquely identify edges. (default: :obj:`None`)
-    """
     def __init__(self, edge_attr_cls: Optional[Any] = None):
         super().__init__()
         self.__dict__['_edge_attr_cls'] = edge_attr_cls or EdgeAttr
 
-    # Core (CRUD) #############################################################
 
     @abstractmethod
     def _put_edge_index(self, edge_index: EdgeTensorType,
@@ -160,22 +109,12 @@ class GraphStore(ABC):
         r"""To be implemented by :class:`GraphStore` subclasses."""
 
     def remove_edge_index(self, *args, **kwargs) -> bool:
-        r"""Synchronously deletes an :obj:`edge_index` tuple from the
-        :class:`GraphStore`.
-        Returns whether deletion was successful.
-
-        Args:
-            *args: Arguments passed to :class:`EdgeAttr`.
-            **kwargs: Keyword arguments passed to :class:`EdgeAttr`.
-        """
-        edge_attr = self._edge_attr_cls.cast(*args, **kwargs)
-        return self._remove_edge_index(edge_attr)
+        pass
 
     @abstractmethod
     def get_all_edge_attrs(self) -> List[EdgeAttr]:
         r"""Returns all registered edge attributes."""
 
-    # Layout Conversion #######################################################
 
     def coo(
         self,
@@ -225,7 +164,6 @@ class GraphStore(ABC):
         """
         return self._edges_to_layout(EdgeLayout.CSC, edge_types, store)
 
-    # Python built-ins ########################################################
 
     def __setitem__(self, key: EdgeAttr, value: EdgeTensorType):
         self.put_edge_index(value, key)
@@ -239,7 +177,6 @@ class GraphStore(ABC):
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}()'
 
-    # Helper methods ##########################################################
 
     def _edge_to_layout(
         self,
@@ -273,9 +210,6 @@ class GraphStore(ABC):
 
             if attr.layout != EdgeLayout.CSC:  # COO->CSC
                 if hasattr(self, 'meta') and self.meta.get('is_hetero', False):
-                    # Hotfix for `LocalGraphStore`, where in heterogeneous
-                    # graphs, edge indices for different edge types have
-                    # continuous indices not starting at 0.
                     num_cols = int(col.max()) + 1
                 elif attr.size is not None:
                     num_cols = attr.size[1]
@@ -313,12 +247,10 @@ class GraphStore(ABC):
         if not is_hetero:
             return self._edge_to_layout(edge_attrs[0], layout, store)
 
-        # Obtain all edge attributes, grouped by type:
         edge_type_attrs: Dict[EdgeType, List[EdgeAttr]] = defaultdict(list)
         for attr in self.get_all_edge_attrs():
             edge_type_attrs[attr.edge_type].append(attr)
 
-        # Check that requested edge types exist and filter:
         if edge_types is not None:
             for edge_type in edge_types:
                 if edge_type not in edge_type_attrs:
@@ -330,7 +262,6 @@ class GraphStore(ABC):
                 for key, attr in edge_type_attrs.items() if key in edge_types
             }
 
-        # Convert layout from its most favorable original layout:
         row_dict, col_dict, perm_dict = {}, {}, {}
         for edge_type, attrs in edge_type_attrs.items():
             layouts = [attr.layout for attr in attrs]

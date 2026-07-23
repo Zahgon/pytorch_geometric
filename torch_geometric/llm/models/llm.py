@@ -16,7 +16,6 @@ MAX_NEW_TOKENS = 128
 PAD_TOKEN_ID = 0
 PADDING_SIDE = 'left'
 
-# legacy constants - used for Llama 2 style prompting
 BOS = '<s>[INST]'
 EOS_USER = '[/INST]'
 EOS = '[/s]'
@@ -28,7 +27,6 @@ def get_llm_kwargs(required_memory: int, dtype=torch.dtype) -> Dict[str, Any]:
     gpu_memory: List[int] = []
     for i in range(torch.cuda.device_count()):
         gpu_memory.append(torch.cuda.mem_get_info(i)[0] // 1024**3)
-        # Use the minimum number of GPUs to fit the LLM on.
         if sum(gpu_memory) >= required_memory:
             break
 
@@ -49,24 +47,6 @@ def get_llm_kwargs(required_memory: int, dtype=torch.dtype) -> Dict[str, Any]:
 
 
 class LLM(torch.nn.Module):
-    r"""A wrapper around a Large Language Model (LLM) from HuggingFace.
-
-    Args:
-        model_name (str): The HuggingFace model name
-        num_params (float, optional): An integer representing how many params
-            the HuggingFace model has, in billions. This is used to
-            automatically allocate the correct number of GPUs needed (using a
-            rough heuristic), given the available GPU memory of your GPUs.  If
-            not specified, the number of parameters is determined using the
-            `huggingface_hub` module.
-        n_gpus (int, optional): Number of GPUs to use. Designed for advanced
-            users to select how many GPU's they want to set this manually and
-            override the automatic set up mechanism.
-        dtype (torch.dtype, optional): The data type to use for the LLM.
-            (default :obj: `torch.bfloat16`)
-        sys_prompt (str, optional): A system prompt to use for the LLM.
-            (default: :obj: `None`)
-    """
     def __init__(
         self,
         model_name: str,
@@ -87,8 +67,6 @@ class LLM(torch.nn.Module):
                 param_count = safetensors_metadata.parameter_count
                 num_params = float(list(param_count.values())[0] // 10**9)
 
-            # A rough heuristic on GPU memory requirements, e.g., we found that
-            # LLAMA3 (8B parameters) fits on a 96GB GPU.
             required_memory = 96.0 * num_params / 8.0
             kwargs = get_llm_kwargs(required_memory, dtype)
         else:
@@ -174,7 +152,6 @@ class LLM(torch.nn.Module):
 
         return tokenizer.decode(tokens)
 
-    # legacy function - used for Llama 2 style prompting
     def _encode_inputs(
         self,
         question: List[str],
@@ -208,7 +185,6 @@ class LLM(torch.nn.Module):
         label_input_ids = label_input_ids + eos_tokens.input_ids
         return label_input_ids
 
-    # legacy function - used for Llama 2 style prompting
     def _input_ids(
         self,
         i: int,
@@ -223,7 +199,6 @@ class LLM(torch.nn.Module):
         input_ids += eos_user_tokens.input_ids
         return input_ids
 
-    # legacy function - used for Llama 2 style prompting
     def _inputs_embeds(
         self,
         i: int,
@@ -283,7 +258,6 @@ class LLM(torch.nn.Module):
                                            device=self.device)
         return inputs_embeds, attention_mask, label_input_ids
 
-    # legacy function - used for Llama 2 style prompting
     def _get_embeds_old(
         self,
         question: List[str],

@@ -5,10 +5,6 @@ from torch_geometric.datasets.motif_generator import CustomMotif
 
 
 class GridMotif(CustomMotif):
-    r"""Generates the grid-structured motif from the
-    `"GNNExplainer: Generating Explanations for Graph Neural Networks"
-    <https://arxiv.org/abs/1903.03894>`__ paper.
-    """
     def __init__(self) -> None:
         edge_indices = [
             [0, 1],

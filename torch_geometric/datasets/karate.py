@@ -6,38 +6,6 @@ from torch_geometric.data import Data, InMemoryDataset
 
 
 class KarateClub(InMemoryDataset):
-    r"""Zachary's karate club network from the `"An Information Flow Model for
-    Conflict and Fission in Small Groups"
-    <https://www.journals.uchicago.edu/doi/abs/10.1086/jar.33.4.3629752>`_
-    paper, containing 34 nodes,
-    connected by 156 (undirected and unweighted) edges.
-    Every node is labeled by one of four classes obtained via modularity-based
-    clustering, following the `"Semi-supervised Classification with Graph
-    Convolutional Networks" <https://arxiv.org/abs/1609.02907>`_ paper.
-    Training is based on a single labeled example per class, *i.e.* a total
-    number of 4 labeled nodes.
-
-    Args:
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-
-    **STATS:**
-
-    .. list-table::
-        :widths: 10 10 10 10
-        :header-rows: 1
-
-        * - #nodes
-          - #edges
-          - #features
-          - #classes
-        * - 34
-          - 156
-          - 34
-          - 4
-    """
     def __init__(self, transform: Optional[Callable] = None):
         super().__init__(None, transform)
 
@@ -72,8 +40,6 @@ class KarateClub(InMemoryDataset):
 
         x = torch.eye(y.size(0), dtype=torch.float)
 
-        # Select a single training node for each community
-        # (we just use the first one).
         train_mask = torch.zeros(y.size(0), dtype=torch.bool)
         for i in range(int(y.max()) + 1):
             train_mask[(y == i).nonzero(as_tuple=False)[0]] = True

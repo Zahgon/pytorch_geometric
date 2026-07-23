@@ -5,22 +5,7 @@ _wandb_initialized: bool = False
 
 
 def init_wandb(name: str, **kwargs: Any) -> None:
-    if '--wandb' not in sys.argv:
-        return
-
-    from datetime import datetime
-
-    import wandb
-
-    wandb.init(
-        project=name,
-        entity='pytorch-geometric',
-        name=datetime.now().strftime('%Y-%m-%d_%H:%M'),
-        config=kwargs,
-    )
-
-    global _wandb_initialized
-    _wandb_initialized = True
+    pass
 
 
 def log(**kwargs: Any) -> None:

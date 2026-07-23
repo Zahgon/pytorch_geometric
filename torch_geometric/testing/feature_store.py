@@ -21,11 +21,9 @@ class MyFeatureStore(FeatureStore):
     def _put_tensor(self, tensor: FeatureTensorType, attr: TensorAttr) -> bool:
         index = attr.index
 
-        # None indices define the obvious index:
         if index is None:
             index = torch.arange(0, tensor.shape[0])
 
-        # Store the index:
         assert isinstance(index, Tensor)
         assert isinstance(tensor, Tensor)
         self.store[self.key(attr)] = (index, tensor)
@@ -40,11 +38,9 @@ class MyFeatureStore(FeatureStore):
 
         assert isinstance(tensor, Tensor)
 
-        # None indices return the whole tensor:
         if attr.index is None:
             return tensor
 
-        # Empty slices return the whole tensor:
         if (isinstance(attr.index, slice)
                 and attr.index == slice(None, None, None)):
             return tensor
@@ -58,7 +54,7 @@ class MyFeatureStore(FeatureStore):
         return tensor[idx]
 
     def _remove_tensor(self, attr: TensorAttr) -> bool:
-        return self.store.pop(self.key(attr), None) is not None
+        pass
 
     def _get_tensor_size(self, attr: TensorAttr) -> Optional[Tuple[int, ...]]:
         tensor = self._get_tensor(attr)

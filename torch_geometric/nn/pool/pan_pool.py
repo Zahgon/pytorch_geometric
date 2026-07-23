@@ -11,34 +11,6 @@ from torch_geometric.utils import scatter
 
 
 class PANPooling(torch.nn.Module):
-    r"""The path integral based pooling operator from the
-    `"Path Integral Based Convolution and Pooling for Graph Neural Networks"
-    <https://arxiv.org/abs/2006.16811>`_ paper.
-
-    PAN pooling performs top-:math:`k` pooling where global node importance is
-    measured based on node features and the MET matrix:
-
-    .. math::
-        {\rm score} = \beta_1 \mathbf{X} \cdot \mathbf{p} + \beta_2
-        {\rm deg}(\mathbf{M})
-
-    Args:
-        in_channels (int): Size of each input sample.
-        ratio (float): Graph pooling ratio, which is used to compute
-            :math:`k = \lceil \mathrm{ratio} \cdot N \rceil`.
-            This value is ignored if min_score is not None.
-            (default: :obj:`0.5`)
-        min_score (float, optional): Minimal node score :math:`\tilde{\alpha}`
-            which is used to compute indices of pooled nodes
-            :math:`\mathbf{i} = \mathbf{y}_i > \tilde{\alpha}`.
-            When this value is not :obj:`None`, the :obj:`ratio` argument is
-            ignored. (default: :obj:`None`)
-        multiplier (float, optional): Coefficient by which features gets
-            multiplied after pooling. This can be useful for large graphs and
-            when :obj:`min_score` is used. (default: :obj:`1.0`)
-        nonlinearity (str or callable, optional): The non-linearity to use.
-            (default: :obj:`"tanh"`)
-    """
     def __init__(
         self,
         in_channels: int,

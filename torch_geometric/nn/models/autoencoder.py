@@ -12,15 +12,6 @@ MAX_LOGSTD = 10
 
 
 class InnerProductDecoder(torch.nn.Module):
-    r"""The inner product decoder from the `"Variational Graph Auto-Encoders"
-    <https://arxiv.org/abs/1611.07308>`_ paper.
-
-    .. math::
-        \sigma(\mathbf{Z}\mathbf{Z}^{\top})
-
-    where :math:`\mathbf{Z} \in \mathbb{R}^{N \times d}` denotes the latent
-    space produced by the encoder.
-    """
     def forward(
         self,
         z: Tensor,
@@ -41,31 +32,10 @@ class InnerProductDecoder(torch.nn.Module):
         return torch.sigmoid(value) if sigmoid else value
 
     def forward_all(self, z: Tensor, sigmoid: bool = True) -> Tensor:
-        r"""Decodes the latent variables :obj:`z` into a probabilistic dense
-        adjacency matrix.
-
-        Args:
-            z (torch.Tensor): The latent space :math:`\mathbf{Z}`.
-            sigmoid (bool, optional): If set to :obj:`False`, does not apply
-                the logistic sigmoid function to the output.
-                (default: :obj:`True`)
-        """
-        adj = torch.matmul(z, z.t())
-        return torch.sigmoid(adj) if sigmoid else adj
+        pass
 
 
 class GAE(torch.nn.Module):
-    r"""The Graph Auto-Encoder model from the
-    `"Variational Graph Auto-Encoders" <https://arxiv.org/abs/1611.07308>`_
-    paper based on user-defined encoder and decoder models.
-
-    Args:
-        encoder (torch.nn.Module): The encoder module.
-        decoder (torch.nn.Module, optional): The decoder module. If set to
-            :obj:`None`, will default to the
-            :class:`torch_geometric.nn.models.InnerProductDecoder`.
-            (default: :obj:`None`)
-    """
     def __init__(self, encoder: Module, decoder: Optional[Module] = None):
         super().__init__()
         self.encoder = encoder
@@ -91,27 +61,7 @@ class GAE(torch.nn.Module):
 
     def recon_loss(self, z: Tensor, pos_edge_index: Tensor,
                    neg_edge_index: Optional[Tensor] = None) -> Tensor:
-        r"""Given latent variables :obj:`z`, computes the binary cross
-        entropy loss for positive edges :obj:`pos_edge_index` and negative
-        sampled edges.
-
-        Args:
-            z (torch.Tensor): The latent space :math:`\mathbf{Z}`.
-            pos_edge_index (torch.Tensor): The positive edges to train against.
-            neg_edge_index (torch.Tensor, optional): The negative edges to
-                train against. If not given, uses negative sampling to
-                calculate negative edges. (default: :obj:`None`)
-        """
-        pos_loss = -torch.log(
-            self.decoder(z, pos_edge_index, sigmoid=True) + EPS).mean()
-
-        if neg_edge_index is None:
-            neg_edge_index = negative_sampling(pos_edge_index, z.size(0))
-        neg_loss = -torch.log(1 -
-                              self.decoder(z, neg_edge_index, sigmoid=True) +
-                              EPS).mean()
-
-        return pos_loss + neg_loss
+        pass
 
     def test(self, z: Tensor, pos_edge_index: Tensor,
              neg_edge_index: Tensor) -> Tuple[Tensor, Tensor]:
@@ -143,18 +93,6 @@ class GAE(torch.nn.Module):
 
 
 class VGAE(GAE):
-    r"""The Variational Graph Auto-Encoder model from the
-    `"Variational Graph Auto-Encoders" <https://arxiv.org/abs/1611.07308>`_
-    paper.
-
-    Args:
-        encoder (torch.nn.Module): The encoder module to compute :math:`\mu`
-            and :math:`\log\sigma^2`.
-        decoder (torch.nn.Module, optional): The decoder module. If set to
-            :obj:`None`, will default to the
-            :class:`torch_geometric.nn.models.InnerProductDecoder`.
-            (default: :obj:`None`)
-    """
     def __init__(self, encoder: Module, decoder: Optional[Module] = None):
         super().__init__(encoder, decoder)
 
@@ -173,37 +111,10 @@ class VGAE(GAE):
 
     def kl_loss(self, mu: Optional[Tensor] = None,
                 logstd: Optional[Tensor] = None) -> Tensor:
-        r"""Computes the KL loss, either for the passed arguments :obj:`mu`
-        and :obj:`logstd`, or based on latent variables from last encoding.
-
-        Args:
-            mu (torch.Tensor, optional): The latent space for :math:`\mu`. If
-                set to :obj:`None`, uses the last computation of :math:`\mu`.
-                (default: :obj:`None`)
-            logstd (torch.Tensor, optional): The latent space for
-                :math:`\log\sigma`.  If set to :obj:`None`, uses the last
-                computation of :math:`\log\sigma^2`. (default: :obj:`None`)
-        """
-        mu = self.__mu__ if mu is None else mu
-        logstd = self.__logstd__ if logstd is None else logstd.clamp(
-            max=MAX_LOGSTD)
-        return -0.5 * torch.mean(
-            torch.sum(1 + 2 * logstd - mu**2 - logstd.exp()**2, dim=1))
+        pass
 
 
 class ARGA(GAE):
-    r"""The Adversarially Regularized Graph Auto-Encoder model from the
-    `"Adversarially Regularized Graph Autoencoder for Graph Embedding"
-    <https://arxiv.org/abs/1802.04407>`_ paper.
-
-    Args:
-        encoder (torch.nn.Module): The encoder module.
-        discriminator (torch.nn.Module): The discriminator module.
-        decoder (torch.nn.Module, optional): The decoder module. If set to
-            :obj:`None`, will default to the
-            :class:`torch_geometric.nn.models.InnerProductDecoder`.
-            (default: :obj:`None`)
-    """
     def __init__(
         self,
         encoder: Module,
@@ -219,42 +130,13 @@ class ARGA(GAE):
         reset(self.discriminator)
 
     def reg_loss(self, z: Tensor) -> Tensor:
-        r"""Computes the regularization loss of the encoder.
-
-        Args:
-            z (torch.Tensor): The latent space :math:`\mathbf{Z}`.
-        """
-        real = torch.sigmoid(self.discriminator(z))
-        real_loss = -torch.log(real + EPS).mean()
-        return real_loss
+        pass
 
     def discriminator_loss(self, z: Tensor) -> Tensor:
-        r"""Computes the loss of the discriminator.
-
-        Args:
-            z (torch.Tensor): The latent space :math:`\mathbf{Z}`.
-        """
-        real = torch.sigmoid(self.discriminator(torch.randn_like(z)))
-        fake = torch.sigmoid(self.discriminator(z.detach()))
-        real_loss = -torch.log(real + EPS).mean()
-        fake_loss = -torch.log(1 - fake + EPS).mean()
-        return real_loss + fake_loss
+        pass
 
 
 class ARGVA(ARGA):
-    r"""The Adversarially Regularized Variational Graph Auto-Encoder model from
-    the `"Adversarially Regularized Graph Autoencoder for Graph Embedding"
-    <https://arxiv.org/abs/1802.04407>`_ paper.
-
-    Args:
-        encoder (torch.nn.Module): The encoder module to compute :math:`\mu`
-            and :math:`\log\sigma^2`.
-        discriminator (torch.nn.Module): The discriminator module.
-        decoder (torch.nn.Module, optional): The decoder module. If set to
-            :obj:`None`, will default to the
-            :class:`torch_geometric.nn.models.InnerProductDecoder`.
-            (default: :obj:`None`)
-    """
     def __init__(
         self,
         encoder: Module,
@@ -284,4 +166,4 @@ class ARGVA(ARGA):
         mu: Optional[Tensor] = None,
         logstd: Optional[Tensor] = None,
     ) -> Tensor:
-        return self.VGAE.kl_loss(mu, logstd)
+        pass

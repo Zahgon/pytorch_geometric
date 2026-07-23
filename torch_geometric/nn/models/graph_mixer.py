@@ -9,20 +9,6 @@ from torch_geometric.utils import scatter, to_dense_batch
 
 
 class NodeEncoder(torch.nn.Module):
-    r"""The node encoder module from the `"Do We Really Need Complicated
-    Model Architectures for Temporal Networks?"
-    <https://openreview.net/forum?id=ayPPc0SyLv1>`_ paper.
-    :class:`NodeEncoder` captures the 1-hop temporal neighborhood information
-    via mean pooling.
-
-    .. math::
-        \mathbf{x}_v^{\prime}(t_0) = \mathbf{x}_v + \textrm{mean} \left\{
-        \mathbf{x}_w : w \in \mathcal{N}(v, t_0 - T, t_0) \right\}
-
-    Args:
-        time_window (int): The temporal window size :math:`T` to define the
-            1-hop temporal neighborhood.
-    """
     def __init__(self, time_window: int):
         super().__init__()
         self.time_window = time_window
@@ -58,14 +44,6 @@ class NodeEncoder(torch.nn.Module):
 
 
 class _MLPMixer(torch.nn.Module):
-    r"""The MLP-Mixer module.
-
-    Args:
-        num_tokens (int): Number of tokens/patches in each sample.
-        in_channels (int): Input channels.
-        out_channels (int): Output channels.
-        dropout (float, optional): Dropout probability. (default: :obj:`0.0`)
-    """
     def __init__(
         self,
         num_tokens: int,
@@ -108,7 +86,6 @@ class _MLPMixer(torch.nn.Module):
         Returns:
             Tensor of size :obj:`[*, out_channels]`.
         """
-        # Token mixing:
         h = self.token_norm(x).mT
         h = self.token_lin1(h)
         h = F.gelu(h)
@@ -117,7 +94,6 @@ class _MLPMixer(torch.nn.Module):
         h = F.dropout(h, p=self.dropout, training=self.training)
         h_token = h.mT + x
 
-        # Channel mixing:
         h = self.channel_norm(h_token)
         h = self.channel_lin1(h)
         h = F.gelu(h)
@@ -126,7 +102,6 @@ class _MLPMixer(torch.nn.Module):
         h = F.dropout(h, p=self.dropout, training=self.training)
         h_channel = h + h_token
 
-        # Head:
         out = self.head_norm(h_channel)
         out = out.mean(dim=1)
         out = self.head_lin(out)
@@ -166,29 +141,6 @@ def get_latest_k_edge_attr(
 
 
 class LinkEncoder(torch.nn.Module):
-    r"""The link encoder module from the `"Do We Really Need Complicated
-    Model Architectures for Temporal Networks?"
-    <https://openreview.net/forum?id=ayPPc0SyLv1>`_ paper.
-    It is composed of two components: (1) :class:`TemporalEncoding` maps each
-    edge timestamp to a :obj:`time_channels`-dimensional vector; (2) an MLP
-    that groups and maps the :math:`k`-latest encoded timestamps and edge
-    features to a :obj:`out_channels`-dimensional representation.
-
-    Args:
-        k (int): The number of most recent temporal links to use.
-        in_channels (int): The edge feature dimensionality.
-        hidden_channels (int): Size of each hidden sample.
-        time_channels (int): Size of encoded timestamp.
-        out_channels (int): Size of each output sample.
-        is_sorted (bool, optional): If set to :obj:`True`, assumes that
-            :obj:`edge_index` is sorted by column and the
-            rows are sorted according to :obj:`edge_time`
-            within individual neighborhoods. This avoids internal
-            re-sorting of the data and can improve runtime and memory
-            efficiency. (default: :obj:`False`)
-        dropout (float, optional): Dropout probability of the MLP layer.
-            (default: :obj:`0.0`)
-    """
     def __init__(
         self,
         k: int,

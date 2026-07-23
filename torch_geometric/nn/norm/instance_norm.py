@@ -10,36 +10,6 @@ from torch_geometric.utils import degree, scatter
 
 
 class InstanceNorm(_InstanceNorm):
-    r"""Applies instance normalization over each individual example in a batch
-    of node features as described in the `"Instance Normalization: The Missing
-    Ingredient for Fast Stylization" <https://arxiv.org/abs/1607.08022>`_
-    paper.
-
-    .. math::
-        \mathbf{x}^{\prime}_i = \frac{\mathbf{x} -
-        \textrm{E}[\mathbf{x}]}{\sqrt{\textrm{Var}[\mathbf{x}] + \epsilon}}
-        \odot \gamma + \beta
-
-    The mean and standard-deviation are calculated per-dimension separately for
-    each object in a mini-batch.
-
-    Args:
-        in_channels (int): Size of each input sample.
-        eps (float, optional): A value added to the denominator for numerical
-            stability. (default: :obj:`1e-5`)
-        momentum (float, optional): The value used for the running mean and
-            running variance computation. (default: :obj:`0.1`)
-        affine (bool, optional): If set to :obj:`True`, this module has
-            learnable affine parameters :math:`\gamma` and :math:`\beta`.
-            (default: :obj:`False`)
-        track_running_stats (bool, optional): If set to :obj:`True`, this
-            module tracks the running mean and variance, and when set to
-            :obj:`False`, this module does not track such statistics and always
-            uses instance statistics in both training and eval modes.
-            (default: :obj:`False`)
-        device (torch.device, optional): The device to use for the module.
-            (default: :obj:`None`)
-    """
     def __init__(
         self,
         in_channels: int,

@@ -9,47 +9,6 @@ from torch_geometric.utils import index_to_mask
 
 
 class DGraphFin(InMemoryDataset):
-    r"""The DGraphFin networks from the
-    `"DGraph: A Large-Scale Financial Dataset for Graph Anomaly Detection"
-    <https://arxiv.org/abs/2207.03579>`_ paper.
-    It is a directed, unweighted dynamic graph consisting of millions of
-    nodes and edges, representing a realistic user-to-user social network
-    in financial industry.
-    Node represents a Finvolution user, and an edge from one
-    user to another means that the user regards the other user
-    as the emergency contact person. Each edge is associated with a
-    timestamp ranging from 1 to 821 and a type of emergency contact
-    ranging from 0 to 11.
-
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-
-    **STATS:**
-
-    .. list-table::
-        :widths: 10 10 10 10
-        :header-rows: 1
-
-        * - #nodes
-          - #edges
-          - #features
-          - #classes
-        * - 3,700,550
-          - 4,300,999
-          - 17
-          - 2
-    """
 
     url = "https://dgraph.xinye.com"
 
@@ -71,15 +30,15 @@ class DGraphFin(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> str:
-        return 'DGraphFin.zip'
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     @property
     def num_classes(self) -> int:
-        return 2
+        pass
 
     def process(self) -> None:
         extract_zip(self.raw_paths[0], self.raw_dir, log=False)

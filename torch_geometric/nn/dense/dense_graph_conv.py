@@ -6,7 +6,6 @@ from torch.nn import Linear
 
 
 class DenseGraphConv(torch.nn.Module):
-    r"""See :class:`torch_geometric.nn.conv.GraphConv`."""
     def __init__(
         self,
         in_channels: int,

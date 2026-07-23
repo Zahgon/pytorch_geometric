@@ -37,14 +37,6 @@ def filter_adj(
 
 
 class FilterEdges(Connect):
-    r"""Filters out edges if their incident nodes are not in any cluster.
-
-    .. math::
-            \mathbf{A}^{\prime} &= \mathbf{A}_{\mathbf{i},\mathbf{i}},
-
-    where :math:`\mathbf{i}` denotes the set of retained nodes.
-    It is assumed that each cluster contains only one node.
-    """
     def forward(
         self,
         select_output: SelectOutput,

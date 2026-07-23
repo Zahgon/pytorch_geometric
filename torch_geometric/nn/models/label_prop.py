@@ -10,30 +10,6 @@ from torch_geometric.utils import one_hot, spmm
 
 
 class LabelPropagation(MessagePassing):
-    r"""The label propagation operator, firstly introduced in the
-    `"Learning from Labeled and Unlabeled Data with Label Propagation"
-    <http://mlg.eng.cam.ac.uk/zoubin/papers/CMU-CALD-02-107.pdf>`_ paper.
-
-    .. math::
-        \mathbf{Y}^{\prime} = \alpha \cdot \mathbf{D}^{-1/2} \mathbf{A}
-        \mathbf{D}^{-1/2} \mathbf{Y} + (1 - \alpha) \mathbf{Y},
-
-    where unlabeled data is inferred by labeled data via propagation.
-    This concrete implementation here is derived from the `"Combining Label
-    Propagation And Simple Models Out-performs Graph Neural Networks"
-    <https://arxiv.org/abs/2010.13993>`_ paper.
-
-    .. note::
-
-        For an example of using the :class:`LabelPropagation`, see
-        `examples/label_prop.py
-        <https://github.com/pyg-team/pytorch_geometric/blob/master/examples/
-        label_prop.py>`_.
-
-    Args:
-        num_layers (int): The number of propagations.
-        alpha (float): The :math:`\alpha` coefficient.
-    """
     def __init__(self, num_layers: int, alpha: float):
         super().__init__(aggr='add')
         self.num_layers = num_layers
@@ -80,7 +56,6 @@ class LabelPropagation(MessagePassing):
 
         res = (1 - self.alpha) * out
         for _ in range(self.num_layers):
-            # propagate_type: (x: Tensor, edge_weight: OptTensor)
             out = self.propagate(edge_index, x=out, edge_weight=edge_weight)
             out.mul_(self.alpha).add_(res)
             if post_step is not None:

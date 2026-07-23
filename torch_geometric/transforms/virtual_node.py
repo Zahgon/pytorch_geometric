@@ -10,20 +10,6 @@ from torch_geometric.transforms import BaseTransform
 
 @functional_transform('virtual_node')
 class VirtualNode(BaseTransform):
-    r"""Appends a virtual node to the given homogeneous graph that is connected
-    to all other nodes, as described in the `"Neural Message Passing for
-    Quantum Chemistry" <https://arxiv.org/abs/1704.01212>`_ paper
-    (functional name: :obj:`virtual_node`).
-    The virtual node serves as a global scratch space that each node both reads
-    from and writes to in every step of message passing.
-    This allows information to travel long distances during the propagation
-    phase.
-
-    Node and edge features of the virtual node are added as zero-filled input
-    features.
-    Furthermore, special edge types will be added both for in-coming and
-    out-going information to and from the virtual node.
-    """
     def forward(self, data: Data) -> Data:
         assert data.edge_index is not None
         row, col = data.edge_index

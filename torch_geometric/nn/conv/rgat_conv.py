@@ -14,160 +14,6 @@ from torch_geometric.utils.sparse import set_sparse_value
 
 
 class RGATConv(MessagePassing):
-    r"""The relational graph attentional operator from the `"Relational Graph
-    Attention Networks" <https://arxiv.org/abs/1904.05811>`_ paper.
-
-    Here, attention logits :math:`\mathbf{a}^{(r)}_{i,j}` are computed for each
-    relation type :math:`r` with the help of both query and key kernels, *i.e.*
-
-    .. math::
-        \mathbf{q}^{(r)}_i = \mathbf{W}_1^{(r)}\mathbf{x}_{i} \cdot
-        \mathbf{Q}^{(r)}
-        \quad \textrm{and} \quad
-        \mathbf{k}^{(r)}_i = \mathbf{W}_1^{(r)}\mathbf{x}_{i} \cdot
-        \mathbf{K}^{(r)}.
-
-    Two schemes have been proposed to compute attention logits
-    :math:`\mathbf{a}^{(r)}_{i,j}` for each relation type :math:`r`:
-
-    **Additive attention**
-
-    .. math::
-        \mathbf{a}^{(r)}_{i,j} = \mathrm{LeakyReLU}(\mathbf{q}^{(r)}_i +
-        \mathbf{k}^{(r)}_j)
-
-    or **multiplicative attention**
-
-    .. math::
-        \mathbf{a}^{(r)}_{i,j} = \mathbf{q}^{(r)}_i \cdot \mathbf{k}^{(r)}_j.
-
-    If the graph has multi-dimensional edge features
-    :math:`\mathbf{e}^{(r)}_{i,j}`, the attention logits
-    :math:`\mathbf{a}^{(r)}_{i,j}` for each relation type :math:`r` are
-    computed as
-
-    .. math::
-        \mathbf{a}^{(r)}_{i,j} = \mathrm{LeakyReLU}(\mathbf{q}^{(r)}_i +
-        \mathbf{k}^{(r)}_j + \mathbf{W}_2^{(r)}\mathbf{e}^{(r)}_{i,j})
-
-    or
-
-    .. math::
-        \mathbf{a}^{(r)}_{i,j} = \mathbf{q}^{(r)}_i \cdot \mathbf{k}^{(r)}_j
-        \cdot \mathbf{W}_2^{(r)} \mathbf{e}^{(r)}_{i,j},
-
-    respectively.
-    The attention coefficients :math:`\alpha^{(r)}_{i,j}` for each relation
-    type :math:`r` are then obtained via two different attention mechanisms:
-    The **within-relation** attention mechanism
-
-    .. math::
-        \alpha^{(r)}_{i,j} =
-        \frac{\exp(\mathbf{a}^{(r)}_{i,j})}
-        {\sum_{k \in \mathcal{N}_r(i)} \exp(\mathbf{a}^{(r)}_{i,k})}
-
-    or the **across-relation** attention mechanism
-
-    .. math::
-        \alpha^{(r)}_{i,j} =
-        \frac{\exp(\mathbf{a}^{(r)}_{i,j})}
-        {\sum_{r^{\prime} \in \mathcal{R}}
-        \sum_{k \in \mathcal{N}_{r^{\prime}}(i)}
-        \exp(\mathbf{a}^{(r^{\prime})}_{i,k})}
-
-    where :math:`\mathcal{R}` denotes the set of relations, *i.e.* edge types.
-    Edge type needs to be a one-dimensional :obj:`torch.long` tensor which
-    stores a relation identifier :math:`\in \{ 0, \ldots, |\mathcal{R}| - 1\}`
-    for each edge.
-
-    To enhance the discriminative power of attention-based GNNs, this layer
-    further implements four different cardinality preservation options as
-    proposed in the `"Improving Attention Mechanism in Graph Neural Networks
-    via Cardinality Preservation" <https://arxiv.org/abs/1907.02204>`_ paper:
-
-    .. math::
-        \text{additive:}~~~\mathbf{x}^{{\prime}(r)}_i &=
-        \sum_{j \in \mathcal{N}_r(i)}
-        \alpha^{(r)}_{i,j} \mathbf{x}^{(r)}_j + \mathcal{W} \odot
-        \sum_{j \in \mathcal{N}_r(i)} \mathbf{x}^{(r)}_j
-
-        \text{scaled:}~~~\mathbf{x}^{{\prime}(r)}_i &=
-        \psi(|\mathcal{N}_r(i)|) \odot
-        \sum_{j \in \mathcal{N}_r(i)} \alpha^{(r)}_{i,j} \mathbf{x}^{(r)}_j
-
-        \text{f-additive:}~~~\mathbf{x}^{{\prime}(r)}_i &=
-        \sum_{j \in \mathcal{N}_r(i)}
-        (\alpha^{(r)}_{i,j} + 1) \cdot \mathbf{x}^{(r)}_j
-
-        \text{f-scaled:}~~~\mathbf{x}^{{\prime}(r)}_i &=
-        |\mathcal{N}_r(i)| \odot \sum_{j \in \mathcal{N}_r(i)}
-        \alpha^{(r)}_{i,j} \mathbf{x}^{(r)}_j
-
-    * If :obj:`attention_mode="additive-self-attention"` and
-      :obj:`concat=True`, the layer outputs :obj:`heads * out_channels`
-      features for each node.
-
-    * If :obj:`attention_mode="multiplicative-self-attention"` and
-      :obj:`concat=True`, the layer outputs :obj:`heads * dim * out_channels`
-      features for each node.
-
-    * If :obj:`attention_mode="additive-self-attention"` and
-      :obj:`concat=False`, the layer outputs :obj:`out_channels` features for
-      each node.
-
-    * If :obj:`attention_mode="multiplicative-self-attention"` and
-      :obj:`concat=False`, the layer outputs :obj:`dim * out_channels` features
-      for each node.
-
-    Please make sure to set the :obj:`in_channels` argument of the next
-    layer accordingly if more than one instance of this layer is used.
-
-    .. note::
-
-        For an example of using :class:`RGATConv`, see
-        `examples/rgat.py <https://github.com/pyg-team/pytorch_geometric/blob
-        /master/examples/rgat.py>`_.
-
-    Args:
-        in_channels (int): Size of each input sample.
-        out_channels (int): Size of each output sample.
-        num_relations (int): Number of relations.
-        num_bases (int, optional): If set, this layer will use the
-            basis-decomposition regularization scheme where :obj:`num_bases`
-            denotes the number of bases to use. (default: :obj:`None`)
-        num_blocks (int, optional): If set, this layer will use the
-            block-diagonal-decomposition regularization scheme where
-            :obj:`num_blocks` denotes the number of blocks to use.
-            (default: :obj:`None`)
-        mod (str, optional): The cardinality preservation option to use.
-            (:obj:`"additive"`, :obj:`"scaled"`, :obj:`"f-additive"`,
-            :obj:`"f-scaled"`, :obj:`None`). (default: :obj:`None`)
-        attention_mechanism (str, optional): The attention mechanism to use
-            (:obj:`"within-relation"`, :obj:`"across-relation"`).
-            (default: :obj:`"across-relation"`)
-        attention_mode (str, optional): The mode to calculate attention logits.
-            (:obj:`"additive-self-attention"`,
-            :obj:`"multiplicative-self-attention"`).
-            (default: :obj:`"additive-self-attention"`)
-        heads (int, optional): Number of multi-head-attentions.
-            (default: :obj:`1`)
-        dim (int): Number of dimensions for query and key kernels.
-            (default: :obj:`1`)
-        concat (bool, optional): If set to :obj:`False`, the multi-head
-            attentions are averaged instead of concatenated.
-            (default: :obj:`True`)
-        negative_slope (float, optional): LeakyReLU angle of the negative
-            slope. (default: :obj:`0.2`)
-        dropout (float, optional): Dropout probability of the normalized
-            attention coefficients which exposes each node to a stochastically
-            sampled neighborhood during training. (default: :obj:`0`)
-        edge_dim (int, optional): Edge feature dimensionality (in case there
-            are any). (default: :obj:`None`)
-        bias (bool, optional): If set to :obj:`False`, the layer will not
-            learn an additive bias. (default: :obj:`True`)
-        **kwargs (optional): Additional arguments of
-            :class:`torch_geometric.nn.conv.MessagePassing`.
-    """
 
     _alpha: OptTensor
 
@@ -237,8 +83,6 @@ class RGATConv(MessagePassing):
             raise ValueError('Can not apply both basis-decomposition and '
                              'block-diagonal-decomposition at the same time.')
 
-        # The learnable parameters to compute both attention logits and
-        # attention coefficients:
         self.q = Parameter(
             torch.empty(self.heads * self.out_channels, self.heads * self.dim))
         self.k = Parameter(
@@ -348,8 +192,6 @@ class RGATConv(MessagePassing):
                 weights for each edge.
                 (default: :obj:`None`)
         """
-        # propagate_type: (x: Tensor, edge_type: OptTensor,
-        #                  edge_attr: OptTensor)
         out = self.propagate(edge_index=edge_index, edge_type=edge_type, x=x,
                              size=size, edge_attr=edge_attr)
 
@@ -360,7 +202,6 @@ class RGATConv(MessagePassing):
         if isinstance(return_attention_weights, bool):
             if isinstance(edge_index, Tensor):
                 if is_torch_sparse_tensor(edge_index):
-                    # TODO TorchScript requires to return a tuple
                     adj = set_sparse_value(edge_index, alpha)
                     return out, (adj, alpha)
                 else:

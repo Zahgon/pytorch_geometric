@@ -1,4 +1,3 @@
-# Code adapted from the G-Retriever paper: https://arxiv.org/abs/2402.07630
 import gc
 import os
 from itertools import chain
@@ -22,29 +21,6 @@ from torch_geometric.llm.utils.backend_utils import (
 
 
 class KGQABaseDataset(InMemoryDataset):
-    r"""Base class for the 2 KGQA datasets used in `"Reasoning on Graphs:
-    Faithful and Interpretable Large Language Model Reasoning"
-    <https://arxiv.org/pdf/2310.01061>`_ paper.
-
-    Args:
-        dataset_name (str): HuggingFace `dataset` name.
-        root (str): Root directory where the dataset should be saved.
-        split (str, optional): If :obj:`"train"`, loads the training dataset.
-            If :obj:`"val"`, loads the validation dataset.
-            If :obj:`"test"`, loads the test dataset. (default: :obj:`"train"`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-        verbose (bool, optional): Whether to print output. Defaults to False.
-        use_pcst (bool, optional): Whether to preprocess the dataset's graph
-            with PCST or return the full graphs. (default: :obj:`True`)
-        load_dataset_kwargs (dict, optional):
-            Keyword arguments for the `datasets.load_dataset` function.
-            (default: :obj:`{}`)
-        retrieval_kwargs (dict, optional):
-            Keyword arguments for the
-            `get_features_for_triplets_groups` function.
-            (default: :obj:`{}`)
-    """
     def __init__(
         self,
         dataset_name: str,
@@ -68,7 +44,6 @@ class KGQABaseDataset(InMemoryDataset):
         """
         self.retrieval_kwargs = retrieval_kwargs or {}
 
-        # Caching custom subsets of the dataset results in unsupported behavior
         if 'split' in self.load_dataset_kwargs:
             print("WARNING: Caching custom subsets of the dataset \
                 results in unsupported behavior.\
@@ -94,21 +69,19 @@ class KGQABaseDataset(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> List[str]:
-        return ["raw.pt"]
+        pass
 
     @property
     def processed_file_names(self) -> List[str]:
-        return ["train_data.pt", "val_data.pt", "test_data.pt"]
+        pass
 
     def download(self) -> None:
         import datasets
 
-        # HF Load Dataset by dataset name if no path is specified
         self.load_dataset_kwargs['path'] = self.load_dataset_kwargs.get(
             'path', self.dataset_name)
         raw_dataset = datasets.load_dataset(**self.load_dataset_kwargs)
 
-        # Assert that the dataset contains the required splits
         assert all(split in raw_dataset for split in self.required_splits), \
             f"Dataset '{self.dataset_name}' is missing required splits: \
             {self.required_splits}"
@@ -116,17 +89,13 @@ class KGQABaseDataset(InMemoryDataset):
         raw_dataset.save_to_disk(self.raw_paths[0])
 
     def _get_trips(self) -> Iterator[TripletLike]:
-        # Iterate over each element's graph in each split of the dataset
-        # Using chain to lazily iterate without storing all trips in memory
         split_iterators = []
 
         for split in self.required_splits:
-            # Create an iterator for each element's graph in the current split
             split_graphs = (element['graph']
                             for element in self.raw_dataset[split])
             split_iterators.append(chain.from_iterable(split_graphs))
 
-        # Chain all split iterators together
         return chain.from_iterable(split_iterators)
 
     def _build_graph(self) -> None:
@@ -135,13 +104,11 @@ class KGQABaseDataset(InMemoryDataset):
         self.indexer: LargeGraphIndexer = LargeGraphIndexer.from_triplets(
             trips, pre_transform=preprocess_triplet)
 
-        # Nodes:
         print("\tEncoding nodes...")
         nodes = self.indexer.get_unique_node_features()
         x = self.model.encode(nodes, batch_size=256, output_device='cpu')
         self.indexer.add_node_feature(new_feature_name="x", new_feature_vals=x)
 
-        # Edges:
         print("\tEncoding edges...")
         edges = self.indexer.get_unique_edge_features(
             feature_name=EDGE_RELATION)
@@ -254,28 +221,6 @@ class KGQABaseDataset(InMemoryDataset):
 
 
 class WebQSPDataset(KGQABaseDataset):
-    r"""The WebQuestionsSP dataset of the `"The Value of Semantic Parse
-    Labeling for Knowledge Base Question Answering"
-    <https://aclanthology.org/P16-2033/>`_ paper.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        split (str, optional): If :obj:`"train"`, loads the training dataset.
-            If :obj:`"val"`, loads the validation dataset.
-            If :obj:`"test"`, loads the test dataset. (default: :obj:`"train"`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-        verbose (bool, optional): Whether to print output. Defaults to False.
-        use_pcst (bool, optional): Whether to preprocess the dataset's graph
-            with PCST or return the full graphs. (default: :obj:`True`)
-        load_dataset_kwargs (dict, optional):
-            Keyword arguments for the `datasets.load_dataset` function.
-            (default: :obj:`{}`)
-        retrieval_kwargs (dict, optional):
-            Keyword arguments for the
-            `get_features_for_triplets_groups` function.
-            (default: :obj:`{}`)
-    """
     def __init__(
         self,
         root: str,
@@ -288,7 +233,6 @@ class WebQSPDataset(KGQABaseDataset):
     ) -> None:
         load_dataset_kwargs = load_dataset_kwargs or {}
         retrieval_kwargs = retrieval_kwargs or {}
-        # Modify these paramters if running into memory/compute issues
         default_retrieval_kwargs = {
             'max_batch_size': 250,  # Lower batch size to reduce memory usage
             'num_workers':
@@ -302,28 +246,6 @@ class WebQSPDataset(KGQABaseDataset):
 
 
 class CWQDataset(KGQABaseDataset):
-    r"""The ComplexWebQuestions (CWQ) dataset of the `"The Web as a
-    Knowledge-base forAnswering Complex Questions"
-    <https://arxiv.org/pdf/1803.06643>`_ paper.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        split (str, optional): If :obj:`"train"`, loads the training dataset.
-            If :obj:`"val"`, loads the validation dataset.
-            If :obj:`"test"`, loads the test dataset. (default: :obj:`"train"`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-        verbose (bool, optional): Whether to print output. Defaults to False.
-        use_pcst (bool, optional): Whether to preprocess the dataset's graph
-            with PCST or return the full graphs. (default: :obj:`True`)
-        load_dataset_kwargs (dict, optional):
-            Keyword arguments for the `datasets.load_dataset` function.
-            (default: :obj:`{}`)
-        retrieval_kwargs (dict, optional):
-            Keyword arguments for the
-            `get_features_for_triplets_groups` function.
-            (default: :obj:`{}`)
-    """
     def __init__(
         self,
         root: str,

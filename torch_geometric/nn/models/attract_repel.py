@@ -3,27 +3,6 @@ import torch.nn.functional as F
 
 
 class ARLinkPredictor(torch.nn.Module):
-    r"""Link predictor using Attract-Repel embeddings from the paper
-    `"Pseudo-Euclidean Attract-Repel Embeddings for Undirected Graphs"
-    <https://arxiv.org/abs/2106.09671>`_.
-
-    This model splits node embeddings into: attract and
-    repel.
-    The edge prediction score is computed as the dot product of attract
-    components minus the dot product of repel components.
-
-    Args:
-        in_channels (int): Size of each input sample.
-        hidden_channels (int): Size of hidden embeddings.
-        out_channels (int, optional): Size of output embeddings.
-            If set to :obj:`None`, will default to :obj:`hidden_channels`.
-            (default: :obj:`None`)
-        num_layers (int): Number of message passing layers.
-            (default: :obj:`2`)
-        dropout (float): Dropout probability. (default: :obj:`0.0`)
-        attract_ratio (float): Ratio to use for attract component.
-            Must be between 0 and 1. (default: :obj:`0.5`)
-    """
     def __init__(self, in_channels, hidden_channels, out_channels=None,
                  num_layers=2, dropout=0.0, attract_ratio=0.5):
         super().__init__()
@@ -45,14 +24,12 @@ class ARLinkPredictor(torch.nn.Module):
         self.attract_dim = int(out_channels * attract_ratio)
         self.repel_dim = out_channels - self.attract_dim
 
-        # Create model layers
         self.lins = torch.nn.ModuleList()
         self.lins.append(torch.nn.Linear(in_channels, hidden_channels))
 
         for _ in range(num_layers - 2):
             self.lins.append(torch.nn.Linear(hidden_channels, hidden_channels))
 
-        # Final layer splits into attract and repel components
         self.lin_attract = torch.nn.Linear(hidden_channels, self.attract_dim)
         self.lin_repel = torch.nn.Linear(hidden_channels, self.repel_dim)
 
@@ -80,7 +57,6 @@ class ARLinkPredictor(torch.nn.Module):
             x = F.relu(x)
             x = F.dropout(x, p=self.dropout, training=self.training)
 
-        # Split into attract and repel components
         attract_x = self.lin_attract(x)
         repel_x = self.lin_repel(x)
 
@@ -100,14 +76,12 @@ class ARLinkPredictor(torch.nn.Module):
         Returns:
             torch.Tensor: Edge prediction scores.
         """
-        # Get node embeddings for edges
         row, col = edge_index
         attract_z_row = attract_z[row]
         attract_z_col = attract_z[col]
         repel_z_row = repel_z[row]
         repel_z_col = repel_z[col]
 
-        # Compute attract-repel scores
         attract_score = torch.sum(attract_z_row * attract_z_col, dim=1)
         repel_score = torch.sum(repel_z_row * repel_z_col, dim=1)
 
@@ -123,26 +97,9 @@ class ARLinkPredictor(torch.nn.Module):
         Returns:
             torch.Tensor: Predicted edge scores.
         """
-        # Encode nodes into attract-repel embeddings
         attract_z, repel_z = self.encode(x)
 
-        # Decode target edges
         return torch.sigmoid(self.decode(attract_z, repel_z, edge_index))
 
     def calculate_r_fraction(self, attract_z, repel_z):
-        """Calculate the R-fraction (proportion of energy in repel space).
-
-        Args:
-            attract_z (torch.Tensor): Attract embeddings.
-            repel_z (torch.Tensor): Repel embeddings.
-
-        Returns:
-            float: R-fraction value.
-        """
-        attract_norm_squared = torch.sum(attract_z**2)
-        repel_norm_squared = torch.sum(repel_z**2)
-
-        r_fraction = repel_norm_squared / (attract_norm_squared +
-                                           repel_norm_squared + 1e-10)
-
-        return r_fraction.item()
+        pass

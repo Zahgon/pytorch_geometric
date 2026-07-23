@@ -70,99 +70,12 @@ def profileit(device: str):  # pragma: no cover
         loss, stats = train(model, x, edge_index, y)
     """
     def decorator(func):
-        def wrapper(
-                *args, **kwargs
-        ) -> Union[Tuple[Any, GPUStats], Tuple[Any, CUDAStats]]:
-            model = args[0]
-            if not isinstance(model, torch.nn.Module):
-                raise AttributeError(
-                    'First argument for profiling needs to be torch.nn.Module')
-            if device not in ['cuda', 'xpu']:
-                raise AttributeError(
-                    "The profiling decorator supports only CUDA and "
-                    "XPU devices")
-
-            device_id = None
-            for arg in list(args) + list(kwargs.values()):
-                if isinstance(arg, torch.Tensor):
-                    device_id = arg.get_device()
-                    break
-            if device_id is None:
-                raise AttributeError(
-                    "Could not infer GPU device from the args in the "
-                    "function being profiled")
-            if device_id == -1:
-                raise RuntimeError(
-                    "The profiling decorator does not support profiling "
-                    "on non GPU devices")
-
-            is_cuda = device == 'cuda'
-            torch_gpu = torch.cuda if is_cuda else torch.xpu
-
-            # `pytorch_memlab` supports only CUDA devices
-            if is_cuda:
-                from pytorch_memlab import LineProfiler
-
-                # Init `pytorch_memlab` for analyzing the model forward pass:
-                line_profiler = LineProfiler(target_gpu=device_id)
-                line_profiler.enable()
-                line_profiler.add_function(args[0].forward)
-
-            start = torch_gpu.Event(enable_timing=True)
-            end = torch_gpu.Event(enable_timing=True)
-            start.record()
-
-            out = func(*args, **kwargs)
-
-            end.record()
-            torch_gpu.synchronize()
-            time = start.elapsed_time(end) / 1000
-
-            if is_cuda:
-                # Get the global memory statistics collected
-                # by `pytorch_memlab`:
-                memlab = read_from_memlab(line_profiler)
-                max_allocated, max_reserved, max_active = memlab
-                line_profiler.disable()
-
-                # Get additional information from `nvidia-smi`:
-                free_cuda, used_cuda = get_gpu_memory_from_nvidia_smi(
-                    device=device_id)
-
-                stats = CUDAStats(time, max_allocated, max_reserved,
-                                  max_active, free_cuda, used_cuda)
-                return out, stats
-            else:
-                stats = GPUStats(time, *get_gpu_memory_from_ipex(device_id))
-                return out, stats
-
-        return wrapper
+        pass
 
     return decorator
 
 
 class timeit(ContextDecorator):
-    r"""A context decorator to facilitate timing a function, *e.g.*, obtaining
-    the runtime of a specific model on a specific dataset.
-
-    .. code-block:: python
-
-        @torch.no_grad()
-        def test(model, x, edge_index):
-            return model(x, edge_index)
-
-        with timeit() as t:
-            z = test(model, x, edge_index)
-        time = t.duration
-
-    Args:
-        log (bool, optional): If set to :obj:`False`, will not log any runtime
-            to the console. (default: :obj:`True`)
-        avg_time_divisor (int, optional): If set to a value greater than
-            :obj:`1`, will divide the total time by this value. Useful for
-            calculating the average of runtimes within a for-loop.
-            (default: :obj:`0`)
-    """
     def __init__(self, log: bool = True, avg_time_divisor: int = 0):
         self.log = log
         self.avg_time_divisor = avg_time_divisor
@@ -205,7 +118,6 @@ def get_stats_summary(
             :obj:`GPUStats` or :obj:`CUDAStats` objects, as returned by
             :meth:`~torch_geometric.profile.profileit`.
     """
-    # calculate common statistics
     kwargs = dict(
         time_mean=float(torch.tensor([s.time for s in stats_list]).mean()),
         time_std=float(torch.tensor([s.time for s in stats_list]).std()),
@@ -225,13 +137,11 @@ def get_stats_summary(
         return GPUStatsSummary(**kwargs)
 
 
-###############################################################################
 
 
 def read_from_memlab(line_profiler: Any) -> List[float]:  # pragma: no cover
     from pytorch_memlab.line_profiler.line_records import LineRecords
 
-    # See: https://pytorch.org/docs/stable/cuda.html#torch.cuda.memory_stats
 
     track_stats = [  # Different statistic can be collected as needed.
         'allocated_bytes.all.peak',
@@ -246,19 +156,11 @@ def read_from_memlab(line_profiler: Any) -> List[float]:  # pragma: no cover
 
 
 def trace_handler(p):
-    print_time_total(p)
-    profile_dir = str(pathlib.Path.cwd()) + '/'
-    timeline_file = profile_dir + 'timeline' + '.json'
-    p.export_chrome_trace(timeline_file)
+    pass
 
 
 def print_time_total(p):
-    if torch.cuda.is_available():
-        profile_sort = 'self_cuda_time_total'
-    else:
-        profile_sort = 'self_cpu_time_total'
-    output = p.key_averages().table(sort_by=profile_sort)
-    print(output)
+    pass
 
 
 def rename_profile_file(*args):
@@ -314,7 +216,6 @@ def xpu_profile(export_chrome_trace=True):
 
 
 def format_prof_time(time):
-    # Profile time is in micro seconds, so format it appropriately:
     return round(time / 1e6, 3)
 
 

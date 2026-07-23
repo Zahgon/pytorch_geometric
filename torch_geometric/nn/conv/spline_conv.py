@@ -19,46 +19,6 @@ else:
 
 
 class SplineConv(MessagePassing):
-    r"""The spline-based convolutional operator from the `"SplineCNN: Fast
-    Geometric Deep Learning with Continuous B-Spline Kernels"
-    <https://arxiv.org/abs/1711.08920>`_ paper.
-
-    .. math::
-        \mathbf{x}^{\prime}_i = \frac{1}{|\mathcal{N}(i)|} \sum_{j \in
-        \mathcal{N}(i)} \mathbf{x}_j \cdot
-        h_{\mathbf{\Theta}}(\mathbf{e}_{i,j}),
-
-    where :math:`h_{\mathbf{\Theta}}` denotes a kernel function defined
-    over the weighted B-Spline tensor product basis.
-
-    .. note::
-
-        Pseudo-coordinates must lay in the fixed interval :math:`[0, 1]` for
-        this method to work as intended.
-
-    Args:
-        in_channels (int or tuple): Size of each input sample, or :obj:`-1` to
-            derive the size from the first input(s) to the forward method.
-            A tuple corresponds to the sizes of source and target
-            dimensionalities.
-        out_channels (int): Size of each output sample.
-        dim (int): Pseudo-coordinate dimensionality.
-        kernel_size (int or [int]): Size of the convolving kernel.
-        is_open_spline (bool or [bool], optional): If set to :obj:`False`, the
-            operator will use a closed B-spline basis in this dimension.
-            (default :obj:`True`)
-        degree (int, optional): B-spline basis degrees. (default: :obj:`1`)
-        aggr (str, optional): The aggregation scheme to use
-            (:obj:`"add"`, :obj:`"mean"`, :obj:`"max"`).
-            (default: :obj:`"mean"`)
-        root_weight (bool, optional): If set to :obj:`False`, the layer will
-            not add transformed root node features to the output.
-            (default: :obj:`True`)
-        bias (bool, optional): If set to :obj:`False`, the layer will not learn
-            an additive bias. (default: :obj:`True`)
-        **kwargs (optional): Additional arguments of
-            :class:`torch_geometric.nn.conv.MessagePassing`.
-    """
     def __init__(
         self,
         in_channels: Union[int, Tuple[int, int]],
@@ -135,7 +95,6 @@ class SplineConv(MessagePassing):
                 '`SplineConv`. If possible, please move your data to GPU.',
                 stacklevel=2)
 
-        # propagate_type: (x: OptPairTensor, edge_attr: OptTensor)
         out = self.propagate(edge_index, x=x, edge_attr=edge_attr, size=size)
 
         x_r = x[1]
@@ -154,14 +113,7 @@ class SplineConv(MessagePassing):
 
     @torch.no_grad()
     def initialize_parameters(self, module, input):
-        if isinstance(self.weight, torch.nn.parameter.UninitializedParameter):
-            x = input[0][0] if isinstance(input, tuple) else input[0]
-            in_channels = x.size(-1)
-            self.weight.materialize((self.K, in_channels, self.out_channels))
-            size = self.weight.size(0) * self.weight.size(1)
-            uniform(size, self.weight)
-        module._hook.remove()
-        delattr(module, '_hook')
+        pass
 
     def __repr__(self) -> str:
         return (f'{self.__class__.__name__}({self.in_channels}, '

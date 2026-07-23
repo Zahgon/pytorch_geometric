@@ -9,38 +9,6 @@ from torch_geometric.data import Data, InMemoryDataset, download_google_url
 
 
 class Flickr(InMemoryDataset):
-    r"""The Flickr dataset from the `"GraphSAINT: Graph Sampling Based
-    Inductive Learning Method" <https://arxiv.org/abs/1907.04931>`_ paper,
-    containing descriptions and common properties of images.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-
-    **STATS:**
-
-    .. list-table::
-        :widths: 10 10 10 10
-        :header-rows: 1
-
-        * - #nodes
-          - #edges
-          - #features
-          - #classes
-        * - 89,250
-          - 899,756
-          - 500
-          - 7
-    """
     adj_full_id = '1crmsTbd1-2sEXsGwa2IKnIB7Zd3TmUsy'
     feats_id = '1join-XdvX3anJU_MLVtick7MgeAQiWIZ'
     class_map_id = '1uxIkbtg5drHTsKt-PAsZZ4_yJmgFmle9'
@@ -59,11 +27,11 @@ class Flickr(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> List[str]:
-        return ['adj_full.npz', 'feats.npy', 'class_map.json', 'role.json']
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def download(self) -> None:
         download_google_url(self.adj_full_id, self.raw_dir, 'adj_full.npz')

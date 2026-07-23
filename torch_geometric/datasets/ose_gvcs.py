@@ -14,32 +14,6 @@ from torch_geometric.data import (
 
 
 class OSE_GVCS(InMemoryDataset):
-    r"""A dataset describing the `Product ecology
-    <https://wiki.opensourceecology.org/wiki/Product_Ecologies>`_ of the Open
-    Source Ecology's iconoclastic `Global Village Construction Set
-    <https://wiki.opensourceecology.org/wiki/
-    Global_Village_Construction_Set>`_.
-    GVCS is a modular, DIY, low-cost set of blueprints that enables the
-    fabrication of the 50 different industrial machines that it takes to
-    build a small, sustainable civilization with modern comforts.
-
-    The dataset contains a heterogenous graphs with 50 :obj:`machine` nodes,
-    composing the GVCS, and 290 directed edges, each representing one out of
-    three relationships between machines.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.HeteroData` object and returns a
-            transformed version. The data object will be transformed before
-            every access. (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.HeteroData` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-    """
     machines = [
         '3D Printer', '3D Scanner', 'Aluminum Extractor', 'Backhoe',
         'Bakery Oven', 'Baler', 'Bioplastic Extruder', 'Bulldozer', 'Car',
@@ -76,14 +50,11 @@ class OSE_GVCS(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> List[str]:
-        return [
-            f"{machine.lower().replace(' ', '_')}.json"
-            for machine in self.machines
-        ]
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def download(self) -> None:
         path = download_url(self.url, self.root)
@@ -101,16 +72,12 @@ class OSE_GVCS(InMemoryDataset):
                 product = json.load(f)
             categories.append(self.categories.index(product['category']))
             for interaction in product['ecology']:
-                # NOTE Some ecology items are not GVCS machines or have other
-                # relationship types we don't want included.
                 rt = interaction['relationship']
                 if rt not in self.relationships:
                     continue
                 dst = interaction['tool']
                 if dst not in self.machines:
                     continue
-                # Machines are guaranteed to be sorted according to their order
-                # in `self.machines`, so we can use its index for the mapping:
                 src = self.machines.index(product['machine'])
                 dst = self.machines.index(dst)
                 edges[rt].append((src, dst))

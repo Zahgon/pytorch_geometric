@@ -10,30 +10,6 @@ from torch_geometric.utils import one_hot
 
 
 class LINKXDataset(InMemoryDataset):
-    r"""A variety of non-homophilous graph datasets from the `"Large Scale
-    Learning on Non-Homophilous Graphs: New Benchmarks and Strong Simple
-    Methods" <https://arxiv.org/abs/2110.14446>`_ paper.
-
-    .. note::
-        Some of the datasets provided in :class:`LINKXDataset` are from other
-        sources, but have been updated with new features and/or labels.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        name (str): The name of the dataset (:obj:`"penn94"`, :obj:`"reed98"`,
-            :obj:`"amherst41"`, :obj:`"cornell5"`, :obj:`"johnshopkins55"`,
-            :obj:`"genius"`).
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-    """
     github_url = ('https://github.com/CUAI/Non-Homophily-Large-Scale/'
                   'raw/master/data')
     gdrive_url = 'https://drive.usercontent.google.com/download?confirm=t'
@@ -91,22 +67,19 @@ class LINKXDataset(InMemoryDataset):
 
     @property
     def raw_dir(self) -> str:
-        return osp.join(self.root, self.name, 'raw')
+        pass
 
     @property
     def processed_dir(self) -> str:
-        return osp.join(self.root, self.name, 'processed')
+        pass
 
     @property
     def raw_file_names(self) -> List[str]:
-        names = list(self.datasets[self.name].keys())
-        if self.name in self.splits:
-            names += [self.splits[self.name].split('/')[-1]]
-        return names
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def download(self) -> None:
         for filename, path in self.datasets[self.name].items():

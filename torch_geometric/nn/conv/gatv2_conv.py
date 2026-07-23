@@ -32,104 +32,6 @@ else:
 
 
 class GATv2Conv(MessagePassing):
-    r"""The GATv2 operator from the `"How Attentive are Graph Attention
-    Networks?" <https://arxiv.org/abs/2105.14491>`_ paper, which fixes the
-    static attention problem of the standard
-    :class:`~torch_geometric.conv.GATConv` layer.
-    Since the linear layers in the standard GAT are applied right after each
-    other, the ranking of attended nodes is unconditioned on the query node.
-    In contrast, in :class:`GATv2`, every node can attend to any other node.
-
-    .. math::
-        \mathbf{x}^{\prime}_i = \sum_{j \in \mathcal{N}(i) \cup \{ i \}}
-        \alpha_{i,j}\mathbf{\Theta}_{t}\mathbf{x}_{j},
-
-    where the attention coefficients :math:`\alpha_{i,j}` are computed as
-
-    .. math::
-        \alpha_{i,j} =
-        \frac{
-        \exp\left(\mathbf{a}^{\top}\mathrm{LeakyReLU}\left(
-        \mathbf{\Theta}_{s} \mathbf{x}_i + \mathbf{\Theta}_{t} \mathbf{x}_j
-        \right)\right)}
-        {\sum_{k \in \mathcal{N}(i) \cup \{ i \}}
-        \exp\left(\mathbf{a}^{\top}\mathrm{LeakyReLU}\left(
-        \mathbf{\Theta}_{s} \mathbf{x}_i + \mathbf{\Theta}_{t} \mathbf{x}_k
-        \right)\right)}.
-
-    If the graph has multi-dimensional edge features :math:`\mathbf{e}_{i,j}`,
-    the attention coefficients :math:`\alpha_{i,j}` are computed as
-
-    .. math::
-        \alpha_{i,j} =
-        \frac{
-        \exp\left(\mathbf{a}^{\top}\mathrm{LeakyReLU}\left(
-        \mathbf{\Theta}_{s} \mathbf{x}_i
-        + \mathbf{\Theta}_{t} \mathbf{x}_j
-        + \mathbf{\Theta}_{e} \mathbf{e}_{i,j}
-        \right)\right)}
-        {\sum_{k \in \mathcal{N}(i) \cup \{ i \}}
-        \exp\left(\mathbf{a}^{\top}\mathrm{LeakyReLU}\left(
-        \mathbf{\Theta}_{s} \mathbf{x}_i
-        + \mathbf{\Theta}_{t} \mathbf{x}_k
-        + \mathbf{\Theta}_{e} \mathbf{e}_{i,k}]
-        \right)\right)}.
-
-    Args:
-        in_channels (int or tuple): Size of each input sample, or :obj:`-1` to
-            derive the size from the first input(s) to the forward method.
-            A tuple corresponds to the sizes of source and target
-            dimensionalities in case of a bipartite graph.
-        out_channels (int): Size of each output sample.
-        heads (int, optional): Number of multi-head-attentions.
-            (default: :obj:`1`)
-        concat (bool, optional): If set to :obj:`False`, the multi-head
-            attentions are averaged instead of concatenated.
-            (default: :obj:`True`)
-        negative_slope (float, optional): LeakyReLU angle of the negative
-            slope. (default: :obj:`0.2`)
-        dropout (float, optional): Dropout probability of the normalized
-            attention coefficients which exposes each node to a stochastically
-            sampled neighborhood during training. (default: :obj:`0`)
-        add_self_loops (bool, optional): If set to :obj:`False`, will not add
-            self-loops to the input graph. (default: :obj:`True`)
-        edge_dim (int, optional): Edge feature dimensionality (in case
-            there are any). (default: :obj:`None`)
-        fill_value (float or torch.Tensor or str, optional): The way to
-            generate edge features of self-loops
-            (in case :obj:`edge_dim != None`).
-            If given as :obj:`float` or :class:`torch.Tensor`, edge features of
-            self-loops will be directly given by :obj:`fill_value`.
-            If given as :obj:`str`, edge features of self-loops are computed by
-            aggregating all features of edges that point to the specific node,
-            according to a reduce operation. (:obj:`"add"`, :obj:`"mean"`,
-            :obj:`"min"`, :obj:`"max"`, :obj:`"mul"`). (default: :obj:`"mean"`)
-        bias (bool, optional): If set to :obj:`False`, the layer will not learn
-            an additive bias. (default: :obj:`True`)
-        share_weights (bool, optional): If set to :obj:`True`, the same matrix
-            will be applied to the source and the target node of every edge,
-            *i.e.* :math:`\mathbf{\Theta}_{s} = \mathbf{\Theta}_{t}`.
-            (default: :obj:`False`)
-        residual (bool, optional): If set to :obj:`True`, the layer will add
-            a learnable skip-connection. (default: :obj:`False`)
-        **kwargs (optional): Additional arguments of
-            :class:`torch_geometric.nn.conv.MessagePassing`.
-
-    Shapes:
-        - **input:**
-          node features :math:`(|\mathcal{V}|, F_{in})` or
-          :math:`((|\mathcal{V_s}|, F_{s}), (|\mathcal{V_t}|, F_{t}))`
-          if bipartite,
-          edge indices :math:`(2, |\mathcal{E}|)`,
-          edge features :math:`(|\mathcal{E}|, D)` *(optional)*
-        - **output:** node features :math:`(|\mathcal{V}|, H * F_{out})` or
-          :math:`((|\mathcal{V}_t|, H * F_{out})` if bipartite.
-          If :obj:`return_attention_weights=True`, then
-          :math:`((|\mathcal{V}|, H * F_{out}),
-          ((2, |\mathcal{E}|), (|\mathcal{E}|, H)))`
-          or :math:`((|\mathcal{V_t}|, H * F_{out}), ((2, |\mathcal{E}|),
-          (|\mathcal{E}|, H)))` if bipartite
-    """
     def __init__(
         self,
         in_channels: Union[int, Tuple[int, int]],
@@ -185,7 +87,6 @@ class GATv2Conv(MessagePassing):
         else:
             self.lin_edge = None
 
-        # The number of output channels:
         total_out_channels = out_channels * (heads if concat else 1)
 
         if residual:
@@ -324,11 +225,9 @@ class GATv2Conv(MessagePassing):
                         "simultaneously is currently not yet supported for "
                         "'edge_index' in a 'SparseTensor' form")
 
-        # edge_updater_type: (x: PairTensor, edge_attr: OptTensor)
         alpha = self.edge_updater(edge_index, x=(x_l, x_r),
                                   edge_attr=edge_attr)
 
-        # propagate_type: (x: PairTensor, alpha: Tensor)
         out = self.propagate(edge_index, x=(x_l, x_r), alpha=alpha)
 
         if self.concat:
@@ -345,7 +244,6 @@ class GATv2Conv(MessagePassing):
         if return_attention_weights:
             if isinstance(edge_index, Tensor):
                 if is_torch_sparse_tensor(edge_index):
-                    # TODO TorchScript requires to return a tuple
                     adj = set_sparse_value(edge_index, alpha)
                     return out, (adj, alpha)
                 else:

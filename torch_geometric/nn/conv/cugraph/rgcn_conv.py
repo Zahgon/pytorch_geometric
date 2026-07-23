@@ -21,17 +21,6 @@ except ImportError:
 
 
 class CuGraphRGCNConv(CuGraphModule):  # pragma: no cover
-    r"""The relational graph convolutional operator from the `"Modeling
-    Relational Data with Graph Convolutional Networks"
-    <https://arxiv.org/abs/1703.06103>`_ paper.
-
-    :class:`CuGraphRGCNConv` is an optimized version of
-    :class:`~torch_geometric.nn.conv.RGCNConv` based on the :obj:`cugraph-ops`
-    package that fuses message passing computation for accelerated execution
-    and lower memory footprint.
-
-    See :ref:`install-cugraph` for how to set up :obj:`cugraph-ops`.
-    """
     def __init__(self, in_channels: int, out_channels: int, num_relations: int,
                  num_bases: Optional[int] = None, aggr: str = 'mean',
                  root_weight: bool = True, bias: bool = True):

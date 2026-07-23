@@ -10,19 +10,6 @@ from torch_geometric.utils import scatter
 
 @functional_transform('local_cartesian')
 class LocalCartesian(BaseTransform):
-    r"""Saves the relative Cartesian coordinates of linked nodes in its edge
-    attributes (functional name: :obj:`local_cartesian`). Each coordinate gets
-    *neighborhood-normalized* to a specified interval
-    (:math:`[0, 1]` by default).
-
-    Args:
-        norm (bool, optional): If set to :obj:`False`, the output will not be
-            normalized. (default: :obj:`True`)
-        cat (bool, optional): If set to :obj:`False`, all existing edge
-            attributes will be replaced. (default: :obj:`True`)
-        interval ((float, float), optional): A tuple specifying the lower and
-            upper bound for normalization. (default: :obj:`(0.0, 1.0)`)
-    """
     def __init__(
             self,
             norm: bool = True,

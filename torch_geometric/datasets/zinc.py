@@ -16,73 +16,6 @@ from torch_geometric.io import fs
 
 
 class ZINC(InMemoryDataset):
-    r"""The ZINC dataset from the `ZINC database
-    <https://pubs.acs.org/doi/abs/10.1021/acs.jcim.5b00559>`_ and the
-    `"Automatic Chemical Design Using a Data-Driven Continuous Representation
-    of Molecules" <https://arxiv.org/abs/1610.02415>`_ paper, containing about
-    250,000 molecular graphs with up to 38 heavy atoms.
-    The task is to regress the penalized :obj:`logP` (also called constrained
-    solubility in some works), given by :obj:`y = logP - SAS - cycles`, where
-    :obj:`logP` is the water-octanol partition coefficient, :obj:`SAS` is the
-    synthetic accessibility score, and :obj:`cycles` denotes the number of
-    cycles with more than six atoms.
-    Penalized :obj:`logP` is a score commonly used for training molecular
-    generation models, see, *e.g.*, the
-    `"Junction Tree Variational Autoencoder for Molecular Graph Generation"
-    <https://proceedings.mlr.press/v80/jin18a.html>`_ and
-    `"Grammar Variational Autoencoder"
-    <https://proceedings.mlr.press/v70/kusner17a.html>`_ papers.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        subset (bool, optional): If set to :obj:`True`, will only load a
-            subset of the dataset (12,000 molecular graphs), following the
-            `"Benchmarking Graph Neural Networks"
-            <https://arxiv.org/abs/2003.00982>`_ paper. (default: :obj:`False`)
-        split (str, optional): If :obj:`"train"`, loads the training dataset.
-            If :obj:`"val"`, loads the validation dataset.
-            If :obj:`"test"`, loads the test dataset.
-            (default: :obj:`"train"`)
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        pre_filter (callable, optional): A function that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a boolean
-            value, indicating whether the data object should be included in the
-            final dataset. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-
-    **STATS:**
-
-    .. list-table::
-        :widths: 20 10 10 10 10 10
-        :header-rows: 1
-
-        * - Name
-          - #graphs
-          - #nodes
-          - #edges
-          - #features
-          - #classes
-        * - ZINC Full
-          - 249,456
-          - ~23.2
-          - ~49.8
-          - 1
-          - 1
-        * - ZINC Subset
-          - 12,000
-          - ~23.2
-          - ~49.8
-          - 1
-          - 1
-    """
 
     url = 'https://www.dropbox.com/s/feo9qle74kg48gy/molecules.zip?dl=1'
     split_url = ('https://raw.githubusercontent.com/graphdeeplearning/'
@@ -107,19 +40,15 @@ class ZINC(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> List[str]:
-        return [
-            'train.pickle', 'val.pickle', 'test.pickle', 'train.index',
-            'val.index', 'test.index'
-        ]
+        pass
 
     @property
     def processed_dir(self) -> str:
-        name = 'subset' if self.subset else 'full'
-        return osp.join(self.root, name, 'processed')
+        pass
 
     @property
     def processed_file_names(self) -> List[str]:
-        return ['train.pt', 'val.pt', 'test.pt']
+        pass
 
     def download(self) -> None:
         fs.rm(self.raw_dir)

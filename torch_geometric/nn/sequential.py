@@ -28,60 +28,6 @@ class Child(NamedTuple):
 
 
 class Sequential(torch.nn.Module):
-    r"""An extension of the :class:`torch.nn.Sequential` container in order to
-    define a sequential GNN model.
-
-    Since GNN operators take in multiple input arguments,
-    :class:`torch_geometric.nn.Sequential` additionally expects both global
-    input arguments, and function header definitions of individual operators.
-    If omitted, an intermediate module will operate on the *output* of its
-    preceding module:
-
-    .. code-block:: python
-
-        from torch.nn import Linear, ReLU
-        from torch_geometric.nn import Sequential, GCNConv
-
-        model = Sequential('x, edge_index', [
-            (GCNConv(in_channels, 64), 'x, edge_index -> x'),
-            ReLU(inplace=True),
-            (GCNConv(64, 64), 'x, edge_index -> x'),
-            ReLU(inplace=True),
-            Linear(64, out_channels),
-        ])
-
-    Here, :obj:`'x, edge_index'` defines the input arguments of :obj:`model`,
-    and :obj:`'x, edge_index -> x'` defines the function header, *i.e.* input
-    arguments *and* return types of :class:`~torch_geometric.nn.conv.GCNConv`.
-
-    In particular, this also allows to create more sophisticated models,
-    such as utilizing :class:`~torch_geometric.nn.models.JumpingKnowledge`:
-
-    .. code-block:: python
-
-        from torch.nn import Linear, ReLU, Dropout
-        from torch_geometric.nn import Sequential, GCNConv, JumpingKnowledge
-        from torch_geometric.nn import global_mean_pool
-
-        model = Sequential('x, edge_index, batch', [
-            (Dropout(p=0.5), 'x -> x'),
-            (GCNConv(dataset.num_features, 64), 'x, edge_index -> x1'),
-            ReLU(inplace=True),
-            (GCNConv(64, 64), 'x1, edge_index -> x2'),
-            ReLU(inplace=True),
-            (lambda x1, x2: [x1, x2], 'x1, x2 -> xs'),
-            (JumpingKnowledge("cat", 64, num_layers=2), 'xs -> x'),
-            (global_mean_pool, 'x, batch -> x'),
-            Linear(2 * 64, dataset.num_classes),
-        ])
-
-    Args:
-        input_args (str): The input arguments of the model.
-        modules ([(Callable, str) or Callable]): A list of modules (with
-            optional function header definitions). Alternatively, an
-            :obj:`OrderedDict` of modules (and function header definitions) can
-            be passed.
-    """
     _children: List[Child]
 
     def __init__(
@@ -235,7 +181,6 @@ class Sequential(torch.nn.Module):
 
         return outs
 
-    # TorchScript Support #####################################################
 
     def _set_jittable_template(self, raise_on_error: bool = False) -> None:
         try:  # Optimize `forward()` via `*.jinja` templates:
@@ -250,7 +195,6 @@ class Sequential(torch.nn.Module):
                 module_name=jinja_prefix,
                 template_path=osp.join(root_dir, 'sequential.jinja'),
                 tmp_dirname='sequential',
-                # Keyword arguments:
                 modules=[self._caller_module],
                 signature=self.signature,
                 children=self._children,
@@ -258,16 +202,12 @@ class Sequential(torch.nn.Module):
 
             self.forward = module.forward.__get__(self)
 
-            # NOTE We override `forward` on the class level here in order to
-            # support `torch.jit.trace` - this is generally dangerous to do,
-            # and limits `torch.jit.trace` to a single `Sequential` module:
             self.__class__.forward = module.forward
         except Exception as e:  # pragma: no cover
             if raise_on_error:
                 raise e
 
     def __prepare_scriptable__(self) -> 'Sequential':
-        # Prevent type sharing when scripting `Sequential` modules:
         type_store = torch.jit._recursive.concrete_type_store.type_store
         type_store.pop(self.__class__, None)
         return self

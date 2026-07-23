@@ -20,14 +20,13 @@ class OptimizerConfig:
 @register.register_optimizer('adam')
 def adam_optimizer(params: Iterator[Parameter], base_lr: float,
                    weight_decay: float) -> Adam:
-    return Adam(params, lr=base_lr, weight_decay=weight_decay)
+    pass
 
 
 @register.register_optimizer('sgd')
 def sgd_optimizer(params: Iterator[Parameter], base_lr: float, momentum: float,
                   weight_decay: float) -> SGD:
-    return SGD(params, lr=base_lr, momentum=momentum,
-               weight_decay=weight_decay)
+    pass
 
 
 def create_optimizer(params: Iterator[Parameter], cfg: Any) -> Any:
@@ -50,18 +49,18 @@ class SchedulerConfig:
 @register.register_scheduler(None)
 @register.register_scheduler('none')
 def none_scheduler(optimizer: Optimizer, max_epoch: int) -> StepLR:
-    return StepLR(optimizer, step_size=max_epoch + 1)
+    pass
 
 
 @register.register_scheduler('step')
 def step_scheduler(optimizer: Optimizer, steps: List[int],
                    lr_decay: float) -> MultiStepLR:
-    return MultiStepLR(optimizer, milestones=steps, gamma=lr_decay)
+    pass
 
 
 @register.register_scheduler('cos')
 def cos_scheduler(optimizer: Optimizer, max_epoch: int) -> CosineAnnealingLR:
-    return CosineAnnealingLR(optimizer, T_max=max_epoch)
+    pass
 
 
 def create_scheduler(optimizer: Optimizer, cfg: Any) -> Any:

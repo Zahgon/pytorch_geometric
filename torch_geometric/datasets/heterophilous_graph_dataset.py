@@ -9,65 +9,6 @@ from torch_geometric.utils import to_undirected
 
 
 class HeterophilousGraphDataset(InMemoryDataset):
-    r"""The heterophilous graphs :obj:`"Roman-empire"`,
-    :obj:`"Amazon-ratings"`, :obj:`"Minesweeper"`, :obj:`"Tolokers"` and
-    :obj:`"Questions"` from the `"A Critical Look at the Evaluation of GNNs
-    under Heterophily: Are We Really Making Progress?"
-    <https://arxiv.org/abs/2302.11640>`_ paper.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        name (str): The name of the dataset (:obj:`"Roman-empire"`,
-            :obj:`"Amazon-ratings"`, :obj:`"Minesweeper"`, :obj:`"Tolokers"`,
-            :obj:`"Questions"`).
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-
-    **STATS:**
-
-    .. list-table::
-        :widths: 10 10 10 10 10
-        :header-rows: 1
-
-        * - Name
-          - #nodes
-          - #edges
-          - #features
-          - #classes
-        * - Roman-empire
-          - 22,662
-          - 32,927
-          - 300
-          - 18
-        * - Amazon-ratings
-          - 24,492
-          - 93,050
-          - 300
-          - 5
-        * - Minesweeper
-          - 10,000
-          - 39,402
-          - 7
-          - 2
-        * - Tolokers
-          - 11,758
-          - 519,000
-          - 10
-          - 2
-        * - Questions
-          - 48,921
-          - 153,540
-          - 301
-          - 2
-    """
     url = ('https://github.com/yandex-research/heterophilous-graphs/raw/'
            'main/data')
 
@@ -94,19 +35,19 @@ class HeterophilousGraphDataset(InMemoryDataset):
 
     @property
     def raw_dir(self) -> str:
-        return osp.join(self.root, self.name, 'raw')
+        pass
 
     @property
     def processed_dir(self) -> str:
-        return osp.join(self.root, self.name, 'processed')
+        pass
 
     @property
     def raw_file_names(self) -> str:
-        return f'{self.name}.npz'
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def download(self) -> None:
         download_url(f'{self.url}/{self.name}.npz', self.raw_dir)

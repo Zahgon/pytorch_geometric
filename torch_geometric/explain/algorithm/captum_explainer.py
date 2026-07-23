@@ -20,27 +20,6 @@ from torch_geometric.typing import EdgeType, NodeType
 
 
 class CaptumExplainer(ExplainerAlgorithm):
-    """A `Captum <https://captum.ai>`__-based explainer for identifying compact
-    subgraph structures and node features that play a crucial role in the
-    predictions made by a GNN.
-
-    This explainer algorithm uses :captum:`null` `Captum <https://captum.ai/>`_
-    to compute attributions.
-
-    Currently, the following attribution methods are supported:
-
-    * :class:`captum.attr.IntegratedGradients`
-    * :class:`captum.attr.Saliency`
-    * :class:`captum.attr.InputXGradient`
-    * :class:`captum.attr.Deconvolution`
-    * :class:`captum.attr.ShapleyValueSampling`
-    * :class:`captum.attr.GuidedBackprop`
-
-    Args:
-        attribution_method (Attribution or str): The Captum attribution method
-            to use. Can be a string or a :class:`captum.attr` method.
-        **kwargs: Additional arguments for the Captum attribution method.
-    """
     SUPPORTED_METHODS = [  # TODO: Add support for more methods.
         'IntegratedGradients',
         'Saliency',
@@ -112,7 +91,6 @@ class CaptumExplainer(ExplainerAlgorithm):
 
     def _is_supported_attribution_method(self) -> bool:
         r"""Returns :obj:`True` if `self.attribution_method` is supported."""
-        # This is redundant for now since all supported methods need a baseline
         if self._needs_baseline():
             return False
         elif self.attribution_method_class.__name__ in self.SUPPORTED_METHODS:
@@ -160,9 +138,6 @@ class CaptumExplainer(ExplainerAlgorithm):
         self.attribution_method_instance = self.attribution_method_class(
             captum_model)
 
-        # In Captum, the target is the class index for which the attribution is
-        # computed. Within CaptumModel, we transform the binary classification
-        # into a multi-class classification task.
         if self.model_config.mode == ModelMode.regression:
             target = None
         elif index is not None:
@@ -205,5 +180,4 @@ class CaptumExplainer(ExplainerAlgorithm):
                           f"classification tasks (got '{return_type.value}')")
             return False
 
-        # TODO (ramona) Confirm that output type is valid.
         return True

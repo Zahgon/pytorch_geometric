@@ -12,32 +12,6 @@ from torch_geometric.nn.resolver import aggregation_resolver
 
 
 class MultiAggregation(Aggregation):
-    r"""Performs aggregations with one or more aggregators and combines
-    aggregated results, as described in the `"Principal Neighbourhood
-    Aggregation for Graph Nets" <https://arxiv.org/abs/2004.05718>`_ and
-    `"Adaptive Filters and Aggregator Fusion for Efficient Graph Convolutions"
-    <https://arxiv.org/abs/2104.01481>`_ papers.
-
-    Args:
-        aggrs (list): The list of aggregation schemes to use.
-        aggrs_kwargs (dict, optional): Arguments passed to the
-            respective aggregation function in case it gets automatically
-            resolved. (default: :obj:`None`)
-        mode (str, optional): The combine mode to use for combining
-            aggregated results from multiple aggregations (:obj:`"cat"`,
-            :obj:`"proj"`, :obj:`"sum"`, :obj:`"mean"`, :obj:`"max"`,
-            :obj:`"min"`, :obj:`"logsumexp"`, :obj:`"std"`, :obj:`"var"`,
-            :obj:`"attn"`). (default: :obj:`"cat"`)
-        mode_kwargs (dict, optional): Arguments passed for the combine
-            :obj:`mode`. When :obj:`"proj"` or :obj:`"attn"` is used as the
-            combine :obj:`mode`, :obj:`in_channels` (int or tuple) and
-            :obj:`out_channels` (int) are needed to be specified respectively
-            for the size of each input sample to combine from the respective
-            aggregation outputs and the size of each output sample after
-            combination. When :obj:`"attn"` mode is used, :obj:`num_heads`
-            (int) is needed to be specified for the number of parallel
-            attention heads. (default: :obj:`None`)
-    """
     fused_out_index: List[int]
     is_fused_aggr: List[bool]
 
@@ -73,7 +47,6 @@ class MultiAggregation(Aggregation):
             for aggr, aggr_kwargs in zip(aggrs, aggrs_kwargs)
         ])
 
-        # Divide the set into fusable and non-fusable aggregations:
         fused_aggrs: List[Aggregation] = []
         self.fused_out_index: List[int] = []
         self.is_fused_aggr: List[bool] = []
@@ -144,7 +117,6 @@ class MultiAggregation(Aggregation):
     def get_out_channels(self, in_channels: int) -> int:
         if self.out_channels is not None:
             return self.out_channels
-        # TODO Support having customized `out_channels` in each aggregation.
         if self.mode == 'cat':
             return in_channels * len(self.aggrs)
         return in_channels
@@ -153,7 +125,6 @@ class MultiAggregation(Aggregation):
                 ptr: Optional[Tensor] = None, dim_size: Optional[int] = None,
                 dim: int = -2) -> Tensor:
 
-        # `FusedAggregation` is currently limited to two-dimensional inputs:
         if index is None or x.dim() != 2 or self.fused_aggr is None:
             outs = [aggr(x, index, ptr, dim_size, dim) for aggr in self.aggrs]
             return self.combine(outs)

@@ -10,7 +10,6 @@ from torch_geometric.nn.inits import glorot, zeros
 
 
 class DenseGATConv(torch.nn.Module):
-    r"""See :class:`torch_geometric.nn.conv.GATConv`."""
     def __init__(
         self,
         in_channels: int,
@@ -21,7 +20,6 @@ class DenseGATConv(torch.nn.Module):
         dropout: float = 0.0,
         bias: bool = True,
     ):
-        # TODO Add support for edge features.
         super().__init__()
 
         self.in_channels = in_channels
@@ -34,7 +32,6 @@ class DenseGATConv(torch.nn.Module):
         self.lin = Linear(in_channels, heads * out_channels, bias=False,
                           weight_initializer='glorot')
 
-        # The learnable parameters to compute attention coefficients:
         self.att_src = Parameter(torch.empty(1, 1, heads, out_channels))
         self.att_dst = Parameter(torch.empty(1, 1, heads, out_channels))
 
@@ -91,7 +88,6 @@ class DenseGATConv(torch.nn.Module):
 
         alpha = alpha_src.unsqueeze(1) + alpha_dst.unsqueeze(2)  # [B, N, N, H]
 
-        # Weighted and masked softmax:
         alpha = F.leaky_relu(alpha, self.negative_slope)
         alpha = alpha.masked_fill(adj.unsqueeze(-1) == 0, float('-inf'))
         alpha = alpha.softmax(dim=2)

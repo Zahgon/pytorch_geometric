@@ -14,39 +14,6 @@ from torch_geometric.io import read_txt_array
 
 
 class PCPNetDataset(InMemoryDataset):
-    r"""The PCPNet dataset from the `"PCPNet: Learning Local Shape Properties
-    from Raw Point Clouds" <https://arxiv.org/abs/1710.04954>`_ paper,
-    consisting of 30 shapes, each given as a point cloud, densely sampled with
-    100k points.
-    For each shape, surface normals and local curvatures are given as node
-    features.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        category (str): The training set category (one of :obj:`"NoNoise"`,
-            :obj:`"Noisy"`, :obj:`"VarDensity"`, :obj:`"NoisyAndVarDensity"`
-            for :obj:`split="train"` or :obj:`split="val"`,
-            or one of :obj:`"All"`, :obj:`"LowNoise"`, :obj:`"MedNoise"`,
-            :obj:`"HighNoise", :obj:`"VarDensityStriped",
-            :obj:`"VarDensityGradient"` for :obj:`split="test"`).
-        split (str, optional): If :obj:`"train"`, loads the training dataset.
-            If :obj:`"val"`, loads the validation dataset.
-            If :obj:`"test"`, loads the test dataset. (default: :obj:`"train"`)
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        pre_filter (callable, optional): A function that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a boolean
-            value, indicating whether the data object should be included in the
-            final dataset. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-    """
 
     url = 'http://geometry.cs.ucl.ac.uk/projects/2018/pcpnet/pclouds.zip'
 
@@ -103,16 +70,11 @@ class PCPNetDataset(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> str:
-        if self.split == 'train':
-            return self.category_files_train[self.category]
-        elif self.split == 'val':
-            return self.category_files_val[self.category]
-        else:
-            return self.category_files_test[self.category]
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return self.split + '_' + self.category + '.pt'
+        pass
 
     def download(self) -> None:
         path = download_url(self.url, self.raw_dir)

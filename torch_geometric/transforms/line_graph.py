@@ -9,29 +9,6 @@ from torch_geometric.utils import coalesce, cumsum, remove_self_loops, scatter
 
 @functional_transform('line_graph')
 class LineGraph(BaseTransform):
-    r"""Converts a graph to its corresponding line-graph
-    (functional name: :obj:`line_graph`).
-
-    .. math::
-        L(\mathcal{G}) &= (\mathcal{V}^{\prime}, \mathcal{E}^{\prime})
-
-        \mathcal{V}^{\prime} &= \mathcal{E}
-
-        \mathcal{E}^{\prime} &= \{ (e_1, e_2) : e_1 \cap e_2 \neq \emptyset \}
-
-    Line-graph node indices are equal to indices in the original graph's
-    coalesced :obj:`edge_index`.
-    For undirected graphs, the maximum line-graph node index is
-    :obj:`(data.edge_index.size(1) // 2) - 1`.
-
-    New node features are given by old edge attributes.
-    For undirected graphs, edge attributes for reciprocal edges
-    :obj:`(row, col)` and :obj:`(col, row)` get summed together.
-
-    Args:
-        force_directed (bool, optional): If set to :obj:`True`, the graph will
-            be always treated as a directed graph. (default: :obj:`False`)
-    """
     def __init__(self, force_directed: bool = False) -> None:
         self.force_directed = force_directed
 
@@ -60,7 +37,6 @@ class LineGraph(BaseTransform):
             data.num_nodes = edge_index.size(1)
 
         else:
-            # Compute node indices.
             mask = row < col
             row, col = row[mask], col[mask]
             i = torch.arange(row.size(0), dtype=torch.long, device=row.device)
@@ -74,7 +50,6 @@ class LineGraph(BaseTransform):
                 N,
             )
 
-            # Compute new edge indices according to `i`.
             count = scatter(torch.ones_like(row), row, dim=0,
                             dim_size=data.num_nodes, reduce='sum')
             joints = list(torch.split(i, count.tolist()))

@@ -10,32 +10,6 @@ from torch_geometric.nn.aggr import Aggregation
 
 
 class LCMAggregation(Aggregation):
-    r"""The Learnable Commutative Monoid aggregation from the
-    `"Learnable Commutative Monoids for Graph Neural Networks"
-    <https://arxiv.org/abs/2212.08541>`_ paper, in which the elements are
-    aggregated using a binary tree reduction with
-    :math:`\mathcal{O}(\log |\mathcal{V}|)` depth.
-
-    .. note::
-
-        :class:`LCMAggregation` requires sorted indices :obj:`index` as input.
-        Specifically, if you use this aggregation as part of
-        :class:`~torch_geometric.nn.conv.MessagePassing`, ensure that
-        :obj:`edge_index` is sorted by destination nodes, either by manually
-        sorting edge indices via :meth:`~torch_geometric.utils.sort_edge_index`
-        or by calling :meth:`torch_geometric.data.Data.sort`.
-
-    .. warning::
-
-        :class:`LCMAggregation` is not a permutation-invariant operator.
-
-    Args:
-        in_channels (int): Size of each input sample.
-        out_channels (int): Size of each output sample.
-        project (bool, optional): If set to :obj:`True`, the layer will apply a
-            linear transformation followed by an activation function before
-            aggregation. (default: :obj:`True`)
-    """
     def __init__(
         self,
         in_channels: int,
@@ -89,8 +63,6 @@ class LCMAggregation(Aggregation):
             half_size = ceil(x.size(0) / 2)
 
             if x.size(0) % 2 == 1:
-                # This level of the tree has an odd number of nodes, so the
-                # remaining unmatched node gets moved to the next level.
                 x, remainder = x[:-1], x[-1:]
             else:
                 remainder = None
@@ -101,8 +73,6 @@ class LCMAggregation(Aggregation):
             left_right = left_right.reshape(-1, num_features)
             right_left = right_left.reshape(-1, num_features)
 
-            # Execute the GRUCell for all (left, right) pairs in the current
-            # level of the tree in parallel:
             out = self.gru_cell(left_right, right_left)
             out = out.view(-1, 2, num_nodes, num_features)
             out = out.mean(dim=1)

@@ -11,36 +11,6 @@ from torch_geometric.utils import is_torch_sparse_tensor, spmm
 
 
 class PANConv(MessagePassing):
-    r"""The path integral based convolutional operator from the
-    `"Path Integral Based Convolution and Pooling for Graph Neural Networks"
-    <https://arxiv.org/abs/2006.16811>`_ paper.
-
-    .. math::
-        \mathbf{X}^{\prime} = \mathbf{M} \mathbf{X} \mathbf{W}
-
-    where :math:`\mathbf{M}` denotes the normalized and learned maximal entropy
-    transition (MET) matrix that includes neighbors up to :obj:`filter_size`
-    hops:
-
-    .. math::
-
-        \mathbf{M} = \mathbf{Z}^{-1/2} \sum_{n=0}^L e^{-\frac{E(n)}{T}}
-        \mathbf{A}^n \mathbf{Z}^{-1/2}
-
-    Args:
-        in_channels (int): Size of each input sample, or :obj:`-1` to derive
-            the size from the first input(s) to the forward method.
-        out_channels (int): Size of each output sample.
-        filter_size (int): The filter size :math:`L`.
-        **kwargs (optional): Additional arguments of
-            :class:`torch_geometric.nn.conv.MessagePassing`.
-
-    Shapes:
-        - **input:**
-          node features :math:`(|\mathcal{V}|, F_{in})`,
-          edge indices :math:`(2, |\mathcal{E}|)`,
-        - **output:** node features :math:`(|\mathcal{V}|, F_{out})`
-    """
     def __init__(self, in_channels: int, out_channels: int, filter_size: int,
                  **kwargs):
 
@@ -70,7 +40,6 @@ class PANConv(MessagePassing):
         adj_t: Optional[SparseTensor] = None
         if isinstance(edge_index, Tensor):
             if is_torch_sparse_tensor(edge_index):
-                # TODO Handle PyTorch sparse tensor directly.
                 if edge_index.layout == torch.sparse_coo:
                     adj_t = SparseTensor.from_torch_sparse_coo_tensor(
                         edge_index)

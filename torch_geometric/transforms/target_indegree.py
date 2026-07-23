@@ -10,19 +10,6 @@ from torch_geometric.utils import degree
 
 @functional_transform('target_indegree')
 class TargetIndegree(BaseTransform):
-    r"""Saves the globally normalized degree of target nodes
-    (functional name: :obj:`target_indegree`).
-
-    .. math::
-
-        \mathbf{u}(i,j) = \frac{\deg(j)}{\max_{v \in \mathcal{V}} \deg(v)}
-
-    in its edge attributes.
-
-    Args:
-        cat (bool, optional): Concat pseudo-coordinates to edge attributes
-            instead of replacing them. (default: :obj:`True`)
-    """
     def __init__(
         self,
         norm: bool = True,

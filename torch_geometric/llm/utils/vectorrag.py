@@ -1,4 +1,3 @@
-# mypy: ignore-errors
 import os
 from abc import abstractmethod
 from typing import Any, Callable, Dict, List, Optional, Protocol, Union
@@ -12,7 +11,6 @@ from torch_geometric.llm.utils.backend_utils import batch_knn
 
 
 class VectorRetriever(Protocol):
-    """Protocol for VectorRAG."""
     @abstractmethod
     def query(self, query: Any, **kwargs: Optional[Dict[str, Any]]) -> Data:
         """Retrieve a context for a given query."""
@@ -20,7 +18,6 @@ class VectorRetriever(Protocol):
 
 
 class DocumentRetriever(VectorRetriever):
-    """Retrieve documents from a vector database."""
     def __init__(self, raw_docs: List[str],
                  embedded_docs: Optional[Tensor] = None, k_for_docs: int = 2,
                  model: Optional[Union[SentenceTransformer, torch.nn.Module,
@@ -52,7 +49,6 @@ class DocumentRetriever(VectorRetriever):
             self.model_kwargs = model_kwargs or {}
             self.embedded_docs = self.encoder(self.raw_docs,
                                               **self.model_kwargs)
-            # we don't want to print the verbose output in `query`
             self.model_kwargs.pop("verbose", None)
 
     def query(self, query: Union[str, Tensor]) -> List[str]:
@@ -82,14 +78,12 @@ class DocumentRetriever(VectorRetriever):
         """
         os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
 
-        # Prepare data to save
         save_dict = {
             'raw_docs': self.raw_docs,
             'embedded_docs': self.embedded_docs,
             'k_for_docs': self.k_for_docs,
         }
 
-        # We do not serialize the model
         torch.save(save_dict, path)
 
     @classmethod
@@ -118,7 +112,6 @@ class DocumentRetriever(VectorRetriever):
                 and isinstance(save_dict['embedded_docs'], Tensor)\
                 and model_kwargs is not None:
             model_kwargs.pop("verbose", None)
-        # Create a new DocumentRetriever with the loaded data
         return cls(raw_docs=save_dict['raw_docs'],
                    embedded_docs=save_dict['embedded_docs'],
                    k_for_docs=save_dict['k_for_docs'], model=model,

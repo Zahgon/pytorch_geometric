@@ -9,30 +9,6 @@ from torch_geometric.data import Data, InMemoryDataset, download_url
 
 
 class MixHopSyntheticDataset(InMemoryDataset):
-    r"""The MixHop synthetic dataset from the `"MixHop: Higher-Order
-    Graph Convolutional Architectures via Sparsified Neighborhood Mixing"
-    <https://arxiv.org/abs/1905.00067>`_ paper, containing 10
-    graphs, each with varying degree of homophily (ranging from 0.0 to 0.9).
-    All graphs have 5,000 nodes, where each node corresponds to 1 out of 10
-    classes.
-    The feature values of the nodes are sampled from a 2D Gaussian
-    distribution, which are distinct for each class.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        homophily (float): The degree of homophily (one of :obj:`0.0`,
-            :obj:`0.1`, ..., :obj:`0.9`).
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-    """
 
     url = ('https://raw.githubusercontent.com/samihaija/mixhop/master/data'
            '/synthetic')
@@ -54,20 +30,19 @@ class MixHopSyntheticDataset(InMemoryDataset):
 
     @property
     def raw_dir(self) -> str:
-        return osp.join(self.root, f'{self.homophily:0.1f}'[::2], 'raw')
+        pass
 
     @property
     def processed_dir(self) -> str:
-        return osp.join(self.root, f'{self.homophily:0.1f}'[::2], 'processed')
+        pass
 
     @property
     def raw_file_names(self) -> List[str]:
-        name = f'ind.n5000-h{self.homophily:0.1f}-c10'
-        return [f'{name}.allx', f'{name}.ally', f'{name}.graph']
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def download(self) -> None:
         for filename in self.raw_file_names:

@@ -4,9 +4,6 @@ from typing import Optional
 from torch_geometric.llm.models.txt2kg import \
     _chunk_to_triples_str_cloud as call_NIM
 
-# Credit for original "Marlin Accuracy" system goes to:
-# Gilberto Titericz (NVIDIA)
-# This work is an adaptation of his for PyG
 SYSTEM_PROMPT_1 = (
     "Instruction: You are a world class state of the art " +
     "assistant for rating " +
@@ -48,24 +45,7 @@ SYSTEM_PROMPT_2 = (
     "User Answer: \"{correct_answer}\"\n\n" + "Rating: ")
 
 
-# TODO: add support for Local LM
-# TODO: add multiproc support like txt2kg
 class LLMJudge():
-    """Uses NIMs to score a triple of (question, model_pred, correct_answer)
-    This whole class is an adaptation of Gilberto's work for PyG.
-
-    Args:
-        NVIDIA_NIM_MODEL : (str, optional)
-            The name of the NVIDIA NIM model to use.
-            (default: "nvidia/llama-3.1-nemotron-70b-instruct").
-        NVIDIA_API_KEY : (str, optional)
-            The API key for accessing NVIDIA's NIM models.
-            (default: "").
-        ENDPOINT_URL : (str, optional)
-            The URL hosting your model, in case you are not using
-            the public NIM.
-            (default: "https://integrate.api.nvidia.com/v1").
-    """
     def __init__(
         self,
         NVIDIA_NIM_MODEL: Optional[

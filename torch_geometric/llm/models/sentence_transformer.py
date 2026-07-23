@@ -15,13 +15,6 @@ class PoolingStrategy(Enum):
 
 
 class SentenceTransformer(torch.nn.Module):
-    r"""A wrapper around a Sentence-Transformer from HuggingFace.
-
-    Args:
-        model_name (str): The HuggingFace model name, *e.g.*, :obj:`"BERT"`.
-        pooling_strategy (str, optional): The pooling strategy to use
-            for generating node embeddings. (default: :obj:`"mean"`)
-    """
     def __init__(
         self,
         model_name: str,
@@ -39,8 +32,6 @@ class SentenceTransformer(torch.nn.Module):
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
 
-        # Maximum sequence length from the model configuration (e.g. 8192 for
-        # models like ModernBERT)
         self.max_seq_length = self.model.config.max_position_embeddings
         """
         Some models define a max sequence length in their configuration. Others
@@ -152,7 +143,6 @@ class SentenceTransformer(torch.nn.Module):
 
                 embs.append(emb)
             except:  # noqa
-                # fallback to using CPU for huge strings that cause OOMs
                 print("Sentence Transformer failed on cuda, trying w/ cpu...")
                 previous_device = self.device
                 self.model = self.model.to("cpu")
@@ -178,8 +168,6 @@ def mean_pooling(emb: Tensor, attention_mask: Tensor) -> Tensor:
 
 
 def last_pooling(emb: Tensor, attention_mask: Tensor) -> Tensor:
-    # Check whether language model uses left padding,
-    # which is always used for decoder LLMs
     left_padding = attention_mask[:, -1].sum() == attention_mask.size(0)
     if left_padding:
         return emb[:, -1]

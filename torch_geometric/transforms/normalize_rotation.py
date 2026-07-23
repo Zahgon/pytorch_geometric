@@ -8,18 +8,6 @@ from torch_geometric.transforms import BaseTransform
 
 @functional_transform('normalize_rotation')
 class NormalizeRotation(BaseTransform):
-    r"""Rotates all points according to the eigenvectors of the point cloud
-    (functional name: :obj:`normalize_rotation`).
-    If the data additionally holds normals saved in :obj:`data.normal`, these
-    will be rotated accordingly.
-
-    Args:
-        max_points (int, optional): If set to a value greater than :obj:`0`,
-            only a random number of :obj:`max_points` points are sampled and
-            used to compute eigenvectors. (default: :obj:`-1`)
-        sort (bool, optional): If set to :obj:`True`, will sort eigenvectors
-            according to their eigenvalues. (default: :obj:`False`)
-    """
     def __init__(self, max_points: int = -1, sort: bool = False) -> None:
         self.max_points = max_points
         self.sort = sort

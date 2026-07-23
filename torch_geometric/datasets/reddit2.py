@@ -9,46 +9,6 @@ from torch_geometric.data import Data, InMemoryDataset, download_google_url
 
 
 class Reddit2(InMemoryDataset):
-    r"""The Reddit dataset from the `"GraphSAINT: Graph Sampling Based
-    Inductive Learning Method" <https://arxiv.org/abs/1907.04931>`_ paper,
-    containing Reddit posts belonging to different communities.
-
-    .. note::
-
-        This is a sparser version of the original
-        :obj:`~torch_geometric.datasets.Reddit` dataset (~23M edges instead of
-        ~114M edges), and is used in papers such as
-        `SGC <https://arxiv.org/abs/1902.07153>`_ and
-        `GraphSAINT <https://arxiv.org/abs/1907.04931>`_.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-
-    **STATS:**
-
-    .. list-table::
-        :widths: 10 10 10 10
-        :header-rows: 1
-
-        * - #nodes
-          - #edges
-          - #features
-          - #classes
-        * - 232,965
-          - 23,213,838
-          - 602
-          - 41
-    """
     adj_full_id = '1sncK996BM5lpuDf75lDFqCiDZyErc1c2'
     feats_id = '1ZsHaJ0ussP1W722krmEIp_8pwKAoi5b3'
     class_map_id = '1JF3Pjv9OboMNYs2aXRQGbJbc4t_nDd5u'
@@ -67,11 +27,11 @@ class Reddit2(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> List[str]:
-        return ['adj_full.npz', 'feats.npy', 'class_map.json', 'role.json']
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def download(self) -> None:
         download_google_url(self.adj_full_id, self.raw_dir, 'adj_full.npz')

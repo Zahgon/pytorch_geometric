@@ -21,8 +21,7 @@ class GlobalAttention(AttentionalAggregation):
     func_name='nn.glob.global_sort_pool',
 )
 def global_sort_pool(x, index, k):
-    module = SortAggregation(k=k)
-    return module(x, index=index)
+    pass
 
 
 deprecated(

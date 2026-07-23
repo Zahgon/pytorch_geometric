@@ -18,44 +18,6 @@ from torch_geometric.utils import scatter
 
 
 class FusedAggregation(Aggregation):
-    r"""Helper class to fuse computation of multiple aggregations together.
-
-    Used internally in :class:`~torch_geometric.nn.aggr.MultiAggregation` to
-    speed-up computation.
-    Currently, the following optimizations are performed:
-
-    * :class:`MeanAggregation` will share the output with
-      :class:`SumAggregation` in case it is present as well.
-
-    * :class:`VarAggregation` will share the output with either
-      :class:`MeanAggregation` or :class:`SumAggregation` in case one of them
-      is present as well.
-
-    * :class:`StdAggregation` will share the output with either
-      :class:`VarAggregation`, :class:`MeanAggregation` or
-      :class:`SumAggregation` in case one of them is present as well.
-
-    In addition, temporary values such as the count per group index are shared
-    as well.
-
-    Benchmarking results on PyTorch 1.12 (summed over 1000 runs):
-
-    +------------------------------+---------+---------+
-    | Aggregators                  | Vanilla | Fusion  |
-    +==============================+=========+=========+
-    | :obj:`[sum, mean]`           | 0.3325s | 0.1996s |
-    +------------------------------+---------+---------+
-    | :obj:`[sum, mean, min, max]` | 0.7139s | 0.5037s |
-    +------------------------------+---------+---------+
-    | :obj:`[sum, mean, var]`      | 0.6849s | 0.3871s |
-    +------------------------------+---------+---------+
-    | :obj:`[sum, mean, var, std]` | 1.0955s | 0.3973s |
-    +------------------------------+---------+---------+
-
-    Args:
-        aggrs (list): The list of aggregation schemes to use.
-    """
-    # We can fuse all aggregations together that rely on `scatter` directives.
     FUSABLE_AGGRS = {
         SumAggregation,
         MeanAggregation,
@@ -66,14 +28,12 @@ class FusedAggregation(Aggregation):
         StdAggregation,
     }
 
-    # All aggregations that rely on computing the degree of indices.
     DEGREE_BASED_AGGRS = {
         MeanAggregation,
         VarAggregation,
         StdAggregation,
     }
 
-    # Map aggregations to `reduce` options in `scatter` directives.
     REDUCE = {
         'SumAggregation': 'sum',
         'MeanAggregation': 'sum',
@@ -114,22 +74,16 @@ class FusedAggregation(Aggregation):
             if hasattr(aggr, 'semi_grad'):
                 self.semi_grad = self.semi_grad or aggr.semi_grad
 
-        # Check whether we need to compute degree information:
         self.need_degree = False
         for cls in aggr_classes:
             if cls in self.DEGREE_BASED_AGGRS:
                 self.need_degree = True
 
-        # Determine which reduction to use for each aggregator:
-        # An entry of `None` means that this operator re-uses intermediate
-        # outputs from other aggregators.
         reduce_ops: List[Optional[str]] = []
-        # Determine which `(Aggregator, index)` to use as intermediate output:
         lookup_ops: List[Optional[Tuple[str, int]]] = []
 
         for name in self.aggr_names:
             if name == 'MeanAggregation':
-                # Directly use output of `SumAggregation`:
                 if 'SumAggregation' in self.aggr_index:
                     reduce_ops.append(None)
                     lookup_ops.append((
@@ -158,7 +112,6 @@ class FusedAggregation(Aggregation):
                     lookup_ops.append(None)
 
             elif name == 'StdAggregation':
-                # Directly use output of `VarAggregation`:
                 if 'VarAggregation' in self.aggr_index:
                     reduce_ops.append(None)
                     lookup_ops.append((
@@ -192,8 +145,6 @@ class FusedAggregation(Aggregation):
                 ptr: Optional[Tensor] = None, dim_size: Optional[int] = None,
                 dim: int = -2) -> List[Tensor]:
 
-        # Assert two-dimensional input for now to simplify computation:
-        # TODO refactor this to support any dimension.
         self.assert_index_present(index)
         self.assert_two_dimensional_input(x, dim)
 
@@ -211,11 +162,9 @@ class FusedAggregation(Aggregation):
             count.scatter_add_(0, index, x.new_ones(x.size(0)))
             count = count.clamp_(min=1).view(-1, 1)
 
-        #######################################################################
 
         outs: List[Optional[Tensor]] = []
 
-        # Iterate over all reduction ops to compute first results:
         for reduce in self.reduce_ops:
             if reduce is None:
                 outs.append(None)
@@ -233,9 +182,7 @@ class FusedAggregation(Aggregation):
 
             outs.append(out)
 
-        #######################################################################
 
-        # Compute `MeanAggregation` first to be able to re-use it:
         i = self.aggr_index.get('MeanAggregation')
         if i is not None:
             assert count is not None
@@ -253,7 +200,6 @@ class FusedAggregation(Aggregation):
             assert sum_ is not None
             outs[i] = sum_ / count
 
-        # Compute `VarAggregation` second to be able to re-use it:
         if 'VarAggregation' in self.aggr_index:
             i = self.aggr_index['VarAggregation']
 
@@ -282,7 +228,6 @@ class FusedAggregation(Aggregation):
             assert mean is not None
             outs[i] = (pow_sum / count) - (mean * mean)
 
-        # Compute `StdAggregation` last:
         if 'StdAggregation' in self.aggr_index:
             i = self.aggr_index['StdAggregation']
 
@@ -320,13 +265,11 @@ class FusedAggregation(Aggregation):
                 assert mean is not None
                 var = (pow_sum / count) - (mean * mean)
 
-            # Allow "undefined" gradient at `sqrt(0.0)`:
             out = var.clamp(min=1e-5).sqrt()
             out = out.masked_fill(out <= math.sqrt(1e-5), 0.0)
 
             outs[i] = out
 
-        #######################################################################
 
         vals: List[Tensor] = []
         for out in outs:

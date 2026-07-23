@@ -21,39 +21,6 @@ from torch_geometric.data.data import BaseData
 
 
 class HydroNet(InMemoryDataset):
-    r"""The HydroNet dataest from the
-    `"HydroNet: Benchmark Tasks for Preserving Intermolecular Interactions and
-    Structural Motifs in Predictive and Generative Models for Molecular Data"
-    <https://arxiv.org/abs/2012.00131>`_ paper, consisting of 5 million water
-    clusters held together by hydrogen bonding networks.  This dataset
-    provides atomic coordinates and total energy in kcal/mol for the cluster.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        name (str, optional): Name of the subset of the full dataset to use:
-            :obj:`"small"` uses 500k graphs sampled from the :obj:`"medium"`
-            dataset, :obj:`"medium"` uses 2.7m graphs with maximum size of 75
-            nodes.
-            Mutually exclusive option with the clusters argument.
-            (default :obj:`None`)
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-        num_workers (int): Number of multiprocessing workers to use for
-            pre-processing the dataset. (default :obj:`8`)
-        clusters (int or List[int], optional): Select a subset of clusters
-            from the full dataset. If set to :obj:`None`, will select all.
-            (default :obj:`None`)
-        use_processed (bool): Option to use a pre-processed version of the
-            original :obj:`xyz` dataset. (default: :obj:`True`)
-    """
     def __init__(
         self,
         root: str,
@@ -76,11 +43,11 @@ class HydroNet(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> List[str]:
-        return [f'W{c}_geoms_all.zip' for c in range(3, 31)]
+        pass
 
     @property
     def processed_file_names(self) -> List[str]:
-        return [f'W{c}_geoms_all.npz' for c in range(3, 31)]
+        pass
 
     def download(self) -> None:
         token_file = Path(osp.join(self.raw_dir, 'use_processed'))
@@ -170,23 +137,13 @@ class HydroNet(InMemoryDataset):
 
     @cached_property
     def _dataset(self) -> Union[ConcatDataset, Subset]:
-        dataset: ConcatDataset = ConcatDataset(self._partitions)
-
-        if self.name == "small":
-            return self._load_small_split(dataset)
-
-        return dataset
+        pass
 
     def _load_small_split(self, dataset: ConcatDataset) -> Subset:
-        split_file = osp.join(self.processed_dir, 'split_00_small.npz')
-        with np.load(split_file) as split:
-            train_idx = split['train_idx']
-            val_idx = split['val_idx']
-        all_idx = np.concatenate([train_idx, val_idx])
-        return Subset(dataset, all_idx)
+        pass
 
     def len(self) -> int:
-        return len(self._dataset)
+        pass
 
     def get(self, idx: int) -> Data:
         return self._dataset[idx]
@@ -201,10 +158,9 @@ def read_energy(file: str, chunk_size: int) -> np.ndarray:
     import pandas as pd
 
     def skipatoms(i: int) -> bool:
-        return (i - 1) % chunk_size != 0
+        pass
 
     if chunk_size - 2 == 11 * 3:
-        # Manually handle bad lines in W11
         df = pd.read_table(file, header=None, dtype="string",
                            skiprows=skipatoms)
         df = df[0].str.split().str[-1].astype(np.float32)
@@ -220,7 +176,7 @@ def read_atoms(file: str, chunk_size: int) -> Tuple[np.ndarray, np.ndarray]:
     import pandas as pd
 
     def skipheaders(i: int) -> bool:
-        return i % chunk_size == 0 or (i - 1) % chunk_size == 0
+        pass
 
     dtypes = {
         'atom': 'string',
@@ -286,11 +242,11 @@ class Partition(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> List[str]:
-        return [self.name + ".zip"]
+        pass
 
     @property
     def processed_file_names(self) -> List[str]:
-        return [self.name + '.npz']
+        pass
 
     def process(self) -> None:
         num_nodes = self.num_clusters * 3
@@ -315,11 +271,10 @@ class Partition(InMemoryDataset):
 
     @cached_property
     def num_graphs(self) -> int:
-        with np.load(self.processed_paths[0]) as npzfile:
-            return int(npzfile['num_graphs'])
+        pass
 
     def len(self) -> int:
-        return self.num_graphs
+        pass
 
     def get(self, idx: int) -> Data:
         self._load()

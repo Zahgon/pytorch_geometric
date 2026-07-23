@@ -13,28 +13,6 @@ from torch_geometric.data import (
 
 
 class MovieLens(InMemoryDataset):
-    r"""A heterogeneous rating dataset, assembled by GroupLens Research from
-    the `MovieLens web site <https://movielens.org>`_, consisting of nodes of
-    type :obj:`"movie"` and :obj:`"user"`.
-    User ratings for movies are available as ground truth labels for the edges
-    between the users and the movies :obj:`("user", "rates", "movie")`.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.HeteroData` object and returns a
-            transformed version. The data object will be transformed before
-            every access. (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.HeteroData` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        model_name (str): Name of model used to transform movie titles to node
-            features. The model comes from the`Huggingface SentenceTransformer
-            <https://huggingface.co/sentence-transformers>`_.
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-    """
     url = 'https://files.grouplens.org/datasets/movielens/ml-latest-small.zip'
 
     def __init__(
@@ -52,14 +30,11 @@ class MovieLens(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> List[str]:
-        return [
-            osp.join('ml-latest-small', 'movies.csv'),
-            osp.join('ml-latest-small', 'ratings.csv'),
-        ]
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return f'data_{self.model_name}.pt'
+        pass
 
     def download(self) -> None:
         path = download_url(self.url, self.raw_dir)

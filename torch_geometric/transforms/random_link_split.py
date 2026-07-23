@@ -15,76 +15,6 @@ from torch_geometric.utils import negative_sampling
 
 @functional_transform('random_link_split')
 class RandomLinkSplit(BaseTransform):
-    r"""Performs an edge-level random split into training, validation and test
-    sets of a :class:`~torch_geometric.data.Data` or a
-    :class:`~torch_geometric.data.HeteroData` object
-    (functional name: :obj:`random_link_split`).
-    The split is performed such that the training split does not include edges
-    in validation and test splits; and the validation split does not include
-    edges in the test split.
-
-    .. code-block:: python
-
-        from torch_geometric.transforms import RandomLinkSplit
-
-        transform = RandomLinkSplit(is_undirected=True)
-        train_data, val_data, test_data = transform(data)
-
-    Args:
-        num_val (int or float, optional): The number of validation edges.
-            If set to a floating-point value in :math:`[0, 1]`, it represents
-            the ratio of edges to include in the validation set.
-            (default: :obj:`0.1`)
-        num_test (int or float, optional): The number of test edges.
-            If set to a floating-point value in :math:`[0, 1]`, it represents
-            the ratio of edges to include in the test set.
-            (default: :obj:`0.2`)
-        is_undirected (bool): If set to :obj:`True`, the graph is assumed to be
-            undirected, and positive and negative samples will not leak
-            (reverse) edge connectivity across different splits. This only
-            affects the graph split, label data will not be returned
-            undirected. This option is ignored for bipartite edge types or
-            whenever :obj:`edge_type != rev_edge_type`. (default: :obj:`False`)
-        key (str, optional): The name of the attribute holding
-            ground-truth labels.
-            If :obj:`data[key]` does not exist, it will be automatically
-            created and represents a binary classification task
-            (:obj:`1` = edge, :obj:`0` = no edge).
-            If :obj:`data[key]` exists, it has to be a categorical label from
-            :obj:`0` to :obj:`num_classes - 1`.
-            After negative sampling, label :obj:`0` represents negative edges,
-            and labels :obj:`1` to :obj:`num_classes` represent the labels of
-            positive edges. (default: :obj:`"edge_label"`)
-        split_labels (bool, optional): If set to :obj:`True`, will split
-            positive and negative labels and save them in distinct attributes
-            :obj:`"pos_edge_label"` and :obj:`"neg_edge_label"`, respectively.
-            (default: :obj:`False`)
-        add_negative_train_samples (bool, optional): Whether to add negative
-            training samples for link prediction.
-            If the model already performs negative sampling, then the option
-            should be set to :obj:`False`.
-            Otherwise, the added negative samples will be the same across
-            training iterations unless negative sampling is performed again.
-            (default: :obj:`True`)
-        neg_sampling_ratio (float, optional): The ratio of sampled negative
-            edges to the number of positive edges. (default: :obj:`1.0`)
-        disjoint_train_ratio (int or float, optional): If set to a value
-            greater than :obj:`0.0`, training edges will not be shared for
-            message passing and supervision. Instead,
-            :obj:`disjoint_train_ratio` edges are used as ground-truth labels
-            for supervision during training. (default: :obj:`0.0`)
-        edge_types (Tuple[EdgeType] or List[EdgeType], optional): The edge
-            types used for performing edge-level splitting in case of
-            operating on :class:`~torch_geometric.data.HeteroData` objects.
-            (default: :obj:`None`)
-        rev_edge_types (Tuple[EdgeType] or List[Tuple[EdgeType]], optional):
-            The reverse edge types of :obj:`edge_types` in case of operating
-            on :class:`~torch_geometric.data.HeteroData` objects.
-            This will ensure that edges of the reverse direction will be
-            split accordingly to prevent any data leakage.
-            Can be :obj:`None` in case no reverse connection exists.
-            (default: :obj:`None`)
-    """
     def __init__(
         self,
         num_val: Union[int, float] = 0.1,
@@ -212,14 +142,12 @@ class RandomLinkSplit(BaseTransform):
             if num_train - num_disjoint <= 0:
                 raise ValueError("Insufficient number of edges for training")
 
-            # Create data splits:
             self._split(train_store, train_edges[num_disjoint:], is_undirected,
                         rev_edge_type)
             self._split(val_store, train_edges, is_undirected, rev_edge_type)
             self._split(test_store, train_val_edges, is_undirected,
                         rev_edge_type)
 
-            # Create negative samples:
             num_neg_train = 0
             if self.add_negative_train_samples:
                 if num_disjoint > 0:
@@ -238,7 +166,6 @@ class RandomLinkSplit(BaseTransform):
                                                num_neg_samples=num_neg,
                                                method='sparse')
 
-            # Adjust ratio if not enough negative edges exist
             if neg_edge_index.size(1) < num_neg:
                 num_neg_found = neg_edge_index.size(1)
                 ratio = num_neg_found / num_neg
@@ -250,7 +177,6 @@ class RandomLinkSplit(BaseTransform):
                 num_neg_val = int((num_neg_val / num_neg) * num_neg_found)
                 num_neg_test = num_neg_found - num_neg_train - num_neg_val
 
-            # Create labels:
             if num_disjoint > 0:
                 train_edges = train_edges[:num_disjoint]
             self._create_label(
@@ -323,8 +249,6 @@ class RandomLinkSplit(BaseTransform):
         if hasattr(store, self.key):
             edge_label = store[self.key]
             edge_label = edge_label[index]
-            # Increment labels by one. Note that there is no need to increment
-            # in case no negative edges are added.
             if neg_edge_index.numel() > 0:
                 assert edge_label.dtype == torch.long
                 assert edge_label.size(0) == edge_index.size(1)

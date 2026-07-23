@@ -12,18 +12,6 @@ from torch_geometric.typing import EdgeType, NodeType
 
 
 class AttentionExplainer(ExplainerAlgorithm):
-    r"""An explainer that uses the attention coefficients produced by an
-    attention-based GNN (*e.g.*,
-    :class:`~torch_geometric.nn.conv.GATConv`,
-    :class:`~torch_geometric.nn.conv.GATv2Conv`, or
-    :class:`~torch_geometric.nn.conv.TransformerConv`) as edge explanation.
-    Attention scores across layers and heads will be aggregated according to
-    the :obj:`reduce` argument.
-
-    Args:
-        reduce (str, optional): The method to reduce the attention scores
-            across layers and heads. (default: :obj:`"max"`)
-    """
     def __init__(self, reduce: str = 'max'):
         super().__init__()
         self.reduce = reduce
@@ -68,11 +56,9 @@ class AttentionExplainer(ExplainerAlgorithm):
         """Generate explanations based on attention coefficients."""
         self.is_hetero = isinstance(x, dict)
 
-        # Collect attention coefficients
         alphas_dict = self._collect_attention_coefficients(
             model, x, edge_index, **kwargs)
 
-        # Process attention coefficients
         if self.is_hetero:
             return self._create_hetero_explanation(model, alphas_dict,
                                                    edge_index, index, x)
@@ -109,15 +95,11 @@ class AttentionExplainer(ExplainerAlgorithm):
     ) -> Union[List[Tensor], Dict[EdgeType, List[Tensor]]]:
         """Collect attention coefficients from model layers."""
         if self.is_hetero:
-            # For heterogeneous graphs, store alphas by edge type
             alphas_dict: Dict[EdgeType, List[Tensor]] = {}
 
-            # Get list of edge types
             edge_types = list(edge_index.keys())
 
-            # Hook function to capture attention coefficients by edge type
             def hook(module, msg_kwargs, out):
-                # Find edge type from the module's full name
                 module_name = getattr(module, '_name', None)
                 if module_name is None:
                     return
@@ -125,8 +107,6 @@ class AttentionExplainer(ExplainerAlgorithm):
                 edge_type = None
                 for edge_tuple in edge_types:
                     src_type, edge_name, dst_type = edge_tuple
-                    # Check if all components appear in the module name in
-                    # order
                     try:
                         src_idx = module_name.index(src_type)
                         edge_idx = module_name.index(edge_name, src_idx)
@@ -143,14 +123,12 @@ class AttentionExplainer(ExplainerAlgorithm):
                 if edge_type not in alphas_dict:
                     alphas_dict[edge_type] = []
 
-                # Extract alpha from message kwargs or module
                 if 'alpha' in msg_kwargs[0]:
                     alphas_dict[edge_type].append(
                         msg_kwargs[0]['alpha'].detach())
                 elif getattr(module, '_alpha', None) is not None:
                     alphas_dict[edge_type].append(module._alpha.detach())
         else:
-            # For homogeneous graphs, store all alphas in a list
             alphas: List[Tensor] = []
 
             def hook(module, msg_kwargs, out):
@@ -159,25 +137,20 @@ class AttentionExplainer(ExplainerAlgorithm):
                 elif getattr(module, '_alpha', None) is not None:
                     alphas.append(module._alpha.detach())
 
-        # Register hooks for all message passing modules
         hook_handles = []
         for name, module in model.named_modules():
             if isinstance(module,
                           MessagePassing) and module.explain is not False:
-                # Store name for hetero graph lookup in the hook
                 if self.is_hetero:
                     module._name = name
 
                 hook_handles.append(module.register_message_forward_hook(hook))
 
-        # Forward pass to collect attention coefficients.
         model(x, edge_index, **kwargs)
 
-        # Remove hooks
         for handle in hook_handles:
             handle.remove()
 
-        # Check if we collected any attention coefficients.
         if self.is_hetero:
             if not alphas_dict:
                 raise ValueError(
@@ -200,10 +173,8 @@ class AttentionExplainer(ExplainerAlgorithm):
     ) -> Tensor:
         """Process collected attention coefficients into a single mask."""
         for i, alpha in enumerate(alphas):
-            # Ensure alpha doesn't exceed edge_index size
             alpha = alpha[:edge_index_size]
 
-            # Reduce multi-head attention
             if alpha.dim() == 2:
                 alpha = getattr(torch, self.reduce)(alpha, dim=-1)
                 if isinstance(alpha, tuple):  # Handle torch.max output
@@ -213,7 +184,6 @@ class AttentionExplainer(ExplainerAlgorithm):
                                  f"shape {list(alpha.size())}")
             alphas[i] = alpha
 
-        # Combine attention coefficients across layers
         if len(alphas) > 1:
             alpha = torch.stack(alphas, dim=-1)
             alpha = getattr(torch, self.reduce)(alpha, dim=-1)
@@ -233,17 +203,14 @@ class AttentionExplainer(ExplainerAlgorithm):
         x: Tensor,
     ) -> Explanation:
         """Create explanation for homogeneous graph."""
-        # Get hard edge mask for node-level tasks
         hard_edge_mask = None
         if self.model_config.task_level == ModelTaskLevel.node:
             _, hard_edge_mask = self._get_hard_masks(model, index, edge_index,
                                                      num_nodes=x.size(0))
 
-        # Process attention coefficients
         alpha = self._process_attention_coefficients(alphas,
                                                      edge_index.size(1))
 
-        # Post-process mask with hard edge mask if needed
         alpha = self._post_process_mask(alpha, hard_edge_mask,
                                         apply_sigmoid=False)
 
@@ -260,12 +227,10 @@ class AttentionExplainer(ExplainerAlgorithm):
         """Create explanation for heterogeneous graph."""
         edge_masks_dict = {}
 
-        # Process each edge type separately
         for edge_type, alphas in alphas_dict.items():
             if not alphas:
                 continue
 
-            # Get hard edge mask for node-level tasks
             hard_edge_mask = None
             if self.model_config.task_level == ModelTaskLevel.node:
                 src_type, _, dst_type = edge_type
@@ -273,15 +238,12 @@ class AttentionExplainer(ExplainerAlgorithm):
                     model, index, edge_index[edge_type],
                     num_nodes=max(x[src_type].size(0), x[dst_type].size(0)))
 
-            # Process attention coefficients for this edge type
             alpha = self._process_attention_coefficients(
                 alphas, edge_index[edge_type].size(1))
 
-            # Apply hard mask if available
             edge_masks_dict[edge_type] = self._post_process_mask(
                 alpha, hard_edge_mask, apply_sigmoid=False)
 
-        # Create heterogeneous explanation
         explanation = HeteroExplanation()
         explanation.set_value_dict('edge_mask', edge_masks_dict)
         return explanation

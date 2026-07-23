@@ -13,51 +13,6 @@ from torch_geometric.utils import spmm
 
 
 class ARMAConv(MessagePassing):
-    r"""The ARMA graph convolutional operator from the `"Graph Neural Networks
-    with Convolutional ARMA Filters" <https://arxiv.org/abs/1901.01343>`_
-    paper.
-
-    .. math::
-        \mathbf{X}^{\prime} = \frac{1}{K} \sum_{k=1}^K \mathbf{X}_k^{(T)},
-
-    with :math:`\mathbf{X}_k^{(T)}` being recursively defined by
-
-    .. math::
-        \mathbf{X}_k^{(t+1)} = \sigma \left( \mathbf{\hat{L}}
-        \mathbf{X}_k^{(t)} \mathbf{W} + \mathbf{X}^{(0)} \mathbf{V} \right),
-
-    where :math:`\mathbf{\hat{L}} = \mathbf{I} - \mathbf{L} = \mathbf{D}^{-1/2}
-    \mathbf{A} \mathbf{D}^{-1/2}` denotes the
-    modified Laplacian :math:`\mathbf{L} = \mathbf{I} - \mathbf{D}^{-1/2}
-    \mathbf{A} \mathbf{D}^{-1/2}`.
-
-    Args:
-        in_channels (int): Size of each input sample, or :obj:`-1` to derive
-            the size from the first input(s) to the forward method.
-        out_channels (int): Size of each output sample
-            :math:`\mathbf{x}^{(t+1)}`.
-        num_stacks (int, optional): Number of parallel stacks :math:`K`.
-            (default: :obj:`1`).
-        num_layers (int, optional): Number of layers :math:`T`.
-            (default: :obj:`1`)
-        act (callable, optional): Activation function :math:`\sigma`.
-            (default: :meth:`torch.nn.ReLU()`)
-        shared_weights (int, optional): If set to :obj:`True` the layers in
-            each stack will share the same parameters. (default: :obj:`False`)
-        dropout (float, optional): Dropout probability of the skip connection.
-            (default: :obj:`0.`)
-        bias (bool, optional): If set to :obj:`False`, the layer will not learn
-            an additive bias. (default: :obj:`True`)
-        **kwargs (optional): Additional arguments of
-            :class:`torch_geometric.nn.conv.MessagePassing`.
-
-    Shapes:
-        - **input:**
-          node features :math:`(|\mathcal{V}|, F_{in})`,
-          edge indices :math:`(2, |\mathcal{E}|)`,
-          edge weights :math:`(|\mathcal{E}|)` *(optional)*
-        - **output:** node features :math:`(|\mathcal{V}|, F_{out})`
-    """
     def __init__(self, in_channels: int, out_channels: int,
                  num_stacks: int = 1, num_layers: int = 1,
                  shared_weights: bool = False,
@@ -123,7 +78,6 @@ class ARMAConv(MessagePassing):
             else:
                 out = out @ self.weight[0 if self.shared_weights else t - 1]
 
-            # propagate_type: (x: Tensor, edge_weight: OptTensor)
             out = self.propagate(edge_index, x=out, edge_weight=edge_weight)
 
             root = F.dropout(x, p=self.dropout, training=self.training)
@@ -146,16 +100,7 @@ class ARMAConv(MessagePassing):
 
     @torch.no_grad()
     def initialize_parameters(self, module, input):
-        if isinstance(self.init_weight, nn.parameter.UninitializedParameter):
-            F_in, F_out = input[0].size(-1), self.out_channels
-            T, K = self.weight.size(0) + 1, self.weight.size(1)
-            self.init_weight.materialize((K, F_in, F_out))
-            self.root_weight.materialize((T, K, F_in, F_out))
-            glorot(self.init_weight)
-            glorot(self.root_weight)
-
-        module._hook.remove()
-        delattr(module, '_hook')
+        pass
 
     def __repr__(self) -> str:
         return (f'{self.__class__.__name__}({self.in_channels}, '

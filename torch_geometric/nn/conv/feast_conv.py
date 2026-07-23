@@ -13,42 +13,6 @@ from torch_geometric.utils import add_self_loops, remove_self_loops
 
 
 class FeaStConv(MessagePassing):
-    r"""The (translation-invariant) feature-steered convolutional operator from
-    the `"FeaStNet: Feature-Steered Graph Convolutions for 3D Shape Analysis"
-    <https://arxiv.org/abs/1706.05206>`_ paper.
-
-    .. math::
-        \mathbf{x}^{\prime}_i = \frac{1}{|\mathcal{N}(i)|}
-        \sum_{j \in \mathcal{N}(i)} \sum_{h=1}^H
-        q_h(\mathbf{x}_i, \mathbf{x}_j) \mathbf{W}_h \mathbf{x}_j
-
-    with :math:`q_h(\mathbf{x}_i, \mathbf{x}_j) = \mathrm{softmax}_j
-    (\mathbf{u}_h^{\top} (\mathbf{x}_j - \mathbf{x}_i) + c_h)`, where :math:`H`
-    denotes the number of attention heads, and :math:`\mathbf{W}_h`,
-    :math:`\mathbf{u}_h` and :math:`c_h` are trainable parameters.
-
-    Args:
-        in_channels (int): Size of each input sample, or :obj:`-1` to derive
-            the size from the first input(s) to the forward method.
-        out_channels (int): Size of each output sample.
-        heads (int, optional): Number of attention heads :math:`H`.
-            (default: :obj:`1`)
-        add_self_loops (bool, optional): If set to :obj:`False`, will not add
-            self-loops to the input graph. (default: :obj:`True`)
-        bias (bool, optional): If set to :obj:`False`, the layer will not learn
-            an additive bias. (default: :obj:`True`)
-        **kwargs (optional): Additional arguments of
-            :class:`torch_geometric.nn.conv.MessagePassing`.
-
-    Shapes:
-        - **input:**
-          node features :math:`(|\mathcal{V}|, F_{in})` or
-          :math:`((|\mathcal{V_s}|, F_{in}), (|\mathcal{V_t}|, F_{in}))`
-          if bipartite,
-          edge indices :math:`(2, |\mathcal{E}|)`
-        - **output:** node features :math:`(|\mathcal{V}|, F_{out})` or
-          :math:`(|\mathcal{V_t}|, F_{out})` if bipartite
-    """
     def __init__(self, in_channels: int, out_channels: int, heads: int = 1,
                  add_self_loops: bool = True, bias: bool = True, **kwargs):
         kwargs.setdefault('aggr', 'mean')
@@ -92,7 +56,6 @@ class FeaStConv(MessagePassing):
             elif isinstance(edge_index, SparseTensor):
                 edge_index = torch_sparse.set_diag(edge_index)
 
-        # propagate_type: (x: PairTensor)
         out = self.propagate(edge_index, x=x)
 
         if self.bias is not None:

@@ -19,33 +19,6 @@ from torch_geometric.utils import (
 
 
 class ASAPooling(torch.nn.Module):
-    r"""The Adaptive Structure Aware Pooling operator from the
-    `"ASAP: Adaptive Structure Aware Pooling for Learning Hierarchical
-    Graph Representations" <https://arxiv.org/abs/1911.07979>`_ paper.
-
-    Args:
-        in_channels (int): Size of each input sample.
-        ratio (float or int): Graph pooling ratio, which is used to compute
-            :math:`k = \lceil \mathrm{ratio} \cdot N \rceil`, or the value
-            of :math:`k` itself, depending on whether the type of :obj:`ratio`
-            is :obj:`float` or :obj:`int`. (default: :obj:`0.5`)
-        GNN (torch.nn.Module, optional): A graph neural network layer for
-            using intra-cluster properties.
-            Especially helpful for graphs with higher degree of neighborhood
-            (one of :class:`torch_geometric.nn.conv.GraphConv`,
-            :class:`torch_geometric.nn.conv.GCNConv` or
-            any GNN which supports the :obj:`edge_weight` parameter).
-            (default: :obj:`None`)
-        dropout (float, optional): Dropout probability of the normalized
-            attention coefficients which exposes each node to a stochastically
-            sampled neighborhood during training. (default: :obj:`0`)
-        negative_slope (float, optional): LeakyReLU angle of the negative
-            slope. (default: :obj:`0.2`)
-        add_self_loops (bool, optional): If set to :obj:`True`, will add self
-            loops to the new graph connectivity. (default: :obj:`False`)
-        **kwargs (optional): Additional parameters for initializing the
-            graph neural network layer.
-    """
     def __init__(self, in_channels: int, ratio: Union[float, int] = 0.5,
                  GNN: Optional[Callable] = None, dropout: float = 0.0,
                  negative_slope: float = 0.2, add_self_loops: bool = False,
@@ -131,19 +104,16 @@ class ASAPooling(torch.nn.Module):
         score = F.leaky_relu(score, self.negative_slope)
         score = softmax(score, edge_index[1], num_nodes=N)
 
-        # Sample attention coefficients stochastically.
         score = F.dropout(score, p=self.dropout, training=self.training)
 
         v_j = x[edge_index[0]] * score.view(-1, 1)
         x = scatter(v_j, edge_index[1], dim=0, reduce='sum')
 
-        # Cluster selection.
         fitness = self.gnn_score(x, edge_index).sigmoid().view(-1)
         perm = self.select(fitness, batch).node_index
         x = x[perm] * fitness[perm].view(-1, 1)
         batch = batch[perm]
 
-        # Graph coarsening.
         A = to_torch_csr_tensor(edge_index, edge_weight, size=(N, N))
         S = to_torch_coo_tensor(edge_index, score, size=(N, N))
         S = S.index_select(1, perm).to_sparse_csr()

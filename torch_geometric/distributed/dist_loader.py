@@ -17,31 +17,6 @@ from torch_geometric.loader.base import DataLoaderIterator
 
 
 class DistLoader:
-    r"""A base class for creating distributed data loading routines.
-
-    Args:
-        current_ctx (DistContext): Distributed context info of the current
-            process.
-        master_addr (str, optional): RPC address for distributed loader
-            communication.
-            Refers to the IP address of the master node. (default: :obj:`None`)
-        master_port (int or str, optional): The open port for RPC communication
-            with the master node. (default: :obj:`None`)
-        channel (mp.Queue, optional): A communication channel for messages.
-            (default: :obj:`None`)
-        num_rpc_threads (int, optional): The number of threads in the
-            thread-pool used by
-            :class:`~torch.distributed.rpc.TensorPipeAgent` to execute
-            requests. (default: :obj:`16`)
-        rpc_timeout (int, optional): The default timeout in seconds for RPC
-            requests.
-            If the RPC has not completed in this timeframe, an exception will
-            be raised.
-            Callers can override this timeout for
-            individual RPCs in :meth:`~torch.distributed.rpc.rpc_sync` and
-            :meth:`~torch.distributed.rpc.rpc_async` if necessary.
-            (default: :obj:`180`)
-    """
     def __init__(
         self,
         current_ctx: DistContext,
@@ -62,9 +37,6 @@ class DistLoader:
                              f"variable.")
 
         if master_port is None and os.environ.get('MASTER_PORT') is not None:
-            # Select next port to MASTER_PORT used for DDP.
-            # If multiple loaders are launched in the same script, please
-            # provide distinct ports for each.
             master_port = int(os.environ['MASTER_PORT']) + 1
         if master_port is None:
             raise ValueError(f"Missing master port for RPC communication in "
@@ -92,13 +64,9 @@ class DistLoader:
             self.worker_init_fn(0)
 
     def channel_get(self, out: Any) -> Any:
-        if self.channel:
-            out = self.channel.get()
-            logging.debug(f"[{self}] Retrieved message")
-        return out
+        pass
 
     def reset_channel(self, channel=None):
-        # clean remaining queue items and restart new queue
         logging.debug(f'{self} Resetting msg channel')
         while not self.channel.empty():
             self.channel.get_nowait()
@@ -135,7 +103,6 @@ class DistLoader:
             self.dist_sampler.register_sampler_rpc()
             global_barrier(timeout=10)  # Wait for all workers to initialize.
 
-            # close RPC & worker group at exit:
             atexit.register(shutdown_rpc, self.current_ctx_worker.worker_name)
 
         except RuntimeError as e:
@@ -146,7 +113,6 @@ class DistLoader:
         return f'{self.__class__.__name__}(pid={self.pid})'
 
     def __enter__(self) -> DataLoaderIterator:
-        # fetch a single batch for init
         self._prefetch_old = self.prefetch_factor
         self.prefetch_factor = 1
         self._iterator = self._get_iterator()

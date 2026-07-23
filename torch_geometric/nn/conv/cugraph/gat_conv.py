@@ -19,16 +19,6 @@ except ImportError:
 
 
 class CuGraphGATConv(CuGraphModule):  # pragma: no cover
-    r"""The graph attentional operator from the `"Graph Attention Networks"
-    <https://arxiv.org/abs/1710.10903>`_ paper.
-
-    :class:`CuGraphGATConv` is an optimized version of
-    :class:`~torch_geometric.nn.conv.GATConv` based on the :obj:`cugraph-ops`
-    package that fuses message passing computation for accelerated execution
-    and lower memory footprint.
-
-    See :ref:`install-cugraph` for how to set up :obj:`cugraph-ops`.
-    """
     def __init__(
         self,
         in_channels: int,

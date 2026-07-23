@@ -11,33 +11,6 @@ from torch_geometric.utils import degree, scatter
 
 
 class LayerNorm(torch.nn.Module):
-    r"""Applies layer normalization over each individual example in a batch
-    of features as described in the `"Layer Normalization"
-    <https://arxiv.org/abs/1607.06450>`_ paper.
-
-    .. math::
-        \mathbf{x}^{\prime}_i = \frac{\mathbf{x} -
-        \textrm{E}[\mathbf{x}]}{\sqrt{\textrm{Var}[\mathbf{x}] + \epsilon}}
-        \odot \gamma + \beta
-
-    The mean and standard-deviation are calculated across all nodes and all
-    node channels separately for each object in a mini-batch.
-
-    Args:
-        in_channels (int): Size of each input sample.
-        eps (float, optional): A value added to the denominator for numerical
-            stability. (default: :obj:`1e-5`)
-        affine (bool, optional): If set to :obj:`True`, this module has
-            learnable affine parameters :math:`\gamma` and :math:`\beta`.
-            (default: :obj:`True`)
-        mode (str, optional): The normalization mode to use for layer
-            normalization (:obj:`"graph"` or :obj:`"node"`). If :obj:`"graph"`
-            is used, each graph will be considered as an element to be
-            normalized. If `"node"` is used, each node will be considered as
-            an element to be normalized. (default: :obj:`"graph"`)
-        device (torch.device, optional): The device to use for the module.
-            (default: :obj:`None`)
-    """
     def __init__(
         self,
         in_channels: int,
@@ -119,27 +92,6 @@ class LayerNorm(torch.nn.Module):
 
 
 class HeteroLayerNorm(torch.nn.Module):
-    r"""Applies layer normalization over each individual example in a batch
-    of heterogeneous features as described in the `"Layer Normalization"
-    <https://arxiv.org/abs/1607.06450>`_ paper.
-    Compared to :class:`LayerNorm`, :class:`HeteroLayerNorm` applies
-    normalization individually for each node or edge type.
-
-    Args:
-        in_channels (int): Size of each input sample.
-        num_types (int): The number of types.
-        eps (float, optional): A value added to the denominator for numerical
-            stability. (default: :obj:`1e-5`)
-        affine (bool, optional): If set to :obj:`True`, this module has
-            learnable affine parameters :math:`\gamma` and :math:`\beta`.
-            (default: :obj:`True`)
-        mode (str, optional): The normalization mode to use for layer
-            normalization (:obj:`"node"`). If `"node"` is used, each node will
-            be considered as an element to be normalized.
-            (default: :obj:`"node"`)
-        device (torch.device, optional): The device to use for the module.
-            (default: :obj:`None`)
-    """
     def __init__(
         self,
         in_channels: int,
@@ -200,9 +152,6 @@ class HeteroLayerNorm(torch.nn.Module):
         out = F.layer_norm(x, (self.in_channels, ), None, None, self.eps)
 
         if self.affine:
-            # TODO Revisit this logic completely as it performs worse than just
-            # operating on a dictionary of tensors
-            # (especially the `type_vec` code path)
             if type_ptr is not None:
                 h = torch.empty_like(out)
                 for i, (s, e) in enumerate(zip(type_ptr[:-1], type_ptr[1:])):

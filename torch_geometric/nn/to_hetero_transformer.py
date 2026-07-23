@@ -21,7 +21,7 @@ except (ImportError, ModuleNotFoundError, AttributeError):
 
 
 def get_dict(mapping: Optional[Dict[str, Any]]) -> Dict[str, Any]:
-    return mapping if mapping is not None else {}
+    pass
 
 
 def to_hetero(module: Module, metadata: Metadata, aggr: str = "sum",
@@ -124,8 +124,6 @@ class ToHeteroTransformer(Transformer):
 
     aggrs = {
         'sum': torch.add,
-        # For 'mean' aggregation, we first sum up all feature matrices, and
-        # divide by the number of matrices in a later step.
         'mean': torch.add,
         'max': torch.max,
         'min': torch.min,
@@ -169,126 +167,21 @@ class ToHeteroTransformer(Transformer):
                     f"and underscores.", stacklevel=2)
 
     def placeholder(self, node: Node, target: Any, name: str):
-        # Adds a `get` call to the input dictionary for every node-type or
-        # edge-type.
-        if node.type is not None:
-            Type = EdgeType if self.is_edge_level(node) else NodeType
-            node.type = Dict[Type, node.type]
-
-        self.graph.inserting_after(node)
-
-        dict_node = self.graph.create_node('call_function', target=get_dict,
-                                           args=(node, ), name=f'{name}_dict')
-        self.graph.inserting_after(dict_node)
-
-        for key in self.metadata[int(self.is_edge_level(node))]:
-            out = self.graph.create_node('call_method', target='get',
-                                         args=(dict_node, key, None),
-                                         name=f'{name}__{key2str(key)}')
-            self.graph.inserting_after(out)
+        pass
 
     def get_attr(self, node: Node, target: Any, name: str):
         raise NotImplementedError
 
     def call_message_passing_module(self, node: Node, target: Any, name: str):
-        # Add calls to edge type-wise `MessagePassing` modules and aggregate
-        # the outputs to node type-wise embeddings afterwards.
-
-        module = get_submodule(self.module, target)
-        check_add_self_loops(module, self.metadata[1])
-
-        # Group edge-wise keys per destination:
-        key_name, keys_per_dst = {}, defaultdict(list)
-        for key in self.metadata[1]:
-            keys_per_dst[key[-1]].append(key)
-            key_name[key] = f'{name}__{key[-1]}{len(keys_per_dst[key[-1]])}'
-
-        for dst, keys in dict(keys_per_dst).items():
-            # In case there is only a single edge-wise connection, there is no
-            # need for any destination-wise aggregation, and we can already set
-            # the intermediate variable name to the final output name.
-            if len(keys) == 1:
-                key_name[keys[0]] = f'{name}__{dst}'
-                del keys_per_dst[dst]
-
-        self.graph.inserting_after(node)
-        for key in self.metadata[1]:
-            args, kwargs = self.map_args_kwargs(node, key)
-            out = self.graph.create_node('call_module',
-                                         target=f'{target}.{key2str(key)}',
-                                         args=args, kwargs=kwargs,
-                                         name=key_name[key])
-            self.graph.inserting_after(out)
-
-        # Perform destination-wise aggregation.
-        # Here, we aggregate in pairs, popping the first two elements of
-        # `keys_per_dst` and append the result to the list.
-        for dst, keys in keys_per_dst.items():
-            queue = deque([key_name[key] for key in keys])
-            i = 1
-            while len(queue) >= 2:
-                key1, key2 = queue.popleft(), queue.popleft()
-                args = (self.find_by_name(key1), self.find_by_name(key2))
-
-                new_name = f'{name}__{dst}'
-                if self.aggr == 'mean' or len(queue) > 0:
-                    new_name = f'{new_name}_{i}'
-
-                out = self.graph.create_node('call_function',
-                                             target=self.aggrs[self.aggr],
-                                             args=args, name=new_name)
-                self.graph.inserting_after(out)
-                queue.append(new_name)
-                i += 1
-
-            if self.aggr == 'mean':
-                key = queue.popleft()
-                out = self.graph.create_node(
-                    'call_function', target=torch.div,
-                    args=(self.find_by_name(key), len(keys_per_dst[dst])),
-                    name=f'{name}__{dst}')
-                self.graph.inserting_after(out)
+        pass
 
     def call_global_pooling_module(self, node: Node, target: Any, name: str):
-        # Add calls to node type-wise `GlobalPooling` modules and aggregate
-        # the outputs to graph type-wise embeddings afterwards.
-        self.graph.inserting_after(node)
-        for key in self.metadata[0]:
-            args, kwargs = self.map_args_kwargs(node, key)
-            out = self.graph.create_node('call_module',
-                                         target=f'{target}.{key2str(key)}',
-                                         args=args, kwargs=kwargs,
-                                         name=f'{node.name}__{key2str(key)}')
-            self.graph.inserting_after(out)
-
-        # Perform node-wise aggregation.
-        queue = deque(
-            [f'{node.name}__{key2str(key)}' for key in self.metadata[0]])
-        i = 1
-        while len(queue) >= 2:
-            key1, key2 = queue.popleft(), queue.popleft()
-            args = (self.find_by_name(key1), self.find_by_name(key2))
-            out = self.graph.create_node('call_function',
-                                         target=self.aggrs[self.aggr],
-                                         args=args, name=f'{name}_{i}')
-            self.graph.inserting_after(out)
-            queue.append(f'{name}_{i}')
-            i += 1
-
-        if self.aggr == 'mean':
-            key = queue.popleft()
-            out = self.graph.create_node(
-                'call_function', target=torch.div,
-                args=(self.find_by_name(key), len(self.metadata[0])),
-                name=f'{name}_{i}')
-            self.graph.inserting_after(out)
-        self.replace_all_uses_with(node, out)
+        pass
 
     def call_module(self, node: Node, target: Any, name: str):
         if self.is_graph_level(node):
             return
 
-        # Add calls to node type-wise or edge type-wise modules.
         self.graph.inserting_after(node)
         for key in self.metadata[int(self.is_edge_level(node))]:
             args, kwargs = self.map_args_kwargs(node, key)
@@ -299,34 +192,12 @@ class ToHeteroTransformer(Transformer):
             self.graph.inserting_after(out)
 
     def call_method(self, node: Node, target: Any, name: str):
-        if self.is_graph_level(node):
-            return
-
-        # Add calls to node type-wise or edge type-wise methods.
-        self.graph.inserting_after(node)
-        for key in self.metadata[int(self.is_edge_level(node))]:
-            args, kwargs = self.map_args_kwargs(node, key)
-            out = self.graph.create_node('call_method', target=target,
-                                         args=args, kwargs=kwargs,
-                                         name=f'{name}__{key2str(key)}')
-            self.graph.inserting_after(out)
+        pass
 
     def call_function(self, node: Node, target: Any, name: str):
-        if self.is_graph_level(node):
-            return
-
-        # Add calls to node type-wise or edge type-wise functions.
-        self.graph.inserting_after(node)
-        for key in self.metadata[int(self.is_edge_level(node))]:
-            args, kwargs = self.map_args_kwargs(node, key)
-            out = self.graph.create_node('call_function', target=target,
-                                         args=args, kwargs=kwargs,
-                                         name=f'{name}__{key2str(key)}')
-            self.graph.inserting_after(out)
+        pass
 
     def output(self, node: Node, target: Any, name: str):
-        # Replace the output by dictionaries, holding either node type-wise or
-        # edge type-wise data.
         def _recurse(value: Any) -> Any:
             if isinstance(value, Node):
                 if self.is_graph_level(value):
@@ -356,7 +227,6 @@ class ToHeteroTransformer(Transformer):
         node.args = (_recurse(node.args[0]), )
 
     def init_submodule(self, module: Module, target: str) -> Module:
-        # Replicate each module for each node type or edge type.
         has_node_level_target = bool(
             self.find_by_target(f'{target}.{key2str(self.metadata[0][0])}'))
         has_edge_level_target = bool(
@@ -383,7 +253,6 @@ class ToHeteroTransformer(Transformer):
 
         return module_dict
 
-    # Helper methods ##########################################################
 
     def map_args_kwargs(self, node: Node,
                         key: Union[NodeType, EdgeType]) -> Tuple[Tuple, Dict]:

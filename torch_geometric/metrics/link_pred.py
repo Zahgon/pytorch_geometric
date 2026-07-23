@@ -22,7 +22,6 @@ class LinkPredMetricData:
     edge_label_weight: Optional[Tensor] = None
 
     def __post_init__(self) -> None:
-        # Filter all negative weights - they should not be used as ground-truth
         if self.edge_label_weight is not None:
             pos_mask = self.edge_label_weight > 0
             self.edge_label_weight = self.edge_label_weight[pos_mask]
@@ -36,127 +35,22 @@ class LinkPredMetricData:
 
     @property
     def pred_rel_mat(self) -> Tensor:
-        r"""Returns a matrix indicating the relevance of the `k`-th prediction.
-        If :obj:`edge_label_weight` is not given, relevance will be denoted as
-        binary.
-        """
-        if hasattr(self, '_pred_rel_mat'):
-            return self._pred_rel_mat  # type: ignore
-
-        if self.edge_label_index[1].numel() == 0:
-            self._pred_rel_mat = torch.zeros_like(
-                self.pred_index_mat,
-                dtype=torch.bool if self.edge_label_weight is None else
-                torch.get_default_dtype(),
-            )
-            return self._pred_rel_mat
-
-        # Flatten both prediction and ground-truth indices, and determine
-        # overlaps afterwards via `torch.searchsorted`.
-        max_index = max(
-            self.pred_index_mat.max()
-            if self.pred_index_mat.numel() > 0 else 0,
-            self.edge_label_index[1].max()
-            if self.edge_label_index[1].numel() > 0 else 0,
-        ) + 1
-        arange = torch.arange(
-            start=0,
-            end=max_index * self.pred_index_mat.size(0),  # type: ignore
-            step=max_index,  # type: ignore
-            device=self.pred_index_mat.device,
-        ).view(-1, 1)
-        flat_pred_index = (self.pred_index_mat + arange).view(-1)
-        flat_label_index = max_index * self.edge_label_index[0]
-        flat_label_index = flat_label_index + self.edge_label_index[1]
-        flat_label_index, perm = flat_label_index.sort()
-        edge_label_weight = self.edge_label_weight
-        if edge_label_weight is not None:
-            assert edge_label_weight.size() == self.edge_label_index[0].size()
-            edge_label_weight = edge_label_weight[perm]
-
-        pos = torch.searchsorted(flat_label_index, flat_pred_index)
-        pos = pos.clamp(max=flat_label_index.size(0) - 1)  # Out-of-bounds.
-
-        pred_rel_mat = flat_label_index[pos] == flat_pred_index  # Find matches
-        if edge_label_weight is not None:
-            pred_rel_mat = edge_label_weight[pos].where(
-                pred_rel_mat,
-                pred_rel_mat.new_zeros(1),
-            )
-        pred_rel_mat = pred_rel_mat.view(self.pred_index_mat.size())
-
-        self._pred_rel_mat = pred_rel_mat
-        return pred_rel_mat
+        pass
 
     @property
     def label_count(self) -> Tensor:
-        r"""The number of ground-truth labels for every example."""
-        if hasattr(self, '_label_count'):
-            return self._label_count  # type: ignore
-
-        label_count = scatter(
-            torch.ones_like(self.edge_label_index[0]),
-            self.edge_label_index[0],
-            dim=0,
-            dim_size=self.pred_index_mat.size(0),
-            reduce='sum',
-        )
-
-        self._label_count = label_count
-        return label_count
+        pass
 
     @property
     def label_weight_sum(self) -> Tensor:
-        r"""The sum of edge label weights for every example."""
-        if self.edge_label_weight is None:
-            return self.label_count
-
-        if hasattr(self, '_label_weight_sum'):
-            return self._label_weight_sum  # type: ignore
-
-        label_weight_sum = scatter(
-            self.edge_label_weight,
-            self.edge_label_index[0],
-            dim=0,
-            dim_size=self.pred_index_mat.size(0),
-            reduce='sum',
-        )
-
-        self._label_weight_sum = label_weight_sum
-        return label_weight_sum
+        pass
 
     @property
     def edge_label_weight_pos(self) -> Optional[Tensor]:
-        r"""Returns the position of edge label weights in descending order
-        within example-wise buckets.
-        """
-        if self.edge_label_weight is None:
-            return None
-
-        if hasattr(self, '_edge_label_weight_pos'):
-            return self._edge_label_weight_pos  # type: ignore
-
-        # Get the permutation via two sorts: One globally on the weights,
-        # followed by a (stable) sort on the example indices.
-        perm1 = self.edge_label_weight.argsort(descending=True)
-        perm2 = self.edge_label_index[0][perm1].argsort(stable=True)
-        perm = perm1[perm2]
-        # Invert the permutation to get the final position:
-        pos = torch.empty_like(perm)
-        pos[perm] = torch.arange(perm.size(0), device=perm.device)
-        # Normalize position to zero within all buckets:
-        pos = pos - cumsum(self.label_count)[self.edge_label_index[0]]
-
-        self._edge_label_weight_pos = pos
-        return pos
+        pass
 
 
 class _LinkPredMetric(BaseMetric):
-    r"""An abstract class for computing link prediction retrieval metrics.
-
-    Args:
-        k (int): The number of top-:math:`k` predictions to evaluate against.
-    """
     is_differentiable: bool = False
     full_state_update: bool = False
     higher_is_better: Optional[bool] = None
@@ -217,11 +111,6 @@ class _LinkPredMetric(BaseMetric):
 
 
 class LinkPredMetric(_LinkPredMetric):
-    r"""An abstract class for computing link prediction retrieval metrics.
-
-    Args:
-        k (int): The number of top-:math:`k` predictions to evaluate against.
-    """
     weighted: bool
 
     def __init__(self, k: int) -> None:
@@ -263,9 +152,7 @@ class LinkPredMetric(_LinkPredMetric):
         self.total += (data.label_count > 0).sum()
 
     def compute(self) -> Tensor:
-        if self.total == 0:
-            return torch.zeros_like(self.accum)
-        return self.accum / self.total
+        pass
 
     def _compute(self, data: LinkPredMetricData) -> Tensor:
         r"""Computes the specific metric.
@@ -287,36 +174,6 @@ class LinkPredMetric(_LinkPredMetric):
 
 
 class LinkPredMetricCollection(torch.nn.ModuleDict):
-    r"""A collection of metrics to reduce and speed-up computation of link
-    prediction metrics.
-
-    .. code-block:: python
-
-        from torch_geometric.metrics import (
-            LinkPredMAP,
-            LinkPredMetricCollection,
-            LinkPredPrecision,
-            LinkPredRecall,
-        )
-
-        metrics = LinkPredMetricCollection([
-            LinkPredMAP(k=10),
-            LinkPredPrecision(k=100),
-            LinkPredRecall(k=50),
-        ])
-
-        metrics.update(pred_index_mat, edge_label_index)
-        out = metrics.compute()
-        metrics.reset()
-
-        print(out)
-        >>> {'LinkPredMAP@10': tensor(0.375),
-        ...  'LinkPredPrecision@100': tensor(0.127),
-        ...  'LinkPredRecall@50': tensor(0.483)}
-
-    Args:
-        metrics: The link prediction metrics.
-    """
     def __init__(
         self,
         metrics: Union[
@@ -342,21 +199,11 @@ class LinkPredMetricCollection(torch.nn.ModuleDict):
 
     @property
     def max_k(self) -> int:
-        r"""The maximum number of top-:math:`k` predictions to evaluate
-        against.
-        """
-        return max([
-            metric.k  # type: ignore[return-value]
-            for metric in self.values()
-        ])  # type: ignore[type-var]
+        pass
 
     @property
     def weighted(self) -> bool:
-        r"""Returns :obj:`True` in case the collection holds at least one
-        weighted link prediction metric.
-        """
-        return any(
-            [getattr(metric, 'weighted', False) for metric in self.values()])
+        pass
 
     def update(  # type: ignore
         self,
@@ -423,11 +270,7 @@ class LinkPredMetricCollection(torch.nn.ModuleDict):
                 )
 
     def compute(self) -> Dict[str, Tensor]:
-        r"""Computes the final metric values."""
-        return {
-            name: metric.compute()  # type: ignore[operator]
-            for name, metric in self.items()
-        }
+        pass
 
     def reset(self) -> None:
         r"""Reset metric state variables to their default value."""
@@ -440,16 +283,6 @@ class LinkPredMetricCollection(torch.nn.ModuleDict):
 
 
 class LinkPredPrecision(LinkPredMetric):
-    r"""A link prediction metric to compute Precision @ :math:`k`, *i.e.* the
-    proportion of recommendations within the top-:math:`k` that are actually
-    relevant.
-
-    A higher precision indicates the model's ability to surface relevant items
-    early in the ranking.
-
-    Args:
-        k (int): The number of top-:math:`k` predictions to evaluate against.
-    """
     higher_is_better: bool = True
     weighted: bool = False
 
@@ -459,15 +292,6 @@ class LinkPredPrecision(LinkPredMetric):
 
 
 class LinkPredRecall(LinkPredMetric):
-    r"""A link prediction metric to compute Recall @ :math:`k`, *i.e.* the
-    proportion of relevant items that appear within the top-:math:`k`.
-
-    A higher recall indicates the model's ability to retrieve a larger
-    proportion of relevant items.
-
-    Args:
-        k (int): The number of top-:math:`k` predictions to evaluate against.
-    """
     higher_is_better: bool = True
 
     def __init__(self, k: int, weighted: bool = False):
@@ -480,11 +304,6 @@ class LinkPredRecall(LinkPredMetric):
 
 
 class LinkPredF1(LinkPredMetric):
-    r"""A link prediction metric to compute F1 @ :math:`k`.
-
-    Args:
-        k (int): The number of top-:math:`k` predictions to evaluate against.
-    """
     higher_is_better: bool = True
     weighted: bool = False
 
@@ -497,16 +316,6 @@ class LinkPredF1(LinkPredMetric):
 
 
 class LinkPredMAP(LinkPredMetric):
-    r"""A link prediction metric to compute MAP @ :math:`k` (Mean Average
-    Precision), considering the order of relevant items within the
-    top-:math:`k`.
-
-    MAP @ :math:`k` can provide a more comprehensive view of ranking quality
-    than precision alone.
-
-    Args:
-        k (int): The number of top-:math:`k` predictions to evaluate against.
-    """
     higher_is_better: bool = True
     weighted: bool = False
 
@@ -520,19 +329,6 @@ class LinkPredMAP(LinkPredMetric):
 
 
 class LinkPredNDCG(LinkPredMetric):
-    r"""A link prediction metric to compute the NDCG @ :math:`k` (Normalized
-    Discounted Cumulative Gain).
-
-    In particular, can account for the position of relevant items by
-    considering relevance scores, giving higher weight to more relevant items
-    appearing at the top.
-
-    Args:
-        k (int): The number of top-:math:`k` predictions to evaluate against.
-        weighted (bool, optional): If set to :obj:`True`, assumes sorted lists
-            of ground-truth items according to a relevance score as given by
-            :obj:`edge_label_weight`. (default: :obj:`False`)
-    """
     higher_is_better: bool = True
 
     def __init__(self, k: int, weighted: bool = False):
@@ -583,13 +379,6 @@ class LinkPredNDCG(LinkPredMetric):
 
 
 class LinkPredMRR(LinkPredMetric):
-    r"""A link prediction metric to compute the MRR @ :math:`k` (Mean
-    Reciprocal Rank), *i.e.* the mean reciprocal rank of the first correct
-    prediction (or zero otherwise).
-
-    Args:
-        k (int): The number of top-:math:`k` predictions to evaluate against.
-    """
     higher_is_better: bool = True
     weighted: bool = False
 
@@ -601,13 +390,6 @@ class LinkPredMRR(LinkPredMetric):
 
 
 class LinkPredHitRatio(LinkPredMetric):
-    r"""A link prediction metric to compute the hit ratio @ :math:`k`, *i.e.*
-    the percentage of users for whom at least one relevant item is present
-    within the top-:math:`k` recommendations.
-
-    A high ratio signifies the model's effectiveness in satisfying a broad
-    range of user preferences.
-    """
     higher_is_better: bool = True
     weighted: bool = False
 
@@ -617,16 +399,6 @@ class LinkPredHitRatio(LinkPredMetric):
 
 
 class LinkPredCoverage(_LinkPredMetric):
-    r"""A link prediction metric to compute the Coverage @ :math:`k` of
-    predictions, *i.e.* the percentage of unique items recommended across all
-    users within the top-:math:`k`.
-
-    Higher coverage indicates a wider exploration of the item catalog.
-
-    Args:
-        k (int): The number of top-:math:`k` predictions to evaluate against.
-        num_dst_nodes (int): The total number of destination nodes.
-    """
     higher_is_better: bool = True
 
     def __init__(self, k: int, num_dst_nodes: int) -> None:
@@ -649,7 +421,7 @@ class LinkPredCoverage(_LinkPredMetric):
         self.mask[pred_index_mat[:, :self.k].flatten()] = True
 
     def compute(self) -> Tensor:
-        return self.mask.to(torch.get_default_dtype()).mean()
+        pass
 
     def _reset(self) -> None:
         self.mask.zero_()
@@ -660,31 +432,6 @@ class LinkPredCoverage(_LinkPredMetric):
 
 
 class LinkPredDiversity(_LinkPredMetric):
-    r"""A link prediction metric to compute the Diversity @ :math:`k` of
-    predictions according to item categories.
-
-    Diversity is computed as
-
-    .. math::
-        div_{u@k} = 1 - \left( \frac{1}{k \cdot (k-1)} \right) \sum_{i \neq j}
-        sim(i, j)
-
-    where
-
-    .. math::
-        sim(i,j) = \begin{cases}
-            1 & \quad \text{if } i,j \text{ share category,}\\
-            0 & \quad \text{otherwise.}
-        \end{cases}
-
-    which measures the pair-wise inequality of recommendations according to
-    item categories.
-
-    Args:
-        k (int): The number of top-:math:`k` predictions to evaluate against.
-        category (torch.Tensor): A vector that assigns each destination node to
-            a specific category.
-    """
     higher_is_better: bool = True
 
     def __init__(self, k: int, category: Tensor) -> None:
@@ -718,9 +465,7 @@ class LinkPredDiversity(_LinkPredMetric):
         self.total += pred_index_mat.size(0)
 
     def compute(self) -> Tensor:
-        if self.total == 0:
-            return torch.zeros_like(self.accum)
-        return self.accum / self.total
+        pass
 
     def _reset(self) -> None:
         self.accum.zero_()
@@ -728,25 +473,6 @@ class LinkPredDiversity(_LinkPredMetric):
 
 
 class LinkPredPersonalization(_LinkPredMetric):
-    r"""A link prediction metric to compute the Personalization @ :math:`k`,
-    *i.e.* the dissimilarity of recommendations across different users.
-
-    Higher personalization suggests that the model tailors recommendations to
-    individual user preferences rather than providing generic results.
-
-    Dissimilarity is defined by the average inverse cosine similarity between
-    users' lists of recommendations.
-
-    Args:
-        k (int): The number of top-:math:`k` predictions to evaluate against.
-        max_src_nodes (int, optional): The maximum source nodes to consider to
-            compute pair-wise dissimilarity. If specified,
-            Personalization @ :math:`k` is approximated to avoid computation
-            blowup due to quadratic complexity. (default: :obj:`2**12`)
-        batch_size (int, optional): The batch size to determine how many pairs
-            of user recommendations should be processed at once.
-            (default: :obj:`2**16`)
-    """
     higher_is_better: bool = True
 
     def __init__(
@@ -776,7 +502,6 @@ class LinkPredPersonalization(_LinkPredMetric):
         edge_label_weight: Optional[Tensor] = None,
     ) -> None:
 
-        # NOTE Move to CPU to avoid memory blowup.
         pred_index_mat = pred_index_mat[:, :self.k].cpu()
 
         if self.max_src_nodes is None:
@@ -789,48 +514,7 @@ class LinkPredPersonalization(_LinkPredMetric):
             self.total += pred_index_mat.size(0)
 
     def compute(self) -> Tensor:
-        device = self.total.device
-        score = torch.tensor(0.0, device=device)
-        total = torch.tensor(0, device=device)
-
-        if len(self.preds) == 0:
-            return score
-
-        pred = torch.cat(self.preds, dim=0)
-
-        if pred.size(0) == 0:
-            return score
-
-        # Calculate all pairs of nodes (e.g., triu_indices with offset=1).
-        # NOTE We do this in chunks to avoid memory blow-up, which leads to a
-        # more efficient but trickier implementation.
-        num_pairs = (pred.size(0) * (pred.size(0) - 1)) // 2
-        offset = torch.arange(pred.size(0) - 1, 0, -1, device=device)
-        rowptr = cumsum(offset)
-        for start in range(0, num_pairs, self.batch_size):
-            end = min(start + self.batch_size, num_pairs)
-            idx = torch.arange(start, end, device=device)
-
-            # Find the corresponding row:
-            row = torch.searchsorted(rowptr, idx, right=True) - 1
-            # Find the corresponding column:
-            col = idx - rowptr[row] + (pred.size(0) - offset[row])
-
-            left = pred[row.cpu()].to(device)
-            right = pred[col.cpu()].to(device)
-
-            # Use offset to work around applying `isin` along a specific dim:
-            i = max(int(left.max()), int(right.max())) + 1
-            idx = torch.arange(0, i * row.size(0), i, device=device)
-            idx = idx.view(-1, 1)
-            isin = torch.isin(left + idx, right + idx)
-
-            # Compute personalization via average inverse cosine similarity:
-            cos = isin.sum(dim=-1) / pred.size(1)
-            score += (1 - cos).sum()
-            total += cos.numel()
-
-        return score / total
+        pass
 
     def _reset(self) -> None:
         self.preds = []
@@ -838,16 +522,6 @@ class LinkPredPersonalization(_LinkPredMetric):
 
 
 class LinkPredAveragePopularity(_LinkPredMetric):
-    r"""A link prediction metric to compute the Average Recommendation
-    Popularity (ARP) @ :math:`k`, which provides insights into the model's
-    tendency to recommend popular items by averaging the popularity scores of
-    items within the top-:math:`k` recommendations.
-
-    Args:
-        k (int): The number of top-:math:`k` predictions to evaluate against.
-        popularity (torch.Tensor): The popularity of every item in the training
-            set, *e.g.*, the number of times an item has been rated.
-    """
     higher_is_better: bool = False
 
     def __init__(self, k: int, popularity: Tensor) -> None:
@@ -879,9 +553,7 @@ class LinkPredAveragePopularity(_LinkPredMetric):
         self.total += popularity.numel()
 
     def compute(self) -> Tensor:
-        if self.total == 0:
-            return torch.zeros_like(self.accum)
-        return self.accum / self.total
+        pass
 
     def _reset(self) -> None:
         self.accum.zero_()

@@ -35,10 +35,8 @@ def register_base(mapping: Dict[str, Any], key: str,
         mapping[key] = module
         return
 
-    # Other-wise, use it as a decorator:
     def bounded_register(module):
-        register_base(mapping, key, module)
-        return module
+        pass
 
     return bounded_register
 
@@ -84,8 +82,7 @@ def register_network(key: str, module: Any = None):
 
 
 def register_config(key: str, module: Any = None):
-    r"""Registers a configuration group in GraphGym."""
-    return register_base(config_dict, key, module)
+    pass
 
 
 def register_dataset(key: str, module: Any = None):
@@ -94,8 +91,7 @@ def register_dataset(key: str, module: Any = None):
 
 
 def register_loader(key: str, module: Any = None):
-    r"""Registers a data loader in GraphGym."""
-    return register_base(loader_dict, key, module)
+    pass
 
 
 def register_optimizer(key: str, module: Any = None):
@@ -109,15 +105,12 @@ def register_scheduler(key: str, module: Any = None):
 
 
 def register_loss(key: str, module: Any = None):
-    r"""Registers a loss function in GraphGym."""
-    return register_base(loss_dict, key, module)
+    pass
 
 
 def register_train(key: str, module: Any = None):
-    r"""Registers a training function in GraphGym."""
-    return register_base(train_dict, key, module)
+    pass
 
 
 def register_metric(key: str, module: Any = None):
-    r"""Register a metric function in GraphGym."""
-    return register_base(metric_dict, key, module)
+    pass

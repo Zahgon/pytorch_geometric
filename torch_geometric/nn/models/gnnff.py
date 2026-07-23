@@ -31,8 +31,6 @@ class NodeBlock(torch.nn.Module):
         self.lin_c1 = Linear(hidden_node_channels + hidden_edge_channels,
                              2 * hidden_node_channels)
 
-        # BN was added based on previous studies.
-        # ref: https://github.com/txie-93/cgcnn/blob/master/cgcnn/model.py
         self.bn_c1 = BatchNorm1d(2 * hidden_node_channels)
         self.bn = BatchNorm1d(hidden_node_channels)
 
@@ -63,8 +61,6 @@ class EdgeBlock(torch.nn.Module):
             2 * hidden_edge_channels,
         )
 
-        # BN was added based on previous studies.
-        # ref: https://github.com/txie-93/cgcnn/blob/master/cgcnn/model.py
         self.bn_c2 = BatchNorm1d(2 * hidden_edge_channels)
         self.bn_c3 = BatchNorm1d(2 * hidden_edge_channels)
         self.bn_c2_2 = BatchNorm1d(hidden_edge_channels)
@@ -116,25 +112,6 @@ class EdgeBlock(torch.nn.Module):
 
 
 class GNNFF(torch.nn.Module):
-    r"""The Graph Neural Network Force Field (GNNFF) from the
-    `"Accurate and scalable graph neural network force field and molecular
-    dynamics with direct force architecture"
-    <https://www.nature.com/articles/s41524-021-00543-3>`_ paper.
-    :class:`GNNFF` directly predicts atomic forces from automatically
-    extracted features of the local atomic environment that are
-    translationally-invariant, but rotationally-covariant to the coordinate of
-    the atoms.
-
-    Args:
-        hidden_node_channels (int): Hidden node embedding size.
-        hidden_edge_channels (int): Hidden edge embedding size.
-        num_layers (int): Number of message passing blocks.
-        cutoff (float, optional): Cutoff distance for interatomic
-            interactions. (default: :obj:`5.0`)
-        max_num_neighbors (int, optional): The maximum number of neighbors to
-            collect for each node within the :attr:`cutoff` distance.
-            (default: :obj:`32`)
-    """
     def __init__(
         self,
         hidden_node_channels: int,
@@ -192,21 +169,17 @@ class GNNFF(torch.nn.Module):
         i, j, idx_i, idx_j, idx_k, idx_kj, idx_ji = triplets(
             edge_index, num_nodes=z.size(0))
 
-        # Calculate distances and unit vector:
         dist = (pos[i] - pos[j]).pow(2).sum(dim=-1).sqrt()
         unit_vec = (pos[i] - pos[j]) / dist.view(-1, 1)
 
-        # Embedding blocks:
         node_emb = self.node_emb(z)
         edge_emb = self.edge_emb(dist)
 
-        # Message passing blocks:
         for node_block, edge_block in zip(self.node_blocks, self.edge_blocks):
             node_emb = node_block(node_emb, edge_emb, i)
             edge_emb = edge_block(node_emb, edge_emb, i, j, idx_i, idx_j,
                                   idx_k, idx_ji, idx_kj)
 
-        # Force prediction block:
         force = self.force_predictor(edge_emb) * unit_vec
 
         return scatter(force, i, dim=0, reduce='sum')

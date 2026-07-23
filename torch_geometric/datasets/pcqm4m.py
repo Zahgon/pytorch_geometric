@@ -12,36 +12,6 @@ from torch_geometric.utils import from_smiles as _from_smiles
 
 
 class PCQM4Mv2(OnDiskDataset):
-    r"""The PCQM4Mv2 dataset from the `"OGB-LSC: A Large-Scale Challenge for
-    Machine Learning on Graphs" <https://arxiv.org/abs/2103.09430>`_ paper.
-    :class:`PCQM4Mv2` is a quantum chemistry dataset originally curated under
-    the `PubChemQC project
-    <https://pubs.acs.org/doi/10.1021/acs.jcim.7b00083>`_.
-    The task is to predict the DFT-calculated HOMO-LUMO energy gap of molecules
-    given their 2D molecular graphs.
-
-    .. note::
-        This dataset uses the :class:`OnDiskDataset` base class to load data
-        dynamically from disk.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        split (str, optional): If :obj:`"train"`, loads the training dataset.
-            If :obj:`"val"`, loads the validation dataset.
-            If :obj:`"test"`, loads the test dataset.
-            If :obj:`"holdout"`, loads the holdout dataset.
-            (default: :obj:`"train"`)
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        backend (str): The :class:`Database` backend to use.
-            (default: :obj:`"sqlite"`)
-        from_smiles (callable, optional): A custom function that takes a SMILES
-            string and outputs a :obj:`~torch_geometric.data.Data` object.
-            If not set, defaults to :meth:`~torch_geometric.utils.from_smiles`.
-            (default: :obj:`None`)
-    """
     url = ('https://dgl-data.s3-accelerate.amazonaws.com/dataset/OGB-LSC/'
            'pcqm4m-v2.zip')
 
@@ -78,10 +48,7 @@ class PCQM4Mv2(OnDiskDataset):
 
     @property
     def raw_file_names(self) -> List[str]:
-        return [
-            osp.join('pcqm4m-v2', 'raw', 'data.csv.gz'),
-            osp.join('pcqm4m-v2', 'split_dict.pt'),
-        ]
+        pass
 
     def download(self) -> None:
         path = download_url(self.url, self.raw_dir)

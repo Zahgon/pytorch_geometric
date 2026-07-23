@@ -12,22 +12,6 @@ from torch_geometric.transforms import BaseTransform
 
 @functional_transform('fixed_points')
 class FixedPoints(BaseTransform):
-    r"""Samples a fixed number of points and features from a point cloud
-    (functional name: :obj:`fixed_points`).
-
-    Args:
-        num (int): The number of points to sample.
-        replace (bool, optional): If set to :obj:`False`, samples points
-            without replacement. (default: :obj:`True`)
-        allow_duplicates (bool, optional): In case :obj:`replace` is
-            :obj`False` and :obj:`num` is greater than the number of points,
-            this option determines whether to add duplicated nodes to the
-            output points or not.
-            In case :obj:`allow_duplicates` is :obj:`False`, the number of
-            output points might be smaller than :obj:`num`.
-            In case :obj:`allow_duplicates` is :obj:`True`, the number of
-            duplicated points are kept to a minimum. (default: :obj:`False`)
-    """
     def __init__(
         self,
         num: int,

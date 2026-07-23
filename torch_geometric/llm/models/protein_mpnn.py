@@ -76,17 +76,12 @@ class Encoder(MessagePassing):
         edge_index: torch.Tensor,
         edge_attr: torch.Tensor,
     ) -> torch.Tensor:
-        # x: [N, d_v]
-        # edge_index: [2, E]
-        # edge_attr: [E, d_e]
-        # update node features
         h_message = self.propagate(x=x, edge_index=edge_index,
                                    edge_attr=edge_attr)
         dh = h_message / self.scale
         x = self.norm1(x + self.dropout1(dh))
         dh = self.dense(x)
         x = self.norm2(x + self.dropout2(dh))
-        # update edge features
         row, col = edge_index
         x_i, x_j = x[row], x[col]
         h_e = torch.cat([x_i, x_j, edge_attr], dim=-1)
@@ -133,9 +128,6 @@ class Decoder(MessagePassing):
         x_label: torch.Tensor,
         mask: torch.Tensor,
     ) -> torch.Tensor:
-        # x: [N, d_v]
-        # edge_index: [2, E]
-        # edge_attr: [E, d_e]
         h_message = self.propagate(x=x, x_label=x_label, edge_index=edge_index,
                                    edge_attr=edge_attr, mask=mask)
         dh = h_message / self.scale
@@ -156,35 +148,6 @@ class Decoder(MessagePassing):
 
 
 class ProteinMPNN(torch.nn.Module):
-    r"""The ProteinMPNN model from the `"Robust deep learning--based
-    protein sequence design using ProteinMPNN"
-    <https://www.biorxiv.org/content/10.1101/2022.06.03.494563v1>`_ paper.
-
-    Args:
-        hidden_dim (int): Hidden channels.
-            (default: :obj:`128`)
-        num_encoder_layers (int): Number of encode layers.
-            (default: :obj:`3`)
-        num_decoder_layers (int): Number of decode layers.
-            (default: :obj:`3`)
-        num_neighbors (int): Number of neighbors for each atom.
-            (default: :obj:`30`)
-        num_rbf (int): Number of radial basis functions.
-            (default: :obj:`16`)
-        dropout (float): Dropout rate.
-            (default: :obj:`0.1`)
-        augment_eps (float): Augmentation epsilon for input coordinates.
-            (default: :obj:`0.2`)
-        num_positional_embedding (int): Number of positional embeddings.
-            (default: :obj:`16`)
-        vocab_size (int): Number of vocabulary.
-            (default: :obj:`21`)
-
-    .. note::
-        For an example of using :class:`ProteinMPNN`, see
-        `examples/llm/protein_mpnn.py <https://github.com/pyg-team/
-        pytorch_geometric/blob/master/examples/llm/protein_mpnn.py>`_.
-    """
     def __init__(
         self,
         hidden_dim: int = 128,
@@ -288,22 +251,18 @@ class ProteinMPNN(torch.nn.Module):
 
         row, col = edge_index
         offset = residue_idx[row] - residue_idx[col]
-        # find self vs non-self interaction
         e_chains = ((chain_encoding_all[row] -
                      chain_encoding_all[col]) == 0).long()
         e_pos = self.embedding(offset, e_chains)
         h_e = self.edge_mlp(torch.cat([edge_attr, e_pos], dim=-1))
         h_v = torch.zeros(x.size(0), self.hidden_dim, device=x.device)
 
-        # encoder
         for encoder in self.encoder_layers:
             h_v, h_e = encoder(h_v, edge_index, h_e)
 
-        # mask
         h_label = self.label_embedding(chain_seq_label)
         batch_chain_mask_all, _ = to_dense_batch(chain_mask_all * mask,
                                                  batch)  # [B, N]
-        # 0 - visible - encoder, 1 - masked - decoder
         decoding_order = torch.argsort(
             (batch_chain_mask_all + 1e-4) * (torch.abs(
                 torch.randn(batch_chain_mask_all.shape, device=device))))
@@ -319,7 +278,6 @@ class ProteinMPNN(torch.nn.Module):
         adj = to_dense_adj(edge_index, batch)
         mask_attend = order_mask_backward[adj.bool()].unsqueeze(-1)
 
-        # decoder
         for decoder in self.decoder_layers:
             h_v = decoder(
                 h_v,

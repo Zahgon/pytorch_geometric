@@ -23,189 +23,6 @@ def _load_yaml(path: str) -> dict:
 
 
 class GraphLandDataset(InMemoryDataset):
-    r"""The graph datasets from the `"GraphLand: Evaluating
-    Graph Machine Learning Models on Diverse Industrial Data"
-    <https://arxiv.org/abs/2409.14500>`_ paper.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        name (str): The name of the dataset (:obj:`"hm-categories"`,
-            :obj:`"pokec-regions"`, :obj:`"web-topics"`, :obj:`"tolokers-2"`,
-            :obj:`"city-reviews"`, :obj:`"artnet-exp"`, :obj:`"web-fraud"`,
-            :obj:`"hm-prices"`, :obj:`"avazu-ctr"`, :obj:`"city-roads-M"`,
-            :obj:`"city-roads-L"`, :obj:`"twitch-views"`,
-            :obj:`"artnet-views"`, :obj:`"web-traffic"`).
-        split (str): The type of dataset split/setting (:obj:`"RL"`,
-            :obj:`"RH"`, :obj:`"TH"`, :obj:`"THI"`).
-            :obj:`"RL"` is for "random low" split — a 10%/10%/80% random
-            stratified train/val/test split.
-            :obj:`"RH"` is for "random high" split — a 50%/25%/25% random
-            stratified train/val/test split.
-            :obj:`"TH"` is for "temporal high" split — a 50%/25%/25% temporal
-            train/val/test split.
-            :obj:`"THI"` is for "temporal high" split with the inductive
-            setting, which means that the graph is evolving over time, thus
-            val and test nodes are not seen at train time, and test nodes
-            are not seen at val time.
-            The :obj:`"RL"`, :obj:`"RH"`, and :obj:`"TH"` splits correspond
-            to the transductive setting and thus will return a dataset with
-            a single graph and three masks (for train, val, and test nodes).
-            In contrast, the :obj:`"THI"` split corresponds to the inductive
-            setting, and thus will return a dataset with three graphs
-            (a train graph, a val graph, and a test graph), which are three
-            snapshots of an evolving network captured at different timestamps.
-            Each of the three graphs has a mask specifying which of the nodes
-            should be used for training (in the train graph) and evaluation
-            (in the val and test graphs).
-            :obj:`"TH"` and :obj:`"THI"` splits are not available for the
-            following datasets: :obj:`"city-reviews"`, :obj:`"city-roads-M"`,
-            :obj:`"city-roads-L"`, :obj:`"web-traffic"`.
-        numerical_features_transform (str, optional): A transform applied to
-            numerical features (:obj:`None`, :obj:`"standard_scaler"`,
-            :obj:`"min_max_scaler"`, :obj:`"quantile_transform_normal"`,
-            :obj:`"quantile_transform_uniform"`, :obj:`"default"`).
-            Since numerical features can have widely different scales and
-            distributions, it is typically useful to apply some transform
-            to them before passing them to a neural model. This transform
-            is applied to all numerical features except for those that are
-            also categorized as fraction features. The :obj:`"default"` value
-            selects a dataset-specific transform from the other options that
-            was determined to be a safe and likely optimal choice for this
-            dataset based on experiments with various GNNs.
-            (default: :obj:`"default"`)
-        fraction_features_transform (str, optional): A transform applied to
-            fraction features (:obj:`None`, :obj:`"standard_scaler"`,
-            :obj:`"min_max_scaler"`, :obj:`"quantile_transform_normal"`,
-            :obj:`"quantile_transform_uniform"`, :obj:`"default"`). Fraction
-            features are a subset of numerical features that have the meaning
-            of fractions and are thus always in :obj:`[0, 1]` range. Since
-            their range is bounded, it is not neccessary but may still be
-            useful to apply some transform to them before passing them to a
-            neural model. The :obj:`"default"` value selects a dataset-specific
-            transform from the other options that was determined to be a safe
-            and likely optimal choice for this dataset based on experiments
-            with various GNNs. (default: :obj:`"default"`)
-        categorical_features_transform (str, optional): A transform applied to
-            categorical features (:obj:`None`, :obj:`"one_hot_encoding"`).
-            It is most often useful to apply one-hot encoding to categorical
-            features before passing them to a neural model.
-            (default: :obj:`"one_hot_encoding"`)
-        regression_targets_transform (str, optional): A transform applied to
-            regression targets (:obj:`None`, :obj:`"standard_scaler"`,
-            :obj:`"min_max_scaler"`, :obj:`"default"`). Depending on their
-            range, it may or may not be useful to apply a transform to
-            regression targets before fitting a neural model to them.
-            The :obj:`"default"` value selects a dataset-specific transform
-            from the other options that was determined to be a safe and likely
-            optimal choice for this dataset based on experiments with various
-            GNNs. This argument does not affect classification datasets.
-            (default: :obj:`"default"`)
-        numerical_features_nan_imputation_strategy (str, optional): Defines
-            which value to fill NaNs in numerical features with
-            (:obj:`None`, :obj:`"mean"`, :obj:`"median"`,
-            :obj:`"most_frequent"`). This imputation strategy is applied to
-            all numerical features except for those that are also categorized
-            as fraction features. (default: :obj:`"most_frequent"`)
-        fraction_features_nan_imputation_strategy (str, optional): Defines
-            which value to fill NaNs in fraction features with (:obj:`None`,
-            :obj:`"mean"`, :obj:`"median"`, :obj:`"most_frequent"`).
-            (default: :obj:`"most_frequent"`)
-        to_undirected (bool, optional): Whether to convert a directed graph
-            to an undirected one. Does not affect undirected graphs.
-            (default: :obj:`True`)
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-
-    **STATS:**
-
-    .. list-table::
-        :widths: 14 10 10 10 14
-        :header-rows: 1
-
-        * - Name
-          - #nodes
-          - #edges
-          - is directed
-          - task
-        * - :obj:`hm-categories`
-          - 46,563
-          - 21,461,990
-          - False
-          - multiclass
-        * - :obj:`pokec-regions`
-          - 1,632,803
-          - 30,622,564
-          - True
-          - multiclass
-        * - :obj:`web-topics`
-          - 2,890,331
-          - 12,895,369
-          - True
-          - multiclass
-        * - :obj:`tolokers-2`
-          - 11,758
-          - 1,038,000
-          - False
-          - binclass
-        * - :obj:`city-reviews`
-          - 148,801
-          - 2,330,830
-          - False
-          - binclass
-        * - :obj:`artnet-exp`
-          - 50,405
-          - 560,696
-          - False
-          - binclass
-        * - :obj:`web-fraud`
-          - 2,890,331
-          - 12,895,369
-          - True
-          - binclass
-        * - :obj:`hm-prices`
-          - 46,563
-          - 21,461,990
-          - False
-          - regression
-        * - :obj:`avazu-ctr`
-          - 76,269
-          - 21,968,154
-          - False
-          - regression
-        * - :obj:`city-roads-M`
-          - 57,073
-          - 132,571
-          - True
-          - regression
-        * - :obj:`city-roads-L`
-          - 142,257
-          - 279,062
-          - True
-          - regression
-        * - :obj:`twitch-views`
-          - 168,114
-          - 13,595,114
-          - False
-          - regression
-        * - :obj:`artnet-views`
-          - 50,405
-          - 560,696
-          - False
-          - regression
-        * - :obj:`web-traffic`
-          - 2,890,331
-          - 12,895,369
-          - True
-          - regression
-    """
     _url = 'https://zenodo.org/records/16895532'
     GRAPHLAND_DATASETS = {
         'hm-categories': 'multiclass_classification',
@@ -352,29 +169,19 @@ class GraphLandDataset(InMemoryDataset):
 
     @property
     def raw_dir(self) -> str:
-        return osp.join(self.root, self.name, 'raw')
+        pass
 
     @property
     def processed_dir(self) -> str:
-        specs = ''.join(f'__{str(arg).lower()}' for arg in [
-            self.split,
-            self._num_transform,
-            self._frac_transform,
-            self._cat_transform,
-            self._reg_transform,
-            self._num_imputation,
-            self._frac_imputation,
-            self._to_undirected,
-        ])
-        return osp.join(self.root, self.name, 'processed', specs)
+        pass
 
     @property
     def raw_file_names(self) -> str:
-        return self.name
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def download(self) -> None:
         zip_url = osp.join(self._url, 'files', f'{self.name}.zip')
@@ -439,7 +246,6 @@ class GraphLandDataset(InMemoryDataset):
     def _get_transductive_data(self) -> list[Data]:
         raw_data = self._get_raw_data()
 
-        # >>> process targets
         targets = raw_data['targets']
         labeled_mask = ~np.isnan(targets)
         if (raw_data['info']['task'] == 'regression'
@@ -450,7 +256,6 @@ class GraphLandDataset(InMemoryDataset):
             targets = transform.transform(targets).reshape(-1)
         targets = torch.from_numpy(targets).float()
 
-        # >>> process numerical features
         num_features = raw_data['num_features']
         if num_features.size > 0:
             if self._num_transform is not None:
@@ -464,7 +269,6 @@ class GraphLandDataset(InMemoryDataset):
             if self._num_transform is not None:
                 num_features = transform.transform(num_features)
 
-        # >>> process fraction features
         frac_features = raw_data['frac_features']
         if frac_features.size > 0:
             if self._frac_transform is not None:
@@ -478,13 +282,11 @@ class GraphLandDataset(InMemoryDataset):
             if self._frac_transform is not None:
                 frac_features = transform.transform(frac_features)
 
-        # >>> process categorical features
         cat_features = raw_data['cat_features']
         if cat_features.size > 0 and self._cat_transform is not None:
             cat_features = (self._transforms[self._cat_transform]
                             ().fit_transform(cat_features))
 
-        # >>> concatenate features and make features mask
         features = np.concatenate(
             [num_features, frac_features, cat_features],
             axis=1,
@@ -504,7 +306,6 @@ class GraphLandDataset(InMemoryDataset):
         if cat_features.shape[1] > 0:
             cat_mask[-cat_features.shape[1]:] = True
 
-        # >>> update split masks
         train_mask = raw_data['masks']['train'] & labeled_mask
         train_mask = torch.from_numpy(train_mask).bool()
 
@@ -514,11 +315,9 @@ class GraphLandDataset(InMemoryDataset):
         test_mask = raw_data['masks']['test'] & labeled_mask
         test_mask = torch.from_numpy(test_mask).bool()
 
-        # >>> make edge index
         edge_index = raw_data['edges'].T
         edge_index = torch.from_numpy(edge_index).long()
 
-        # >>> construct Data object
         data = Data(
             edge_index=edge_index,
             x=features,
@@ -536,7 +335,6 @@ class GraphLandDataset(InMemoryDataset):
         raw_data = self._get_raw_data()
         transform_mask = raw_data['masks']['train']
 
-        # >>> process targets
         targets = raw_data['targets']
         labeled_mask = ~np.isnan(targets)
         if (raw_data['info']['task'] == 'regression'
@@ -547,7 +345,6 @@ class GraphLandDataset(InMemoryDataset):
             targets = transform.transform(targets).reshape(-1)
         targets = torch.from_numpy(targets).float()
 
-        # >>> process numerical features
         num_features = raw_data['num_features']
         if num_features.size > 0:
             if self._num_transform is not None:
@@ -562,7 +359,6 @@ class GraphLandDataset(InMemoryDataset):
             if self._num_transform is not None:
                 num_features = transform.transform(num_features)
 
-        # >>> process fraction features
         frac_features = raw_data['frac_features']
         if frac_features.size > 0:
             if self._frac_transform is not None:
@@ -577,14 +373,12 @@ class GraphLandDataset(InMemoryDataset):
             if self._frac_transform is not None:
                 frac_features = transform.transform(frac_features)
 
-        # >>> process categorical features
         cat_features = raw_data['cat_features']
         if cat_features.size > 0 and self._cat_transform is not None:
             transform = self._transforms[self._cat_transform]()
             transform.fit(cat_features[transform_mask])
             cat_features = transform.transform(cat_features)
 
-        # >>> concatenate features and make features mask
         features = np.concatenate(
             [num_features, frac_features, cat_features],
             axis=1,
@@ -604,11 +398,9 @@ class GraphLandDataset(InMemoryDataset):
         if cat_features.shape[1] > 0:
             cat_mask[-cat_features.shape[1]:] = True
 
-        # >>> construct Data objects
         edge_index = raw_data['edges'].T
         edge_index = torch.from_numpy(edge_index).long()
 
-        # --- train
         train_graph_mask = raw_data['masks']['train']
         train_graph_mask = torch.from_numpy(train_graph_mask).bool()
 
@@ -635,7 +427,6 @@ class GraphLandDataset(InMemoryDataset):
             cross_snapshot_node_id=train_node_id,
         )
 
-        # --- val
         val_graph_mask = (raw_data['masks']['train']
                           | raw_data['masks']['val'])
         val_graph_mask = torch.from_numpy(val_graph_mask).bool()
@@ -663,7 +454,6 @@ class GraphLandDataset(InMemoryDataset):
             cross_snapshot_node_id=val_node_id,
         )
 
-        # --- test
         test_graph_mask = (raw_data['masks']['train']
                            | raw_data['masks']['val']
                            | raw_data['masks']['test'])

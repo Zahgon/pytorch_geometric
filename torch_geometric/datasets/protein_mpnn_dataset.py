@@ -17,45 +17,6 @@ from torch_geometric.data import (
 
 
 class ProteinMPNNDataset(InMemoryDataset):
-    r"""The ProteinMPNN dataset from the `"Robust deep learning based protein
-    sequence design using ProteinMPNN"
-    <https://www.biorxiv.org/content/10.1101/2022.06.03.494563v1>`_ paper.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        size (str): Size of the PDB information to train the model.
-            If :obj:`"small"`, loads the small dataset (229.4 MB).
-            If :obj:`"large"`, loads the large dataset (64.1 GB).
-            (default: :obj:`"small"`)
-        split (str, optional): If :obj:`"train"`, loads the training dataset.
-            If :obj:`"valid"`, loads the validation dataset.
-            If :obj:`"test"`, loads the test dataset.
-            (default: :obj:`"train"`)
-        datacut (str, optional): Date cutoff to filter the dataset.
-            (default: :obj:`"2030-01-01"`)
-        rescut (float, optional): PDB resolution cutoff.
-            (default: :obj:`3.5`)
-        homo (float, optional): Homology cutoff.
-            (default: :obj:`0.70`)
-        max_length (int, optional): Maximum length of the protein complex.
-            (default: :obj:`10000`)
-        num_units (int, optional): Number of units of the protein complex.
-            (default: :obj:`150`)
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        pre_filter (callable, optional): A function that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a boolean
-            value, indicating whether the data object should be included in the
-            final dataset. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-    """
 
     raw_url = {
         'small':
@@ -103,14 +64,11 @@ class ProteinMPNNDataset(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> List[str]:
-        return [
-            f'{self.sub_folder}/{f}'
-            for f in ['list.csv', 'valid_clusters.txt', 'test_clusters.txt']
-        ]
+        pass
 
     @property
     def processed_file_names(self) -> List[str]:
-        return ['splits.pkl', 'train.pt', 'valid.pt', 'test.pt']
+        pass
 
     def download(self) -> None:
         file_path = download_url(self.raw_url[self.size], self.raw_dir)
@@ -184,7 +142,6 @@ class ProteinMPNNDataset(InMemoryDataset):
             with open(save_path, 'rb') as f:
                 data = pickle.load(f)
         else:
-            # CHAINID, DEPOSITION, RESOLUTION, HASH, CLUSTER, SEQUENCE
             df = pd.read_csv(self.raw_paths[0])
             df = df[(df['RESOLUTION'] <= self.rescut)
                     & (df['DEPOSITION'] <= self.datacut)]
@@ -192,7 +149,6 @@ class ProteinMPNNDataset(InMemoryDataset):
             val_ids = pd.read_csv(self.raw_paths[1], header=None)[0].tolist()
             test_ids = pd.read_csv(self.raw_paths[2], header=None)[0].tolist()
 
-            # compile training and validation sets
             data = {
                 'train': defaultdict(list),
                 'valid': defaultdict(list),
@@ -219,7 +175,6 @@ class ProteinMPNNDataset(InMemoryDataset):
     def _process_pdb1(self, chain_id: str) -> Dict[str, Any]:
         pdbid, chid = chain_id.split('_')
         prefix = f'{self.raw_dir}/{self.sub_folder}/pdb/{pdbid[1:3]}/{pdbid}'
-        # load metadata
         if not os.path.isfile(f'{prefix}.pt'):
             return {'seq': np.zeros(5)}
         meta = torch.load(f'{prefix}.pt')
@@ -227,14 +182,11 @@ class ProteinMPNNDataset(InMemoryDataset):
         asmb_chains = meta['asmb_chains']
         chids = np.array(meta['chains'])
 
-        # find candidate assemblies which contain chid chain
         asmb_candidates = {
             a
             for a, b in zip(asmb_ids, asmb_chains) if chid in b.split(',')
         }
 
-        # if the chains is missing is missing from all the assemblies
-        # then return this chain alone
         if len(asmb_candidates) < 1:
             chain = torch.load(f'{prefix}_{chid}.pt')
             L = len(chain['seq'])
@@ -246,34 +198,27 @@ class ProteinMPNNDataset(InMemoryDataset):
                 'label': chain_id,
             }
 
-        # randomly pick one assembly from candidates
         asmb_i = random.sample(list(asmb_candidates), 1)
 
-        # indices of selected transforms
         idx = np.where(np.array(asmb_ids) == asmb_i)[0]
 
-        # load relevant chains
         chains = {
             c: torch.load(f'{prefix}_{c}.pt')
             for i in idx
             for c in asmb_chains[i] if c in meta['chains']
         }
 
-        # generate assembly
         asmb = {}
         for k in idx:
 
-            # pick k-th xform
             xform = meta[f'asmb_xform{k}']
             u = xform[:, :3, :3]
             r = xform[:, :3, 3]
 
-            # select chains which k-th xform should be applied to
             s1 = set(meta['chains'])
             s2 = set(asmb_chains[k].split(','))
             chains_k = s1 & s2
 
-            # transform selected chains
             for c in chains_k:
                 try:
                     xyz = chains[c]['xyz']
@@ -286,13 +231,11 @@ class ProteinMPNNDataset(InMemoryDataset):
                 except KeyError:
                     return {'seq': np.zeros(5)}
 
-        # select chains which share considerable similarity to chid
         seqid = meta['tm'][chids == chid][0, :, 1]
         homo = {
             ch_j
             for seqid_j, ch_j in zip(seqid, chids) if seqid_j > self.homo
         }
-        # stack all chains in the assembly together
         seq: str = ''
         xyz_all: List[torch.Tensor] = []
         idx_all: List[torch.Tensor] = []
@@ -376,9 +319,7 @@ class ProteinMPNNDataset(InMemoryDataset):
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor,
                torch.Tensor, torch.Tensor]:
         L = len(b['seq'])
-        # residue idx with jumps across chains
         residue_idx = -100 * np.ones([L], dtype=np.int32)
-        # get the list of masked / visible chains
         masked_chains, visible_chains = b['masked_list'], b['visible_list']
         visible_temp_dict, masked_temp_dict = {}, {}
         for letter in masked_chains + visible_chains:
@@ -387,7 +328,6 @@ class ProteinMPNNDataset(InMemoryDataset):
                 visible_temp_dict[letter] = chain_seq
             elif letter in masked_chains:
                 masked_temp_dict[letter] = chain_seq
-        # check for duplicate chains (same sequence but different identity)
         for _, vm in masked_temp_dict.items():
             for kv, vv in visible_temp_dict.items():
                 if vm == vv:
@@ -395,7 +335,6 @@ class ProteinMPNNDataset(InMemoryDataset):
                         masked_chains.append(kv)
                     if kv in visible_chains:
                         visible_chains.remove(kv)
-        # build protein data structures
         all_chains = masked_chains + visible_chains
         np.random.shuffle(all_chains)
         x_chain_list = []
@@ -427,11 +366,9 @@ class ProteinMPNNDataset(InMemoryDataset):
             c += 1
         x_chain_all = np.concatenate(x_chain_list, 0)  # [L, 4, 3]
         chain_seq_all = "".join(chain_seq_list)
-        # [L,] 1.0 for places that need to be predicted
         chain_mask_all = np.concatenate(chain_mask_list, 0)
         chain_encoding_all = np.concatenate(chain_encoding_list, 0)
 
-        # Convert to labels
         alphabet = 'ACDEFGHIKLMNPQRSTVWYX'
         chain_seq_label_all = np.asarray(
             [alphabet.index(a) for a in chain_seq_all], dtype=np.int32)
@@ -440,7 +377,6 @@ class ProteinMPNNDataset(InMemoryDataset):
         mask = np.isfinite(np.sum(x_chain_all, (1, 2))).astype(np.float32)
         x_chain_all[isnan] = 0.
 
-        # Conversion
         return (
             torch.from_numpy(x_chain_all).to(dtype=torch.float32),
             torch.from_numpy(chain_seq_label_all).to(dtype=torch.long),

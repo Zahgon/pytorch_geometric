@@ -11,35 +11,6 @@ from torch_geometric.utils import coalesce, remove_self_loops, to_undirected
 
 
 class FakeDataset(InMemoryDataset):
-    r"""A fake dataset that returns randomly generated
-    :class:`~torch_geometric.data.Data` objects.
-
-    Args:
-        num_graphs (int, optional): The number of graphs. (default: :obj:`1`)
-        avg_num_nodes (int, optional): The average number of nodes in a graph.
-            (default: :obj:`1000`)
-        avg_degree (float, optional): The average degree per node.
-            (default: :obj:`10.0`)
-        num_channels (int, optional): The number of node features.
-            (default: :obj:`64`)
-        edge_dim (int, optional): The number of edge features.
-            (default: :obj:`0`)
-        num_classes (int, optional): The number of classes in the dataset.
-            (default: :obj:`10`)
-        task (str, optional): Whether to return node-level or graph-level
-            labels (:obj:`"node"`, :obj:`"graph"`, :obj:`"auto"`).
-            If set to :obj:`"auto"`, will return graph-level labels if
-            :obj:`num_graphs > 1`, and node-level labels other-wise.
-            (default: :obj:`"auto"`)
-        is_undirected (bool, optional): Whether the graphs to generate are
-            undirected. (default: :obj:`True`)
-        transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            every access. (default: :obj:`None`)
-        **kwargs (optional): Additional attributes and their shapes
-            *e.g.* :obj:`global_features=5`.
-    """
     def __init__(
         self,
         num_graphs: int = 1,
@@ -109,37 +80,6 @@ class FakeDataset(InMemoryDataset):
 
 
 class FakeHeteroDataset(InMemoryDataset):
-    r"""A fake dataset that returns randomly generated
-    :class:`~torch_geometric.data.HeteroData` objects.
-
-    Args:
-        num_graphs (int, optional): The number of graphs. (default: :obj:`1`)
-        num_node_types (int, optional): The number of node types.
-            (default: :obj:`3`)
-        num_edge_types (int, optional): The number of edge types.
-            (default: :obj:`6`)
-        avg_num_nodes (int, optional): The average number of nodes in a graph.
-            (default: :obj:`1000`)
-        avg_degree (float, optional): The average degree per node.
-            (default: :obj:`10.0`)
-        avg_num_channels (int, optional): The average number of node features.
-            (default: :obj:`64`)
-        edge_dim (int, optional): The number of edge features.
-            (default: :obj:`0`)
-        num_classes (int, optional): The number of classes in the dataset.
-            (default: :obj:`10`)
-        task (str, optional): Whether to return node-level or graph-level
-            labels (:obj:`"node"`, :obj:`"graph"`, :obj:`"auto"`).
-            If set to :obj:`"auto"`, will return graph-level labels if
-            :obj:`num_graphs > 1`, and node-level labels other-wise.
-            (default: :obj:`"auto"`)
-        transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.HeteroData` object and returns a
-            transformed version. The data object will be transformed before
-            every access. (default: :obj:`None`)
-        **kwargs (optional): Additional attributes and their shapes
-            *e.g.* :obj:`global_features=5`.
-    """
     def __init__(
         self,
         num_graphs: int = 1,
@@ -231,7 +171,6 @@ class FakeHeteroDataset(InMemoryDataset):
         return data
 
 
-###############################################################################
 
 
 def get_num_nodes(avg_num_nodes: int, avg_degree: float) -> int:

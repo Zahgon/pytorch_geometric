@@ -9,33 +9,6 @@ from torch_geometric.typing import WITH_TORCH_SPARSE, SparseTensor
 
 
 class ShaDowKHopSampler(torch.utils.data.DataLoader):
-    r"""The ShaDow :math:`k`-hop sampler from the `"Decoupling the Depth and
-    Scope of Graph Neural Networks" <https://arxiv.org/abs/2201.07858>`_ paper.
-    Given a graph in a :obj:`data` object, the sampler will create shallow,
-    localized subgraphs.
-    A deep GNN on this local graph then smooths the informative local signals.
-
-    .. note::
-
-        For an example of using :class:`ShaDowKHopSampler`, see
-        `examples/shadow.py <https://github.com/pyg-team/
-        pytorch_geometric/blob/master/examples/shadow.py>`_.
-
-    Args:
-        data (torch_geometric.data.Data): The graph data object.
-        depth (int): The depth/number of hops of the localized subgraph.
-        num_neighbors (int): The number of neighbors to sample for each node in
-            each hop.
-        node_idx (LongTensor or BoolTensor, optional): The nodes that should be
-            considered for creating mini-batches.
-            If set to :obj:`None`, all nodes will be
-            considered.
-        replace (bool, optional): If set to :obj:`True`, will sample neighbors
-            with replacement. (default: :obj:`False`)
-        **kwargs (optional): Additional arguments of
-            :class:`torch.utils.data.DataLoader`, such as :obj:`batch_size` or
-            :obj:`num_workers`.
-    """
     def __init__(self, data: Data, depth: int, num_neighbors: int,
                  node_idx: Optional[Tensor] = None, replace: bool = False,
                  **kwargs):

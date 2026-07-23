@@ -59,7 +59,6 @@ def read_ego(files: List[str], name: str) -> List[EgoData]:
 
             x_all = torch.cat([x, x_ego], dim=0)
 
-            # Reorder `x` according to `featnames` ordering.
             x_all = torch.zeros(x.size(0), len(all_featnames))
             with fsspec.open(featnames_file, 'r') as f:
                 featnames = f.read().split('\n')[:-1]
@@ -105,7 +104,6 @@ def read_ego(files: List[str], name: str) -> List[EgoData]:
         row_ego = torch.full((N - 1, ), N - 1, dtype=torch.long)
         col_ego = torch.arange(N - 1)
 
-        # Ego node should be connected to every other node.
         row = torch.cat([row, row_ego, col_ego], dim=0)
         col = torch.cat([col, col_ego, row_ego], dim=0)
         edge_index = torch.stack([row, col], dim=0)
@@ -158,27 +156,6 @@ def read_wiki(files: List[str], name: str) -> List[Data]:
 
 
 class SNAPDataset(InMemoryDataset):
-    r"""A variety of graph datasets collected from `SNAP at Stanford University
-    <https://snap.stanford.edu/data>`_.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        name (str): The name of the dataset.
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        pre_filter (callable, optional): A function that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a boolean
-            value, indicating whether the data object should be included in the
-            final dataset. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-    """
 
     url = 'https://snap.stanford.edu/data'
 
@@ -213,15 +190,15 @@ class SNAPDataset(InMemoryDataset):
 
     @property
     def raw_dir(self) -> str:
-        return osp.join(self.root, self.name, 'raw')
+        pass
 
     @property
     def processed_dir(self) -> str:
-        return osp.join(self.root, self.name, 'processed')
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def _download(self) -> None:
         if osp.isdir(self.raw_dir) and len(os.listdir(self.raw_dir)) > 0:

@@ -9,39 +9,6 @@ from torch_geometric.utils import coalesce
 
 
 class WikipediaNetwork(InMemoryDataset):
-    r"""The Wikipedia networks introduced in the
-    `"Multi-scale Attributed Node Embedding"
-    <https://arxiv.org/abs/1909.13021>`_ paper.
-    Nodes represent web pages and edges represent hyperlinks between them.
-    Node features represent several informative nouns in the Wikipedia pages.
-    The task is to predict the average daily traffic of the web page.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        name (str): The name of the dataset (:obj:`"chameleon"`,
-            :obj:`"crocodile"`, :obj:`"squirrel"`).
-        geom_gcn_preprocess (bool): If set to :obj:`True`, will load the
-            pre-processed data as introduced in the `"Geom-GCN: Geometric
-            Graph Convolutional Networks" <https://arxiv.org/abs/2002.05287>_`,
-            in which the average monthly traffic of the web page is converted
-            into five categories to predict.
-            If set to :obj:`True`, the dataset :obj:`"crocodile"` is not
-            available.
-            If set to :obj:`True`, train/validation/test splits will be
-            available as masks for multiple splits with shape
-            :obj:`[num_nodes, num_splits]`. (default: :obj:`True`)
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-
-    """
 
     raw_url = 'https://graphmining.ai/datasets/ptg/wiki'
     processed_url = ('https://raw.githubusercontent.com/graphdml-uiuc-jlu/'
@@ -68,29 +35,19 @@ class WikipediaNetwork(InMemoryDataset):
 
     @property
     def raw_dir(self) -> str:
-        if self.geom_gcn_preprocess:
-            return osp.join(self.root, self.name, 'geom_gcn', 'raw')
-        else:
-            return osp.join(self.root, self.name, 'raw')
+        pass
 
     @property
     def processed_dir(self) -> str:
-        if self.geom_gcn_preprocess:
-            return osp.join(self.root, self.name, 'geom_gcn', 'processed')
-        else:
-            return osp.join(self.root, self.name, 'processed')
+        pass
 
     @property
     def raw_file_names(self) -> Union[List[str], str]:
-        if self.geom_gcn_preprocess:
-            return (['out1_node_feature_label.txt', 'out1_graph_edges.txt'] +
-                    [f'{self.name}_split_0.6_0.2_{i}.npz' for i in range(10)])
-        else:
-            return f'{self.name}.npz'
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def download(self) -> None:
         if self.geom_gcn_preprocess:

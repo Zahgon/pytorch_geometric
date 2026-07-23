@@ -7,41 +7,6 @@ from torch_geometric.data import Data, InMemoryDataset, download_url
 
 
 class GitHub(InMemoryDataset):
-    r"""The GitHub Web and ML Developers dataset introduced in the
-    `"Multi-scale Attributed Node Embedding"
-    <https://arxiv.org/abs/1909.13021>`_ paper.
-    Nodes represent developers on :obj:`github:`GitHub` and edges are mutual
-    follower relationships.
-    It contains 37,300 nodes, 578,006 edges, 128 node features and 2 classes.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-
-    **STATS:**
-
-    .. list-table::
-        :widths: 10 10 10 10
-        :header-rows: 1
-
-        * - #nodes
-          - #edges
-          - #features
-          - #classes
-        * - 37,700
-          - 578,006
-          - 0
-          - 2
-    """
     url = 'https://graphmining.ai/datasets/ptg/github.npz'
 
     def __init__(
@@ -57,11 +22,11 @@ class GitHub(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> str:
-        return 'github.npz'
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def download(self) -> None:
         download_url(self.url, self.raw_dir)

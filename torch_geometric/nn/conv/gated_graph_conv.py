@@ -9,42 +9,6 @@ from torch_geometric.utils import spmm
 
 
 class GatedGraphConv(MessagePassing):
-    r"""The gated graph convolution operator from the `"Gated Graph Sequence
-    Neural Networks" <https://arxiv.org/abs/1511.05493>`_ paper.
-
-    .. math::
-        \mathbf{h}_i^{(0)} &= \mathbf{x}_i \, \Vert \, \mathbf{0}
-
-        \mathbf{m}_i^{(l+1)} &= \sum_{j \in \mathcal{N}(i)} e_{j,i} \cdot
-        \mathbf{\Theta} \cdot \mathbf{h}_j^{(l)}
-
-        \mathbf{h}_i^{(l+1)} &= \textrm{GRU} (\mathbf{m}_i^{(l+1)},
-        \mathbf{h}_i^{(l)})
-
-    up to representation :math:`\mathbf{h}_i^{(L)}`.
-    The number of input channels of :math:`\mathbf{x}_i` needs to be less or
-    equal than :obj:`out_channels`.
-    :math:`e_{j,i}` denotes the edge weight from source node :obj:`j` to target
-    node :obj:`i` (default: :obj:`1`)
-
-    Args:
-        out_channels (int): Size of each output sample.
-        num_layers (int): The sequence length :math:`L`.
-        aggr (str, optional): The aggregation scheme to use
-            (:obj:`"add"`, :obj:`"mean"`, :obj:`"max"`).
-            (default: :obj:`"add"`)
-        bias (bool, optional): If set to :obj:`False`, the layer will not learn
-            an additive bias. (default: :obj:`True`)
-        **kwargs (optional): Additional arguments of
-            :class:`torch_geometric.nn.conv.MessagePassing`.
-
-    Shapes:
-        - **input:**
-          node features :math:`(|\mathcal{V}|, F_{in})`,
-          edge indices :math:`(2, |\mathcal{E}|)`
-        - **output:** node features :math:`(|\mathcal{V}|, F_{out})`
-
-    """
     def __init__(self, out_channels: int, num_layers: int, aggr: str = 'add',
                  bias: bool = True, **kwargs):
         super().__init__(aggr=aggr, **kwargs)
@@ -75,7 +39,6 @@ class GatedGraphConv(MessagePassing):
 
         for i in range(self.num_layers):
             m = torch.matmul(x, self.weight[i])
-            # propagate_type: (x: Tensor, edge_weight: OptTensor)
             m = self.propagate(edge_index, x=m, edge_weight=edge_weight)
             x = self.rnn(m, x)
 

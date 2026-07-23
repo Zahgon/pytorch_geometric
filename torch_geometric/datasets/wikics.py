@@ -10,26 +10,6 @@ from torch_geometric.utils import to_undirected
 
 
 class WikiCS(InMemoryDataset):
-    r"""The semi-supervised Wikipedia-based dataset from the
-    `"Wiki-CS: A Wikipedia-Based Benchmark for Graph Neural Networks"
-    <https://arxiv.org/abs/2007.02901>`_ paper, containing 11,701 nodes,
-    216,123 edges, 10 classes and 20 different training splits.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        is_undirected (bool, optional): Whether the graph is undirected.
-            (default: :obj:`True`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-    """
 
     url = 'https://github.com/pmernyei/wiki-cs-dataset/raw/master/dataset'
 
@@ -55,11 +35,11 @@ class WikiCS(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> List[str]:
-        return ['data.json']
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data_undirected.pt' if self.is_undirected else 'data.pt'
+        pass
 
     def download(self) -> None:
         for name in self.raw_file_names:

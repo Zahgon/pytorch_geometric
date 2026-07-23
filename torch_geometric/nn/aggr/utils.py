@@ -6,29 +6,6 @@ from torch.nn import LayerNorm, Linear, MultiheadAttention, Parameter
 
 
 class MultiheadAttentionBlock(torch.nn.Module):
-    r"""The Multihead Attention Block (MAB) from the `"Set Transformer: A
-    Framework for Attention-based Permutation-Invariant Neural Networks"
-    <https://arxiv.org/abs/1810.00825>`_ paper.
-
-    .. math::
-
-        \mathrm{MAB}(\mathbf{x}, \mathbf{y}) &= \mathrm{LayerNorm}(\mathbf{h} +
-        \mathbf{W} \mathbf{h})
-
-        \mathbf{h} &= \mathrm{LayerNorm}(\mathbf{x} +
-        \mathrm{Multihead}(\mathbf{x}, \mathbf{y}, \mathbf{y}))
-
-    Args:
-        channels (int): Size of each input sample.
-        heads (int, optional): Number of multi-head-attentions.
-            (default: :obj:`1`)
-        norm (str, optional): If set to :obj:`False`, will not apply layer
-            normalization. (default: :obj:`True`)
-        dropout (float, optional): Dropout probability of attention weights.
-            (default: :obj:`0`)
-        device (torch.device, optional): The device of the module.
-            (default: :obj:`None`)
-    """
     def __init__(self, channels: int, heads: int = 1, layer_norm: bool = True,
                  dropout: float = 0.0, device: Optional[torch.device] = None):
         super().__init__()
@@ -89,23 +66,6 @@ class MultiheadAttentionBlock(torch.nn.Module):
 
 
 class SetAttentionBlock(torch.nn.Module):
-    r"""The Set Attention Block (SAB) from the `"Set Transformer: A
-    Framework for Attention-based Permutation-Invariant Neural Networks"
-    <https://arxiv.org/abs/1810.00825>`_ paper.
-
-    .. math::
-
-        \mathrm{SAB}(\mathbf{X}) = \mathrm{MAB}(\mathbf{x}, \mathbf{y})
-
-    Args:
-        channels (int): Size of each input sample.
-        heads (int, optional): Number of multi-head-attentions.
-            (default: :obj:`1`)
-        norm (str, optional): If set to :obj:`False`, will not apply layer
-            normalization. (default: :obj:`True`)
-        dropout (float, optional): Dropout probability of attention weights.
-            (default: :obj:`0`)
-    """
     def __init__(self, channels: int, heads: int = 1, layer_norm: bool = True,
                  dropout: float = 0.0):
         super().__init__()
@@ -126,29 +86,6 @@ class SetAttentionBlock(torch.nn.Module):
 
 
 class InducedSetAttentionBlock(torch.nn.Module):
-    r"""The Induced Set Attention Block (SAB) from the `"Set Transformer: A
-    Framework for Attention-based Permutation-Invariant Neural Networks"
-    <https://arxiv.org/abs/1810.00825>`_ paper.
-
-    .. math::
-
-        \mathrm{ISAB}(\mathbf{X}) &= \mathrm{MAB}(\mathbf{x}, \mathbf{h})
-
-        \mathbf{h} &= \mathrm{MAB}(\mathbf{I}, \mathbf{x})
-
-    where :math:`\mathbf{I}` denotes :obj:`num_induced_points` learnable
-    vectors.
-
-    Args:
-        channels (int): Size of each input sample.
-        num_induced_points (int): Number of induced points.
-        heads (int, optional): Number of multi-head-attentions.
-            (default: :obj:`1`)
-        norm (str, optional): If set to :obj:`False`, will not apply layer
-            normalization. (default: :obj:`True`)
-        dropout (float, optional): Dropout probability of attention weights.
-            (default: :obj:`0`)
-    """
     def __init__(self, channels: int, num_induced_points: int, heads: int = 1,
                  layer_norm: bool = True, dropout: float = 0.0):
         super().__init__()
@@ -177,27 +114,6 @@ class InducedSetAttentionBlock(torch.nn.Module):
 
 
 class PoolingByMultiheadAttention(torch.nn.Module):
-    r"""The Pooling by Multihead Attention (PMA) layer from the `"Set
-    Transformer: A Framework for Attention-based Permutation-Invariant Neural
-    Networks" <https://arxiv.org/abs/1810.00825>`_ paper.
-
-    .. math::
-
-        \mathrm{PMA}(\mathbf{X}) = \mathrm{MAB}(\mathbf{S}, \mathbf{x})
-
-    where :math:`\mathbf{S}` denotes :obj:`num_seed_points` learnable vectors.
-
-    Args:
-        channels (int): Size of each input sample.
-        num_seed_points (int, optional): Number of seed points.
-            (default: :obj:`1`)
-        heads (int, optional): Number of multi-head-attentions.
-            (default: :obj:`1`)
-        norm (str, optional): If set to :obj:`False`, will not apply layer
-            normalization. (default: :obj:`True`)
-        dropout (float, optional): Dropout probability of attention weights.
-            (default: :obj:`0`)
-    """
     def __init__(self, channels: int, num_seed_points: int = 1, heads: int = 1,
                  layer_norm: bool = True, dropout: float = 0.0):
         super().__init__()

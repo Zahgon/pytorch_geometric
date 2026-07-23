@@ -25,7 +25,6 @@ from torch_geometric.data import Data
 from torch_geometric.io import fs
 from torch_geometric.typing import WITH_PT24
 
-# Could be any hashable type
 TripletLike = Tuple[str, str, str]
 
 KnowledgeGraphLike = Iterable[TripletLike]
@@ -35,7 +34,6 @@ def ordered_set(values: Iterable[str]) -> List[str]:
     return list(dict.fromkeys(values))
 
 
-# TODO: Refactor Node and Edge funcs and attrs to be accessible via an Enum?
 
 NODE_PID = "pid"  # Encodes node id
 
@@ -71,10 +69,6 @@ if WITH_PT24:
 
 
 class LargeGraphIndexer:
-    """For a dataset that consists of multiple subgraphs that are assumed to
-    be part of a much larger graph, collate the values into a large graph store
-    to save resources.
-    """
     def __init__(
         self,
         nodes: Iterable[str],
@@ -108,7 +102,6 @@ class LargeGraphIndexer:
             raise AttributeError("Edges need to be unique")
 
         if node_attr is not None:
-            # TODO: Validity checks btw nodes and node_attr
             self.node_attr = node_attr
             if NODE_KEYS & set(self.node_attr.keys()) != NODE_KEYS:
                 raise AttributeError(
@@ -125,7 +118,6 @@ class LargeGraphIndexer:
             self._nodes[node] = i
 
         if edge_attr is not None:
-            # TODO: Validity checks btw edges and edge_attr
             self.edge_attr = edge_attr
 
             if EDGE_KEYS & set(self.edge_attr.keys()) != EDGE_KEYS:
@@ -173,7 +165,6 @@ class LargeGraphIndexer:
         Returns:
             LargeGraphIndexer: Index of unique nodes and edges.
         """
-        # NOTE: Right now assumes that all trips can be loaded into memory
         nodes = []
         edges = []
 
@@ -211,7 +202,6 @@ class LargeGraphIndexer:
             LargeGraphIndexer: Singular unique index for all nodes and edges
                 in input indices.
         """
-        # FIXME Needs to merge node attrs and edge attrs?
         trips = chain.from_iterable([graph.to_triplets() for graph in graphs])
         return cls.from_triplets(trips)
 
@@ -293,7 +283,6 @@ class LargeGraphIndexer:
             values = self.node_attr[feature_name].values
         else:
             values = self.node_attr[feature_name]
-        # TODO: torch_geometric.utils.select
         if isinstance(values, torch.Tensor):
             idxs = list(
                 self.get_node_features_iter(feature_name, pids,
@@ -417,7 +406,6 @@ class LargeGraphIndexer:
         else:
             values = self.edge_attr[feature_name]
 
-        # TODO: torch_geometric.utils.select
         if isinstance(values, torch.Tensor):
             idxs = list(
                 self.get_edge_features_iter(feature_name, pids,
@@ -609,8 +597,6 @@ def get_features_for_triplets_groups(
         for trip in trips:
             yield pre_transform(tuple(trip))
 
-    # Carefully trying to avoid loading all triplets into memory at once
-    # While also still tracking the number of elements for tqdm
     triplet_groups: List[Iterator[TripletLike]] = [
         apply_transform(triplets) for triplets in triplet_groups
     ]
@@ -651,38 +637,9 @@ def get_features_for_triplets_groups(
     """
 
     def _fetch_feature_batch(batches):
-        node_key_batch, edge_key_batch, edge_index_batch = batches
-        node_feats = indexer.get_node_features(
-            feature_name=node_feature_name,
-            pids=chain.from_iterable(node_key_batch))
-        edge_feats = indexer.get_edge_features(
-            feature_name=edge_feature_name,
-            pids=chain.from_iterable(edge_key_batch))
+        pass
 
-        last_node_idx, last_edge_idx = 0, 0
-        for (nkeys, ekeys, eidx) in zip(node_key_batch, edge_key_batch,
-                                        edge_index_batch):
-            nlen, elen = len(nkeys), len(ekeys)
-            x = torch.Tensor(node_feats[last_node_idx:last_node_idx + nlen])
-            last_node_idx += len(nkeys)
-
-            edge_attr = torch.Tensor(edge_feats[last_edge_idx:last_edge_idx +
-                                                elen])
-            last_edge_idx += len(ekeys)
-
-            edge_idx = torch.LongTensor(eidx).T
-
-            data_obj = Data(x=x, edge_attr=edge_attr, edge_index=edge_idx)
-            data_obj[NODE_PID] = node_keys
-            data_obj[EDGE_PID] = edge_keys
-            data_obj["node_idx"] = [indexer._nodes[k] for k in nkeys]
-            data_obj["edge_idx"] = [indexer._edges[e] for e in ekeys]
-
-            yield data_obj
-
-    # NOTE: Backport of itertools.batched from Python 3.12
     def batched(iterable, n, *, strict=False):
-        # batched('ABCDEFG', 3) → ABC DEF G
         if n < 1:
             raise ValueError('n must be at least one')
         iterator = iter(iterable)

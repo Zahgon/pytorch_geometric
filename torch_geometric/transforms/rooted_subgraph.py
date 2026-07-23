@@ -11,23 +11,6 @@ from torch_geometric.utils import to_torch_csc_tensor
 
 
 class RootedSubgraphData(Data):
-    r"""A data object describing a homogeneous graph together with each node's
-    rooted subgraph.
-
-    It contains several additional properties that hold the information to map
-    to batch of every node's rooted subgraph:
-
-    * :obj:`sub_edge_index` (Tensor): The edge indices of all combined rooted
-      subgraphs.
-    * :obj:`n_id` (Tensor): The indices of nodes in all combined rooted
-      subgraphs.
-    * :obj:`e_id` (Tensor): The indices of edges in all combined rooted
-      subgraphs.
-    * :obj:`n_sub_batch` (Tensor): The batch vector to distinguish nodes across
-      different subgraphs.
-    * :obj:`e_sub_batch` (Tensor): The batch vector to distinguish edges across
-      different subgraphs.
-    """
     def __inc__(self, key: str, value: Any, *args: Any, **kwargs: Any) -> Any:
         if key == 'sub_edge_index':
             return self.n_id.size(0)
@@ -41,39 +24,15 @@ class RootedSubgraphData(Data):
         return super().__inc__(key, value, *args, **kwargs)
 
     def map_data(self) -> Data:
-        # Maps all feature information of the :class:`Data` object to each
-        # rooted subgraph.
-        data = copy.copy(self)
-
-        for key, value in self.items():
-            if key in ['sub_edge_index', 'n_id', 'e_id', 'e_sub_batch']:
-                del data[key]
-            elif key == 'n_sub_batch':
-                continue
-            elif key == 'num_nodes':
-                data.num_nodes = self.n_id.size(0)
-            elif key == 'edge_index':
-                data.edge_index = self.sub_edge_index
-            elif self.is_node_attr(key):
-                dim = self.__cat_dim__(key, value)
-                data[key] = value.index_select(dim, self.n_id)
-            elif self.is_edge_attr(key):
-                dim = self.__cat_dim__(key, value)
-                data[key] = value.index_select(dim, self.e_id)
-
-        return data
+        pass
 
 
 class RootedSubgraph(BaseTransform, ABC):
-    r"""Base class for implementing rooted subgraph transformations."""
     @abstractmethod
     def extract(
         self,
         data: Data,
     ) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
-        # Returns the tuple:
-        # :obj:`(sub_edge_index, n_id, e_id, n_sub_batch, e_sub_batch)`
-        # of the :class:`RootedSubgraphData` object.
         pass
 
     def map(
@@ -81,23 +40,7 @@ class RootedSubgraph(BaseTransform, ABC):
         data: Data,
         n_mask: Tensor,
     ) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
-
-        assert data.edge_index is not None
-        num_nodes = data.num_nodes
-        assert num_nodes is not None
-
-        n_sub_batch, n_id = n_mask.nonzero().t()
-        e_mask = n_mask[:, data.edge_index[0]] & n_mask[:, data.edge_index[1]]
-        e_sub_batch, e_id = e_mask.nonzero().t()
-
-        sub_edge_index = data.edge_index[:, e_id]
-        arange = torch.arange(n_id.size(0), device=data.edge_index.device)
-        node_map = data.edge_index.new_ones(num_nodes, num_nodes)
-        node_map[n_sub_batch, n_id] = arange
-        sub_edge_index += (arange * num_nodes)[e_sub_batch]
-        sub_edge_index = node_map.view(-1)[sub_edge_index]
-
-        return sub_edge_index, n_id, e_id, n_sub_batch, e_sub_batch
+        pass
 
     def forward(self, data: Data) -> RootedSubgraphData:
         out = self.extract(data)
@@ -107,13 +50,6 @@ class RootedSubgraph(BaseTransform, ABC):
 
 
 class RootedEgoNets(RootedSubgraph):
-    r"""Collects rooted :math:`k`-hop EgoNets for each node in the graph, as
-    described in the `"From Stars to Subgraphs: Uplifting Any GNN with Local
-    Structure Awareness" <https://arxiv.org/abs/2110.03753>`_ paper.
-
-    Args:
-        num_hops (int): the number of hops :math:`k`.
-    """
     def __init__(self, num_hops: int) -> None:
         super().__init__()
         self.num_hops = num_hops
@@ -139,15 +75,6 @@ class RootedEgoNets(RootedSubgraph):
 
 
 class RootedRWSubgraph(RootedSubgraph):
-    """Collects rooted random-walk based subgraphs for each node in the graph,
-    as described in the `"From Stars to Subgraphs: Uplifting Any GNN with Local
-    Structure Awareness" <https://arxiv.org/abs/2110.03753>`_ paper.
-
-    Args:
-        walk_length (int): the length of the random walk.
-        repeat (int, optional): The number of times of repeating the random
-            walk to reduce randomness. (default: :obj:`1`)
-    """
     def __init__(self, walk_length: int, repeat: int = 1):
         super().__init__()
         self.walk_length = walk_length

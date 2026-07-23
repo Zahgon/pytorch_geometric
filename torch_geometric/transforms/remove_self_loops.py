@@ -8,15 +8,6 @@ from torch_geometric.utils import remove_self_loops
 
 @functional_transform('remove_self_loops')
 class RemoveSelfLoops(BaseTransform):
-    r"""Removes all self-loops in the given homogeneous or heterogeneous
-    graph (functional name: :obj:`remove_self_loops`).
-
-    Args:
-        attr (str, optional): The name of the attribute of edge weights
-            or multi-dimensional edge features to pass to
-            :meth:`torch_geometric.utils.remove_self_loops`.
-            (default: :obj:`"edge_weight"`)
-    """
     def __init__(self, attr: str = 'edge_weight') -> None:
         self.attr = attr
 

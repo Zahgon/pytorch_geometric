@@ -9,24 +9,6 @@ from torch_geometric.nn.dense.linear import Linear
 
 
 class PMLP(torch.nn.Module):
-    r"""The P(ropagational)MLP model from the `"Graph Neural Networks are
-    Inherently Good Generalizers: Insights by Bridging GNNs and MLPs"
-    <https://arxiv.org/abs/2212.09034>`_ paper.
-    :class:`PMLP` is identical to a standard MLP during training, but then
-    adopts a GNN architecture during testing.
-
-    Args:
-        in_channels (int): Size of each input sample.
-        hidden_channels (int): Size of each hidden sample.
-        out_channels (int): Size of each output sample.
-        num_layers (int): The number of layers.
-        dropout (float, optional): Dropout probability of each hidden
-            embedding. (default: :obj:`0.`)
-        norm (bool, optional): If set to :obj:`False`, will not apply batch
-            normalization. (default: :obj:`True`)
-        bias (bool, optional): If set to :obj:`False`, the module
-            will not learn additive biases. (default: :obj:`True`)
-    """
     def __init__(
         self,
         in_channels: int,

@@ -21,80 +21,63 @@ from torch_geometric.utils import one_hot
 def clean_up_description(description: str) -> str:
     description = description + " "
 
-    # extra adj Pure
     if description.startswith("Pure "):
         description = description.replace("Pure ", "")
-    # fix typo
     if description.startswith("Mercurycombines"):
         description = description.replace("Mercurycombines",
                                           "Mercury combines")
 
-    # a special case
     description = description.replace(
         "17-Hydroxy-6-methylpregna-3,6-diene-3,20-dione. ",
         "17-Hydroxy-6-methylpregna-3,6-diene-3,20-dione is ")
 
-    # a special case
     description = description.replace("5-Thymidylic acid. ",
                                       "5-Thymidylic acid. is ")
 
-    # a special case
     description = description.replace(
         "5'-S-(3-Amino-3-carboxypropyl)-5'-thioadenosine. ",
         "5'-S-(3-Amino-3-carboxypropyl)-5'-thioadenosine. is ")
 
-    # a special case
     description = description.replace(
         ("Guanosine 5'-(trihydrogen diphosphate), monoanhydride"
          " with phosphorothioic acid. "),
         ("Guanosine 5'-(trihydrogen diphosphate), monoanhydride"
          " with phosphorothioic acid is "))
 
-    # a special case
     description = description.replace("5'-Uridylic acid. ",
                                       "5'-Uridylic acid is ")
 
-    # a special case
     description = description.replace("5'-Adenylic acid, ",
                                       "5'-Adenylic acid is ")
 
-    # a special case
     description = description.replace(
         "Uridine 5'-(tetrahydrogen triphosphate). ",
         "Uridine 5'-(tetrahydrogen triphosphate). is ")
 
-    # a special case
     description = description.replace("Inosine 5'-Monophosphate. ",
                                       "Inosine 5'-Monophosphate. is ")
 
-    # a special case
     description = description.replace("Pivaloyloxymethyl butyrate (AN-9), ",
                                       "Pivaloyloxymethyl butyrate (AN-9) is ")
 
-    # a special case
     description = description.replace(
         "4-Amino-5-cyano-7-(D-ribofuranosyl)-7H- pyrrolo(2,3-d)pyrimidine. ",
         "4-Amino-5-cyano-7-(D-ribofuranosyl)-7H- pyrrolo(2,3-d)pyrimidine is ")
 
-    # a special case
     description = description.replace(
         "Cardamonin (also known as Dihydroxymethoxychalcone), ",
         "Cardamonin (also known as Dihydroxymethoxychalcone) is ")
 
-    # a special case
     description = description.replace("Lithium has been used to treat ",
                                       "Lithium is ")
 
-    # a special case
     description = description.replace("4,4'-Methylenebis ",
                                       "4,4'-Methylenebis is ")
 
-    # a special case
     description = description.replace(
         "2,3,7,8-Tetrachlorodibenzo-p-dioxin",
         "2,3,7,8-Tetrachlorodibenzo-p-dioxin is ")
 
-    # a special case
     description = description.replace("Exposure to 2,4,5-trichlorophenol ",
                                       "2,4,5-Trichlorophenol exposure ")
 
@@ -172,33 +155,6 @@ def extract_name(
 
 
 class MoleculeGPTDataset(InMemoryDataset):
-    r"""The dataset from the `"MoleculeGPT: Instruction Following Large
-    Language Models for Molecular Property Prediction"
-    <https://ai4d3.github.io/2023/papers/34.pdf>`_ paper.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        pre_filter (callable, optional): A function that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a boolean
-            value, indicating whether the data object should be included in the
-            final dataset. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-        total_page_num (int, optional): The number of pages from PubChem.
-            (default: :obj:`10`)
-        total_block_num (int, optional): The blocks of SDF files from PubChem.
-            (default: :obj:`1`)
-        num_units (int, optional): Number of units of the sample.
-            (default: :obj:`-1`, which means all units will be used)
-    """
     description_url = (
         'https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/annotations/'
         'heading/json?heading_type=Compound&heading=Record+Description&page={}'
@@ -227,14 +183,13 @@ class MoleculeGPTDataset(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> List[str]:
-        return ['pubchem.csv']
+        pass
 
     @property
     def processed_file_names(self) -> List[str]:
-        return ['data.pt']
+        pass
 
     def download(self) -> None:
-        # Step 01. Extract description
         step1_folder = f"{self.raw_dir}/step_01_PubChemSTM_description"
         if not os.path.exists(step1_folder):
             os.makedirs(step1_folder)
@@ -303,7 +258,6 @@ class MoleculeGPTDataset(InMemoryDataset):
             with open(f"{self.raw_dir}/CID2text.json", "w") as f:
                 json.dump(CID2text_extracted, f)
 
-        # Step 02. Download SDF Files
         step2_folder = f"{self.raw_dir}/step_02_PubChemSTM_SDF"
         if not os.path.exists(step2_folder):
             for block_id in tqdm(range(self.total_block_num)):
@@ -341,7 +295,6 @@ class MoleculeGPTDataset(InMemoryDataset):
             self.save(data_list, self.processed_paths[0])
             return
 
-        # Step 03. Filter out SDF
         step2_folder = f"{self.raw_dir}/step_02_PubChemSTM_SDF"
         step3_folder = f"{self.raw_dir}/step_03_PubChemSTM_filtered"
         if not os.path.exists(step3_folder):
@@ -393,7 +346,6 @@ class MoleculeGPTDataset(InMemoryDataset):
                 for block_id in range(self.total_block_num):
                     extract_one_SDF_file(block_id)
 
-        # Step 04. Merge SDF
         with open(f"{self.raw_dir}/CID2text.json") as f:
             CID2text = json.load(f)
         target_CID_list = set(CID2text.keys())
@@ -418,12 +370,10 @@ class MoleculeGPTDataset(InMemoryDataset):
         writer.close()
         print(f"In total: {len(found_CID_set)} molecules")
 
-        # Step 05. Convert to PyG data format
         types = {'H': 0, 'C': 1, 'N': 2, 'O': 3, 'F': 4, 'Unknow': 5}
         bonds = {BT.SINGLE: 0, BT.DOUBLE: 1, BT.TRIPLE: 2, BT.AROMATIC: 3}
 
         data_list = []
-        # Real data
         CID2text_file = f'{self.raw_dir}/CID2text.json'
 
         with open(CID2text_file) as f:

@@ -22,44 +22,6 @@ from torch_geometric.typing import EdgeType, NodeType
 
 
 class GNNExplainer(ExplainerAlgorithm):
-    r"""The GNN-Explainer model from the `"GNNExplainer: Generating
-    Explanations for Graph Neural Networks"
-    <https://arxiv.org/abs/1903.03894>`_ paper for identifying compact subgraph
-    structures and node features that play a crucial role in the predictions
-    made by a GNN.
-
-    .. note::
-
-        For an example of using :class:`GNNExplainer`, see
-        `examples/explain/gnn_explainer.py <https://github.com/pyg-team/
-        pytorch_geometric/blob/master/examples/explain/gnn_explainer.py>`_,
-        `examples/explain/gnn_explainer_ba_shapes.py <https://github.com/
-        pyg-team/pytorch_geometric/blob/master/examples/
-        explain/gnn_explainer_ba_shapes.py>`_, and `examples/explain/
-        gnn_explainer_link_pred.py <https://github.com/pyg-team/
-        pytorch_geometric/blob/master/examples/explain/gnn_explainer_link_pred.py>`_.
-
-    .. note::
-
-        The :obj:`edge_size` coefficient is multiplied by the number of nodes
-        in the explanation at every iteration, and the resulting value is added
-        to the loss as a regularization term, with the goal of producing
-        compact explanations.
-        A higher value will push the algorithm towards explanations with less
-        elements.
-        Consider adjusting the :obj:`edge_size` coefficient according to the
-        average node degree in the dataset, especially if this value is bigger
-        than in the datasets used in the original paper.
-
-    Args:
-        epochs (int, optional): The number of epochs to train.
-            (default: :obj:`100`)
-        lr (float, optional): The learning rate to apply.
-            (default: :obj:`0.01`)
-        **kwargs (optional): Additional hyper-parameters to override default
-            settings in
-            :attr:`~torch_geometric.explain.algorithm.GNNExplainer.coeffs`.
-    """
 
     default_coeffs = {
         'edge_size': 0.005,
@@ -127,7 +89,6 @@ class GNNExplainer(ExplainerAlgorithm):
     def _create_explanation(self) -> Union[Explanation, HeteroExplanation]:
         """Create an explanation object from the current masks."""
         if self.is_hetero:
-            # For heterogeneous graphs, process each type separately
             node_mask_dict = {}
             edge_mask_dict = {}
 
@@ -147,13 +108,11 @@ class GNNExplainer(ExplainerAlgorithm):
                         apply_sigmoid=True,
                     )
 
-            # Create heterogeneous explanation
             explanation = HeteroExplanation()
             explanation.set_value_dict('node_mask', node_mask_dict)
             explanation.set_value_dict('edge_mask', edge_mask_dict)
 
         else:
-            # For homogeneous graphs, process single masks
             node_mask = self._post_process_mask(
                 self.node_mask,
                 self.hard_node_mask,
@@ -165,7 +124,6 @@ class GNNExplainer(ExplainerAlgorithm):
                 apply_sigmoid=True,
             )
 
-            # Create homogeneous explanation
             explanation = Explanation(node_mask=node_mask, edge_mask=edge_mask)
 
         return explanation
@@ -209,36 +167,26 @@ class GNNExplainer(ExplainerAlgorithm):
         index: Optional[Union[int, Tensor]] = None,
         **kwargs,
     ) -> None:
-        # Initialize masks based on input type
         self._initialize_masks(x, edge_index)
 
-        # Collect parameters for optimization
         parameters = self._collect_parameters(model, edge_index)
 
-        # Create optimizer
         optimizer = torch.optim.Adam(parameters, lr=self.lr)
 
-        # Training loop
         for i in range(self.epochs):
             optimizer.zero_grad()
 
-            # Forward pass with masked inputs
             y_hat = self._forward_with_masks(model, x, edge_index, **kwargs)
             y = target
 
-            # Handle index if provided
             if index is not None:
                 y_hat, y = y_hat[index], y[index]
 
-            # Calculate loss
             loss = self._loss(y_hat, y)
 
-            # Backward pass
             loss.backward()
             optimizer.step()
 
-            # In the first iteration, collect gradients to identify important
-            # nodes/edges
             if i == 0:
                 self._collect_gradients()
 
@@ -247,7 +195,6 @@ class GNNExplainer(ExplainerAlgorithm):
         parameters = []
 
         if self.is_hetero:
-            # For heterogeneous graphs, collect parameters from all types
             for mask in self.node_mask.values():
                 if mask is not None:
                     parameters.append(mask)
@@ -257,7 +204,6 @@ class GNNExplainer(ExplainerAlgorithm):
                 if mask is not None:
                     parameters.append(mask)
         else:
-            # For homogeneous graphs, collect single parameters
             if self.node_mask is not None:
                 parameters.append(self.node_mask)
             if self.edge_mask is not None:
@@ -296,7 +242,6 @@ class GNNExplainer(ExplainerAlgorithm):
     ) -> Tensor:
         """Forward pass with masked inputs."""
         if self.is_hetero:
-            # Apply masks to heterogeneous inputs
             h_dict = {}
             for node_type, features in x.items():
                 if node_type in self.node_mask and self.node_mask[
@@ -306,13 +251,10 @@ class GNNExplainer(ExplainerAlgorithm):
                 else:
                     h_dict[node_type] = features
 
-            # Forward pass with masked features
             return model(h_dict, edge_index, **kwargs)
         else:
-            # Apply mask to homogeneous input
             h = x if self.node_mask is None else x * self.node_mask.sigmoid()
 
-            # Forward pass with masked features
             return model(h, edge_index, **kwargs)
 
     def _initialize_masks(
@@ -324,20 +266,17 @@ class GNNExplainer(ExplainerAlgorithm):
         edge_mask_type = self.explainer_config.edge_mask_type
 
         if self.is_hetero:
-            # Initialize dictionaries for heterogeneous masks
             self.node_mask = {}
             self.hard_node_mask = {}
             self.edge_mask = {}
             self.hard_edge_mask = {}
 
-            # Initialize node masks for each node type
             for node_type, features in x.items():
                 device = features.device
                 N, F = features.size()
                 self._initialize_node_mask(node_mask_type, node_type, N, F,
                                            device)
 
-            # Initialize edge masks for each edge type
             for edge_type, indices in edge_index.items():
                 device = indices.device
                 E = indices.size(1)
@@ -346,11 +285,9 @@ class GNNExplainer(ExplainerAlgorithm):
                 self._initialize_edge_mask(edge_mask_type, edge_type, E, N,
                                            device)
         else:
-            # Initialize masks for homogeneous graph
             device = x.device
             (N, F), E = x.size(), edge_index.size(1)
 
-            # Initialize homogeneous node and edge masks
             self._initialize_homogeneous_masks(node_mask_type, edge_mask_type,
                                                N, F, E, device)
 
@@ -398,7 +335,6 @@ class GNNExplainer(ExplainerAlgorithm):
     def _initialize_homogeneous_masks(self, node_mask_type, edge_mask_type, N,
                                       F, E, device):
         """Initialize masks for homogeneous graph."""
-        # Initialize node mask
         std = 0.1
         if node_mask_type is None:
             self.node_mask = None
@@ -411,7 +347,6 @@ class GNNExplainer(ExplainerAlgorithm):
         else:
             raise ValueError(f"Invalid node mask type: {node_mask_type}")
 
-        # Initialize edge mask
         if edge_mask_type is None:
             self.edge_mask = None
         elif edge_mask_type == MaskType.object:
@@ -468,15 +403,11 @@ class GNNExplainer(ExplainerAlgorithm):
             self.hard_edge_mask = self.edge_mask.grad != 0.0
 
     def _loss(self, y_hat: Tensor, y: Tensor) -> Tensor:
-        # Calculate base loss based on model configuration
         loss = self._calculate_base_loss(y_hat, y)
 
-        # Apply regularization based on graph type
         if self.is_hetero:
-            # Apply regularization for heterogeneous graph
             loss = self._apply_hetero_regularization(loss)
         else:
-            # Apply regularization for homogeneous graph
             loss = self._apply_homo_regularization(loss)
 
         return loss
@@ -494,7 +425,6 @@ class GNNExplainer(ExplainerAlgorithm):
 
     def _apply_hetero_regularization(self, loss):
         """Apply regularization for heterogeneous graph."""
-        # Apply regularization for each edge type
         for edge_type, mask in self.edge_mask.items():
             if (mask is not None
                     and self.hard_edge_mask[edge_type] is not None):
@@ -503,7 +433,6 @@ class GNNExplainer(ExplainerAlgorithm):
                     self.coeffs['edge_size'], self.coeffs['edge_reduction'],
                     self.coeffs['edge_ent'])
 
-        # Apply regularization for each node type
         for node_type, mask in self.node_mask.items():
             if (mask is not None
                     and self.hard_node_mask[node_type] is not None):
@@ -517,7 +446,6 @@ class GNNExplainer(ExplainerAlgorithm):
 
     def _apply_homo_regularization(self, loss):
         """Apply regularization for homogeneous graph."""
-        # Apply regularization for edge mask
         if self.hard_edge_mask is not None:
             assert self.edge_mask is not None
             loss = self._add_mask_regularization(loss, self.edge_mask,
@@ -526,7 +454,6 @@ class GNNExplainer(ExplainerAlgorithm):
                                                  self.coeffs['edge_reduction'],
                                                  self.coeffs['edge_ent'])
 
-        # Apply regularization for node mask
         if self.hard_node_mask is not None:
             assert self.node_mask is not None
             loss = self._add_mask_regularization(
@@ -542,9 +469,7 @@ class GNNExplainer(ExplainerAlgorithm):
         """Add size and entropy regularization for a mask."""
         m = mask[hard_mask].sigmoid()
         reduce_fn = getattr(torch, reduction_name)
-        # Add size regularization
         loss = loss + size_coeff * reduce_fn(m)
-        # Add entropy regularization
         ent = -m * torch.log(m + self.coeffs['EPS']) - (
             1 - m) * torch.log(1 - m + self.coeffs['EPS'])
         loss = loss + ent_coeff * ent.mean()
@@ -558,7 +483,6 @@ class GNNExplainer(ExplainerAlgorithm):
 
 
 class GNNExplainer_:
-    r"""Deprecated version for :class:`GNNExplainer`."""
 
     coeffs = GNNExplainer.default_coeffs
 
@@ -605,18 +529,7 @@ class GNNExplainer_:
 
     @torch.no_grad()
     def get_initial_prediction(self, *args, **kwargs) -> Tensor:
-
-        training = self.model.training
-        self.model.eval()
-
-        out = self.model(*args, **kwargs)
-        if (self._explainer.model_config.mode ==
-                ModelMode.multiclass_classification):
-            out = out.argmax(dim=-1)
-
-        self.model.train(training)
-
-        return out
+        pass
 
     def explain_graph(
         self,
@@ -624,16 +537,7 @@ class GNNExplainer_:
         edge_index: Tensor,
         **kwargs,
     ) -> Tuple[Tensor, Tensor]:
-        self._explainer.model_config.task_level = ModelTaskLevel.graph
-
-        explanation = self._explainer(
-            self.model,
-            x,
-            edge_index,
-            target=self.get_initial_prediction(x, edge_index, **kwargs),
-            **kwargs,
-        )
-        return self._convert_output(explanation, edge_index)
+        pass
 
     def explain_node(
         self,
@@ -642,34 +546,7 @@ class GNNExplainer_:
         edge_index: Tensor,
         **kwargs,
     ) -> Tuple[Tensor, Tensor]:
-        self._explainer.model_config.task_level = ModelTaskLevel.node
-        explanation = self._explainer(
-            self.model,
-            x,
-            edge_index,
-            target=self.get_initial_prediction(x, edge_index, **kwargs),
-            index=node_idx,
-            **kwargs,
-        )
-        return self._convert_output(explanation, edge_index, index=node_idx,
-                                    x=x)
+        pass
 
     def _convert_output(self, explanation, edge_index, index=None, x=None):
-        node_mask = explanation.get('node_mask')
-        edge_mask = explanation.get('edge_mask')
-
-        if node_mask is not None:
-            node_mask_type = self._explainer.explainer_config.node_mask_type
-            if node_mask_type in {MaskType.object, MaskType.common_attributes}:
-                node_mask = node_mask.view(-1)
-
-        if edge_mask is None:
-            if index is not None:
-                _, edge_mask = self._explainer._get_hard_masks(
-                    self.model, index, edge_index, num_nodes=x.size(0))
-                edge_mask = edge_mask.to(x.dtype)
-            else:
-                edge_mask = torch.ones(edge_index.size(1),
-                                       device=edge_index.device)
-
-        return node_mask, edge_mask
+        pass

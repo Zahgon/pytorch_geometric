@@ -13,29 +13,6 @@ class KNNOutput(NamedTuple):
 
 
 class KNNIndex:
-    r"""A base class to perform fast :math:`k`-nearest neighbor search
-    (:math:`k`-NN) via the :obj:`faiss` library.
-
-    Please ensure that :obj:`faiss` is installed by running
-
-    .. code-block:: bash
-
-        pip install faiss-cpu
-        # or
-        pip install faiss-gpu
-
-    depending on whether to plan to use GPU-processing for :math:`k`-NN search.
-
-    Args:
-        index_factory (str, optional): The name of the index factory to use,
-            *e.g.*, :obj:`"IndexFlatL2"` or :obj:`"IndexFlatIP"`. See `here
-            <https://github.com/facebookresearch/faiss/wiki/
-            The-index-factory>`_ for more information.
-        emb (torch.Tensor, optional): The data points to add.
-            (default: :obj:`None`)
-        reserve (int, optional): The number of elements to reserve memory for
-            before re-allocating (GPU-only). (default: :obj:`None`)
-    """
     def __init__(
         self,
         index_factory: Optional[str] = None,
@@ -151,7 +128,6 @@ class KNNIndex:
         score, index = self.index.search(emb.detach(), query_k)
 
         if exclude_links is not None:
-            # Drop indices to exclude by converting to flat vector:
             flat_exclude = self.numel * exclude_links[0] + exclude_links[1]
 
             offset = torch.arange(
@@ -167,7 +143,6 @@ class KNNIndex:
             score = score.view(-1)[notin]
             index = index.view(-1)[notin]
 
-            # Only maintain top-k scores:
             count = notin.view(-1, query_k).sum(dim=1)
             cum_count = cumsum(count)
 
@@ -204,22 +179,10 @@ class KNNIndex:
         return KNNOutput(score, index)
 
     def get_emb(self) -> Tensor:
-        r"""Returns the data points stored in the :class:`KNNIndex`."""
-        if self.index is None:
-            raise RuntimeError(f"'{self.__class__.__name__}' is not yet "
-                               "initialized. Please call `add(...)` first.")
-
-        return self.index.reconstruct_n(0, self.numel)
+        pass
 
 
 class L2KNNIndex(KNNIndex):
-    r"""Performs fast :math:`k`-nearest neighbor search (:math:`k`-NN) based on
-    the :math:`L_2` metric via the :obj:`faiss` library.
-
-    Args:
-        emb (torch.Tensor, optional): The data points to add.
-            (default: :obj:`None`)
-    """
     def __init__(self, emb: Optional[Tensor] = None):
         super().__init__(index_factory=None, emb=emb)
 
@@ -229,13 +192,6 @@ class L2KNNIndex(KNNIndex):
 
 
 class MIPSKNNIndex(KNNIndex):
-    r"""Performs fast :math:`k`-nearest neighbor search (:math:`k`-NN) based on
-    the maximum inner product via the :obj:`faiss` library.
-
-    Args:
-        emb (torch.Tensor, optional): The data points to add.
-            (default: :obj:`None`)
-    """
     def __init__(self, emb: Optional[Tensor] = None):
         super().__init__(index_factory=None, emb=emb)
 
@@ -245,21 +201,6 @@ class MIPSKNNIndex(KNNIndex):
 
 
 class ApproxL2KNNIndex(KNNIndex):
-    r"""Performs fast approximate :math:`k`-nearest neighbor search
-    (:math:`k`-NN) based on the the :math:`L_2` metric via the :obj:`faiss`
-    library.
-    Hyperparameters needs to be tuned for speed-accuracy trade-off.
-
-    Args:
-        num_cells (int): The number of cells.
-        num_cells_to_visit (int): The number of cells that are visited to
-            perform to search.
-        bits_per_vector (int): The number of bits per sub-vector.
-        emb (torch.Tensor, optional): The data points to add.
-            (default: :obj:`None`)
-        reserve (int, optional): The number of elements to reserve memory for
-            before re-allocating (GPU only). (default: :obj:`None`)
-    """
     def __init__(
         self,
         num_cells: int,
@@ -288,21 +229,6 @@ class ApproxL2KNNIndex(KNNIndex):
 
 
 class ApproxMIPSKNNIndex(KNNIndex):
-    r"""Performs fast approximate :math:`k`-nearest neighbor search
-    (:math:`k`-NN) based on the maximum inner product via the :obj:`faiss`
-    library.
-    Hyperparameters needs to be tuned for speed-accuracy trade-off.
-
-    Args:
-        num_cells (int): The number of cells.
-        num_cells_to_visit (int): The number of cells that are visited to
-            perform to search.
-        bits_per_vector (int): The number of bits per sub-vector.
-        emb (torch.Tensor, optional): The data points to add.
-            (default: :obj:`None`)
-        reserve (int, optional): The number of elements to reserve memory for
-            before re-allocating (GPU only). (default: :obj:`None`)
-    """
     def __init__(
         self,
         num_cells: int,

@@ -10,19 +10,6 @@ from torch_geometric.transforms import BaseTransform
 
 @functional_transform('spherical')
 class Spherical(BaseTransform):
-    r"""Saves the spherical coordinates of linked nodes in its edge attributes
-    (functional name: :obj:`spherical`).
-
-    Args:
-        norm (bool, optional): If set to :obj:`False`, the output will not be
-            normalized to the interval :math:`{[0, 1]}^3`.
-            (default: :obj:`True`)
-        max_value (float, optional): If set and :obj:`norm=True`, normalization
-            will be performed based on this value instead of the maximum value
-            found in the data. (default: :obj:`None`)
-        cat (bool, optional): If set to :obj:`False`, all existing edge
-            attributes will be replaced. (default: :obj:`True`)
-    """
     def __init__(
         self,
         norm: bool = True,

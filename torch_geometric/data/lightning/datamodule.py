@@ -76,8 +76,6 @@ class LightningData(LightningDataModule):
         if graph_sampler is not None:
             loader = 'custom'
 
-        # For full-batch training, we use reasonable defaults for a lot of
-        # data-loading options:
         if loader not in ['full', 'neighbor', 'link_neighbor', 'custom']:
             raise ValueError(f"Undefined 'loader' option (got '{loader}')")
 
@@ -120,11 +118,9 @@ class LightningData(LightningDataModule):
         self.data = data
         self.loader = loader
 
-        # Determine sampler and loader arguments ##############################
 
         if loader in ['neighbor', 'link_neighbor']:
 
-            # Define a new `NeighborSampler` to be re-used across data loaders:
             sampler_kwargs, self.loader_kwargs = split_kwargs(
                 self.kwargs,
                 NeighborSampler,
@@ -151,12 +147,9 @@ class LightningData(LightningDataModule):
             assert loader == 'full'
             self.loader_kwargs = self.kwargs
 
-        # Determine validation sampler and loader arguments ###################
 
         self.eval_loader_kwargs = copy.copy(self.loader_kwargs)
         if eval_loader_kwargs is not None:
-            # If the user wants to override certain values during evaluation,
-            # we shallow-copy the graph sampler and update its attributes.
             if hasattr(self, 'graph_sampler'):
                 self.eval_graph_sampler = copy.copy(self.graph_sampler)
 
@@ -180,36 +173,13 @@ class LightningData(LightningDataModule):
 
     @property
     def train_shuffle(self) -> bool:
-        shuffle = self.loader_kwargs.get('sampler', None) is None
-        shuffle &= self.loader_kwargs.get('batch_sampler', None) is None
-        return shuffle
+        pass
 
     def prepare_data(self) -> None:
-        if self.loader == 'full':
-            assert self.trainer is not None
-            try:
-                num_devices = self.trainer.num_devices
-            except AttributeError:
-                # PyTorch Lightning < 1.6 backward compatibility:
-                num_devices = self.trainer.num_processes  # type: ignore
-                num_gpus = self.trainer.num_gpus  # type: ignore
-                num_devices = max(num_devices, num_gpus)
-
-            if num_devices > 1:
-                raise ValueError(
-                    f"'{self.__class__.__name__}' with loader='full' requires "
-                    f"training on a single device")
-        super().prepare_data()
+        pass
 
     def full_dataloader(self, **kwargs: Any) -> torch.utils.data.DataLoader:
-        warnings.filterwarnings('ignore', '.*does not have many workers.*')
-        warnings.filterwarnings('ignore', '.*data loading bottlenecks.*')
-
-        return torch.utils.data.DataLoader(
-            [self.data],  # type: ignore
-            collate_fn=lambda xs: xs[0],
-            **kwargs,
-        )
+        pass
 
     def __repr__(self) -> str:
         kwargs = kwargs_repr(data=self.data, loader=self.loader, **self.kwargs)
@@ -217,42 +187,6 @@ class LightningData(LightningDataModule):
 
 
 class LightningDataset(LightningDataModule):
-    r"""Converts a set of :class:`~torch_geometric.data.Dataset` objects into a
-    :class:`pytorch_lightning.LightningDataModule` variant. It can then be
-    automatically used as a :obj:`datamodule` for multi-GPU graph-level
-    training via :lightning:`null`
-    `PyTorch Lightning <https://www.pytorchlightning.ai>`__.
-    :class:`LightningDataset` will take care of providing mini-batches via
-    :class:`~torch_geometric.loader.DataLoader`.
-
-    .. note::
-
-        Currently only the
-        :class:`pytorch_lightning.strategies.SingleDeviceStrategy` and
-        :class:`pytorch_lightning.strategies.DDPStrategy` training
-        strategies of :lightning:`null` `PyTorch Lightning
-        <https://pytorch-lightning.readthedocs.io/en/latest/guides/
-        speed.html>`__ are supported in order to correctly share data across
-        all devices/processes:
-
-        .. code-block:: python
-
-            import pytorch_lightning as pl
-            trainer = pl.Trainer(strategy="ddp_spawn", accelerator="gpu",
-                                 devices=4)
-            trainer.fit(model, datamodule)
-
-    Args:
-        train_dataset (Dataset): The training dataset.
-        val_dataset (Dataset, optional): The validation dataset.
-            (default: :obj:`None`)
-        test_dataset (Dataset, optional): The test dataset.
-            (default: :obj:`None`)
-        pred_dataset (Dataset, optional): The prediction dataset.
-            (default: :obj:`None`)
-        **kwargs (optional): Additional arguments of
-            :class:`torch_geometric.loader.DataLoader`.
-    """
     def __init__(
         self,
         train_dataset: Dataset,
@@ -273,47 +207,19 @@ class LightningDataset(LightningDataModule):
         self.pred_dataset = pred_dataset
 
     def dataloader(self, dataset: Dataset, **kwargs: Any) -> DataLoader:
-        return DataLoader(dataset, **kwargs)
+        pass
 
     def train_dataloader(self) -> DataLoader:
-        from torch.utils.data import IterableDataset
-
-        shuffle = not isinstance(self.train_dataset, IterableDataset)
-        shuffle &= self.kwargs.get('sampler', None) is None
-        shuffle &= self.kwargs.get('batch_sampler', None) is None
-
-        return self.dataloader(
-            self.train_dataset,
-            shuffle=shuffle,
-            **self.kwargs,
-        )
+        pass
 
     def val_dataloader(self) -> DataLoader:
-        assert self.val_dataset is not None
-
-        kwargs = copy.copy(self.kwargs)
-        kwargs.pop('sampler', None)
-        kwargs.pop('batch_sampler', None)
-
-        return self.dataloader(self.val_dataset, shuffle=False, **kwargs)
+        pass
 
     def test_dataloader(self) -> DataLoader:
-        assert self.test_dataset is not None
-
-        kwargs = copy.copy(self.kwargs)
-        kwargs.pop('sampler', None)
-        kwargs.pop('batch_sampler', None)
-
-        return self.dataloader(self.test_dataset, shuffle=False, **kwargs)
+        pass
 
     def predict_dataloader(self) -> DataLoader:
-        assert self.pred_dataset is not None
-
-        kwargs = copy.copy(self.kwargs)
-        kwargs.pop('sampler', None)
-        kwargs.pop('batch_sampler', None)
-
-        return self.dataloader(self.pred_dataset, shuffle=False, **kwargs)
+        pass
 
     def __repr__(self) -> str:
         kwargs = kwargs_repr(
@@ -327,79 +233,6 @@ class LightningDataset(LightningDataModule):
 
 
 class LightningNodeData(LightningData):
-    r"""Converts a :class:`~torch_geometric.data.Data` or
-    :class:`~torch_geometric.data.HeteroData` object into a
-    :class:`pytorch_lightning.LightningDataModule` variant. It can then be
-    automatically used as a :obj:`datamodule` for multi-GPU node-level
-    training via :lightning:`null`
-    `PyTorch Lightning <https://www.pytorchlightning.ai>`__.
-    :class:`LightningDataset` will take care of providing mini-batches via
-    :class:`~torch_geometric.loader.NeighborLoader`.
-
-    .. note::
-
-        Currently only the
-        :class:`pytorch_lightning.strategies.SingleDeviceStrategy` and
-        :class:`pytorch_lightning.strategies.DDPStrategy` training
-        strategies of :lightning:`null` `PyTorch Lightning
-        <https://pytorch-lightning.readthedocs.io/en/latest/guides/
-        speed.html>`__ are supported in order to correctly share data across
-        all devices/processes:
-
-        .. code-block:: python
-
-            import pytorch_lightning as pl
-            trainer = pl.Trainer(strategy="ddp_spawn", accelerator="gpu",
-                                 devices=4)
-            trainer.fit(model, datamodule)
-
-    Args:
-        data (Data or HeteroData): The :class:`~torch_geometric.data.Data` or
-            :class:`~torch_geometric.data.HeteroData` graph object.
-        input_train_nodes (torch.Tensor or str or (str, torch.Tensor)): The
-            indices of training nodes.
-            If not given, will try to automatically infer them from the
-            :obj:`data` object by searching for :obj:`train_mask`,
-            :obj:`train_idx`, or :obj:`train_index` attributes.
-            (default: :obj:`None`)
-        input_train_time (torch.Tensor, optional): The timestamp
-            of training nodes. (default: :obj:`None`)
-        input_val_nodes (torch.Tensor or str or (str, torch.Tensor)): The
-            indices of validation nodes.
-            If not given, will try to automatically infer them from the
-            :obj:`data` object by searching for :obj:`val_mask`,
-            :obj:`valid_mask`, :obj:`val_idx`, :obj:`valid_idx`,
-            :obj:`val_index`, or :obj:`valid_index` attributes.
-            (default: :obj:`None`)
-        input_val_time (torch.Tensor, optional): The timestamp
-            of validation edges. (default: :obj:`None`)
-        input_test_nodes (torch.Tensor or str or (str, torch.Tensor)): The
-            indices of test nodes.
-            If not given, will try to automatically infer them from the
-            :obj:`data` object by searching for :obj:`test_mask`,
-            :obj:`test_idx`, or :obj:`test_index` attributes.
-            (default: :obj:`None`)
-        input_test_time (torch.Tensor, optional): The timestamp
-            of test nodes. (default: :obj:`None`)
-        input_pred_nodes (torch.Tensor or str or (str, torch.Tensor)): The
-            indices of prediction nodes.
-            If not given, will try to automatically infer them from the
-            :obj:`data` object by searching for :obj:`pred_mask`,
-            :obj:`pred_idx`, or :obj:`pred_index` attributes.
-            (default: :obj:`None`)
-        input_pred_time (torch.Tensor, optional): The timestamp
-            of prediction nodes. (default: :obj:`None`)
-        loader (str): The scalability technique to use (:obj:`"full"`,
-            :obj:`"neighbor"`). (default: :obj:`"neighbor"`)
-        node_sampler (BaseSampler, optional): A custom sampler object to
-            generate mini-batches. If set, will ignore the :obj:`loader`
-            option. (default: :obj:`None`)
-        eval_loader_kwargs (Dict[str, Any], optional): Custom keyword arguments
-            that override the :class:`torch_geometric.loader.NeighborLoader`
-            configuration during evaluation. (default: :obj:`None`)
-        **kwargs (optional): Additional arguments of
-            :class:`torch_geometric.loader.NeighborLoader`.
-    """
     def __init__(
         self,
         data: Union[Data, HeteroData],
@@ -464,130 +297,22 @@ class LightningNodeData(LightningData):
         node_sampler: Optional[BaseSampler] = None,
         **kwargs: Any,
     ) -> torch.utils.data.DataLoader:
-        if self.loader == 'full':
-            return self.full_dataloader(**kwargs)
-
-        assert node_sampler is not None
-
-        return NodeLoader(
-            self.data,
-            node_sampler=node_sampler,
-            input_nodes=input_nodes,
-            input_time=input_time,
-            input_id=input_id,
-            **kwargs,
-        )
+        pass
 
     def train_dataloader(self) -> torch.utils.data.DataLoader:
-        return self.dataloader(
-            self.input_train_nodes,
-            self.input_train_time,
-            self.input_train_id,
-            node_sampler=getattr(self, 'graph_sampler', None),
-            shuffle=self.train_shuffle,
-            **self.loader_kwargs,
-        )
+        pass
 
     def val_dataloader(self) -> torch.utils.data.DataLoader:
-        return self.dataloader(
-            self.input_val_nodes,
-            self.input_val_time,
-            self.input_val_id,
-            node_sampler=getattr(self, 'eval_graph_sampler', None),
-            shuffle=False,
-            **self.eval_loader_kwargs,
-        )
+        pass
 
     def test_dataloader(self) -> torch.utils.data.DataLoader:
-        return self.dataloader(
-            self.input_test_nodes,
-            self.input_test_time,
-            self.input_test_id,
-            node_sampler=getattr(self, 'eval_graph_sampler', None),
-            shuffle=False,
-            **self.eval_loader_kwargs,
-        )
+        pass
 
     def predict_dataloader(self) -> torch.utils.data.DataLoader:
-        return self.dataloader(
-            self.input_pred_nodes,
-            self.input_pred_time,
-            self.input_pred_id,
-            node_sampler=getattr(self, 'eval_graph_sampler', None),
-            shuffle=False,
-            **self.eval_loader_kwargs,
-        )
+        pass
 
 
 class LightningLinkData(LightningData):
-    r"""Converts a :class:`~torch_geometric.data.Data` or
-    :class:`~torch_geometric.data.HeteroData` object into a
-    :class:`pytorch_lightning.LightningDataModule` variant. It can then be
-    automatically used as a :obj:`datamodule` for multi-GPU link-level
-    training via :lightning:`null`
-    `PyTorch Lightning <https://www.pytorchlightning.ai>`__.
-    :class:`LightningDataset` will take care of providing mini-batches via
-    :class:`~torch_geometric.loader.LinkNeighborLoader`.
-
-    .. note::
-
-        Currently only the
-        :class:`pytorch_lightning.strategies.SingleDeviceStrategy` and
-        :class:`pytorch_lightning.strategies.DDPStrategy` training
-        strategies of :lightning:`null` `PyTorch Lightning
-        <https://pytorch-lightning.readthedocs.io/en/latest/guides/
-        speed.html>`__ are supported in order to correctly share data across
-        all devices/processes:
-
-        .. code-block:: python
-
-            import pytorch_lightning as pl
-            trainer = pl.Trainer(strategy="ddp_spawn", accelerator="gpu",
-                                 devices=4)
-            trainer.fit(model, datamodule)
-
-    Args:
-        data (Data or HeteroData or Tuple[FeatureStore, GraphStore]): The
-            :class:`~torch_geometric.data.Data` or
-            :class:`~torch_geometric.data.HeteroData` graph object, or a
-            tuple of a :class:`~torch_geometric.data.FeatureStore` and
-            :class:`~torch_geometric.data.GraphStore` objects.
-        input_train_edges (Tensor or EdgeType or Tuple[EdgeType, Tensor]):
-            The training edges. (default: :obj:`None`)
-        input_train_labels (torch.Tensor, optional):
-            The labels of training edges. (default: :obj:`None`)
-        input_train_time (torch.Tensor, optional): The timestamp
-            of training edges. (default: :obj:`None`)
-        input_val_edges (Tensor or EdgeType or Tuple[EdgeType, Tensor]):
-            The validation edges. (default: :obj:`None`)
-        input_val_labels (torch.Tensor, optional):
-            The labels of validation edges. (default: :obj:`None`)
-        input_val_time (torch.Tensor, optional): The timestamp
-            of validation edges. (default: :obj:`None`)
-        input_test_edges (Tensor or EdgeType or Tuple[EdgeType, Tensor]):
-            The test edges. (default: :obj:`None`)
-        input_test_labels (torch.Tensor, optional):
-            The labels of test edges. (default: :obj:`None`)
-        input_test_time (torch.Tensor, optional): The timestamp
-            of test edges. (default: :obj:`None`)
-        input_pred_edges (Tensor or EdgeType or Tuple[EdgeType, Tensor]):
-            The prediction edges. (default: :obj:`None`)
-        input_pred_labels (torch.Tensor, optional):
-            The labels of prediction edges. (default: :obj:`None`)
-        input_pred_time (torch.Tensor, optional): The timestamp
-            of prediction edges. (default: :obj:`None`)
-        loader (str): The scalability technique to use (:obj:`"full"`,
-            :obj:`"neighbor"`). (default: :obj:`"neighbor"`)
-        link_sampler (BaseSampler, optional): A custom sampler object to
-            generate mini-batches. If set, will ignore the :obj:`loader`
-            option. (default: :obj:`None`)
-        eval_loader_kwargs (Dict[str, Any], optional): Custom keyword arguments
-            that override the
-            :class:`torch_geometric.loader.LinkNeighborLoader` configuration
-            during evaluation. (default: :obj:`None`)
-        **kwargs (optional): Additional arguments of
-            :class:`torch_geometric.loader.LinkNeighborLoader`.
-    """
     def __init__(
         self,
         data: Union[Data, HeteroData],
@@ -647,70 +372,23 @@ class LightningLinkData(LightningData):
         link_sampler: Optional[BaseSampler] = None,
         **kwargs: Any,
     ) -> torch.utils.data.DataLoader:
-        if self.loader == 'full':
-            return self.full_dataloader(**kwargs)
-
-        assert link_sampler is not None
-
-        return LinkLoader(
-            self.data,
-            link_sampler=link_sampler,
-            edge_label_index=input_edges,
-            edge_label=input_labels,
-            edge_label_time=input_time,
-            input_id=input_id,
-            **kwargs,
-        )
+        pass
 
     def train_dataloader(self) -> torch.utils.data.DataLoader:
-        return self.dataloader(
-            self.input_train_edges,
-            self.input_train_labels,
-            self.input_train_time,
-            self.input_train_id,
-            link_sampler=getattr(self, 'graph_sampler', None),
-            shuffle=self.train_shuffle,
-            **self.loader_kwargs,
-        )
+        pass
 
     def val_dataloader(self) -> torch.utils.data.DataLoader:
-        return self.dataloader(
-            self.input_val_edges,
-            self.input_val_labels,
-            self.input_val_time,
-            self.input_val_id,
-            link_sampler=getattr(self, 'eval_graph_sampler', None),
-            shuffle=False,
-            **self.eval_loader_kwargs,
-        )
+        pass
 
     def test_dataloader(self) -> torch.utils.data.DataLoader:
-        return self.dataloader(
-            self.input_test_edges,
-            self.input_test_labels,
-            self.input_test_time,
-            self.input_test_id,
-            link_sampler=getattr(self, 'eval_graph_sampler', None),
-            shuffle=False,
-            **self.eval_loader_kwargs,
-        )
+        pass
 
     def predict_dataloader(self) -> torch.utils.data.DataLoader:
-        return self.dataloader(
-            self.input_pred_edges,
-            self.input_pred_labels,
-            self.input_pred_time,
-            self.input_pred_id,
-            link_sampler=getattr(self, 'eval_graph_sampler', None),
-            shuffle=False,
-            **self.eval_loader_kwargs,
-        )
+        pass
 
 
-###############################################################################
 
 
-# TODO Support Tuple[FeatureStore, GraphStore]
 def infer_input_nodes(data: Union[Data, HeteroData], split: str) -> InputNodes:
     attr_name: Optional[str] = None
     if f'{split}_mask' in data:
@@ -739,7 +417,7 @@ def infer_input_nodes(data: Union[Data, HeteroData], split: str) -> InputNodes:
 
 
 def kwargs_repr(**kwargs: Any) -> str:
-    return ', '.join([f'{k}={v}' for k, v in kwargs.items() if v is not None])
+    pass
 
 
 def split_kwargs(

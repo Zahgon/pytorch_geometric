@@ -20,16 +20,6 @@ except ImportError:
 
 
 class CuGraphSAGEConv(CuGraphModule):  # pragma: no cover
-    r"""The GraphSAGE operator from the `"Inductive Representation Learning on
-    Large Graphs" <https://arxiv.org/abs/1706.02216>`_ paper.
-
-    :class:`CuGraphSAGEConv` is an optimized version of
-    :class:`~torch_geometric.nn.conv.SAGEConv` based on the :obj:`cugraph-ops`
-    package that fuses message passing computation for accelerated execution
-    and lower memory footprint.
-
-    See :ref:`install-cugraph` for how to set up :obj:`cugraph-ops`.
-    """
     def __init__(
         self,
         in_channels: int,

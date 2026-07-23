@@ -7,15 +7,6 @@ from torch_geometric.typing import OptTensor
 
 
 class DenseSAGEConv(torch.nn.Module):
-    r"""See :class:`torch_geometric.nn.conv.SAGEConv`.
-
-    .. note::
-
-        :class:`~torch_geometric.nn.dense.DenseSAGEConv` expects to work on
-        binary adjacency matrices.
-        If you want to make use of weighted dense adjacency matrices, please
-        use :class:`torch_geometric.nn.dense.DenseGraphConv` instead.
-    """
     def __init__(
         self,
         in_channels: int,

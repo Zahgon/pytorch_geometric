@@ -6,7 +6,6 @@ from torch_geometric.resolver import resolver
 
 
 class GraphGenerator(ABC):
-    r"""An abstract base class for generating synthetic graphs."""
     @abstractmethod
     def __call__(self) -> Data:
         r"""To be implemented by :class:`GraphGenerator` subclasses."""

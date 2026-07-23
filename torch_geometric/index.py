@@ -47,8 +47,7 @@ def implements(torch_function: Callable) -> Callable:
     r"""Registers a :pytorch:`PyTorch` function override."""
     @functools.wraps(torch_function)
     def decorator(my_function: Callable) -> Callable:
-        HANDLED_FUNCTIONS[torch_function] = my_function
-        return my_function
+        pass
 
     return decorator
 
@@ -73,81 +72,19 @@ def assert_contiguous(tensor: Tensor) -> None:
 
 
 def assert_sorted(func: Callable) -> Callable:
-    @functools.wraps(func)
-    def wrapper(self: 'Index', *args: Any, **kwargs: Any) -> Any:
-        if not self.is_sorted:
-            cls_name = self.__class__.__name__
-            raise ValueError(
-                f"Cannot call '{func.__name__}' since '{cls_name}' is not "
-                f"sorted. Please call `{cls_name}.sort()` first.")
-        return func(self, *args, **kwargs)
-
-    return wrapper
+    pass
 
 
 class Index(Tensor):
-    r"""A one-dimensional :obj:`index` tensor with additional (meta)data
-    attached.
 
-    :class:`Index` is a :pytorch:`null` :class:`torch.Tensor` that holds
-    indices of shape :obj:`[num_indices]`.
-
-    While :class:`Index` sub-classes a general :pytorch:`null`
-    :class:`torch.Tensor`, it can hold additional (meta)data, *i.e.*:
-
-    * :obj:`dim_size`: The size of the underlying sparse vector size, *i.e.*,
-      the size of a dimension that can be indexed via :obj:`index`.
-      By default, it is inferred as :obj:`dim_size=index.max() + 1`.
-    * :obj:`is_sorted`: Whether indices are sorted in ascending order.
-
-    Additionally, :class:`Index` caches data via :obj:`indptr` for fast CSR
-    conversion in case its representation is sorted.
-    Caches are filled based on demand (*e.g.*, when calling
-    :meth:`Index.get_indptr`), or when explicitly requested via
-    :meth:`Index.fill_cache_`, and are maintained and adjusted over its
-    lifespan.
-
-    This representation ensures optimal computation in GNN message passing
-    schemes, while preserving the ease-of-use of regular COO-based :pyg:`PyG`
-    workflows.
-
-    .. code-block:: python
-
-        from torch_geometric import Index
-
-        index = Index([0, 1, 1, 2], dim_size=3, is_sorted=True)
-        >>> Index([0, 1, 1, 2], dim_size=3, is_sorted=True)
-        assert index.dim_size == 3
-        assert index.is_sorted
-
-        # Flipping order:
-        index.flip(0)
-        >>> Index([[2, 1, 1, 0], dim_size=3)
-        assert not index.is_sorted
-
-        # Filtering:
-        mask = torch.tensor([True, True, True, False])
-        index[:, mask]
-        >>> Index([[0, 1, 1], dim_size=3, is_sorted=True)
-        assert index.is_sorted
-    """
-    # See "https://pytorch.org/docs/stable/notes/extending.html"
-    # for a basic tutorial on how to subclass `torch.Tensor`.
-
-    # The underlying tensor representation:
     _data: Tensor
 
-    # The size of the underlying sparse vector, e.g. `_data.max() + 1` :
     _dim_size: Optional[int] = None
 
-    # Whether the `index` representation is sorted:
     _is_sorted: bool = False
 
-    # A cache for its compressed representation:
     _indptr: Optional[Tensor] = None
 
-    # Whenever we perform a concatenation of indices, we cache the original
-    # metadata to be able to reconstruct individual indices:
     _cat_metadata: Optional[CatMetadata] = None
 
     @staticmethod
@@ -193,7 +130,6 @@ class Index(Tensor):
         )
         assert isinstance(out, Index)
 
-        # Attach metadata:
         out._data = data
         out._dim_size = dim_size
         out._is_sorted = is_sorted
@@ -202,13 +138,11 @@ class Index(Tensor):
         if isinstance(data, cls):
             out._data = data._data
 
-            # Reset metadata if cache is invalidated:
             if dim_size is not None and dim_size != data.dim_size:
                 out._indptr = None
 
         return out
 
-    # Validation ##############################################################
 
     def validate(self) -> 'Index':
         r"""Validates the :class:`Index` representation.
@@ -238,24 +172,19 @@ class Index(Tensor):
 
         return self
 
-    # Properties ##############################################################
 
     @property
     def dim_size(self) -> Optional[int]:
-        r"""The size of the underlying sparse vector."""
-        return self._dim_size
+        pass
 
     @property
     def is_sorted(self) -> bool:
-        r"""Returns whether indices are sorted in ascending order."""
-        return self._is_sorted
+        pass
 
     @property
     def dtype(self) -> torch.dtype:  # type: ignore
-        # TODO Remove once PyTorch does not override `dtype` in `DataLoader`.
         return self._data.dtype
 
-    # Cache Interface #########################################################
 
     def get_dim_size(self) -> int:
         r"""The size of the underlying sparse vector.
@@ -269,24 +198,7 @@ class Index(Tensor):
         return self._dim_size
 
     def dim_resize_(self, dim_size: Optional[int]) -> 'Index':
-        r"""Assigns or re-assigns the size of the underlying sparse vector."""
-        if self.is_sorted and self._indptr is not None:
-            if dim_size is None:
-                self._indptr = None
-
-            elif self._indptr.numel() - 1 >= dim_size:
-                self._indptr = self._indptr[:dim_size + 1]
-
-            else:
-                fill_value = self._indptr.new_full(
-                    (dim_size - self._indptr.numel() + 1, ),
-                    fill_value=self._indptr[-1],  # type: ignore
-                )
-                self._indptr = torch.cat([self._indptr, fill_value], dim=0)
-
-        self._dim_size = dim_size
-
-        return self
+        pass
 
     @assert_sorted
     def get_indptr(self) -> Tensor:
@@ -300,15 +212,8 @@ class Index(Tensor):
         return self._indptr
 
     def fill_cache_(self) -> 'Index':
-        r"""Fills the cache with (meta)data information."""
-        self.get_dim_size()
+        pass
 
-        if self.is_sorted:
-            self.get_indptr()
-
-        return self
-
-    # Methods #################################################################
 
     def share_memory_(self) -> 'Index':
         """"""  # noqa: D419
@@ -318,8 +223,7 @@ class Index(Tensor):
         return self
 
     def is_shared(self) -> bool:
-        """"""  # noqa: D419
-        return self._data.is_shared()
+        pass
 
     def as_tensor(self) -> Tensor:
         r"""Zero-copies the :class:`Index` representation back to a
@@ -327,7 +231,6 @@ class Index(Tensor):
         """
         return self._data
 
-    # PyTorch/Python builtins #################################################
 
     def __tensor_flatten__(self) -> Tuple[List[str], Tuple[Any, ...]]:
         attrs = ['_data']
@@ -360,7 +263,6 @@ class Index(Tensor):
 
         return index
 
-    # Prevent auto-wrapping outputs back into the proper subclass type:
     __torch_function__ = torch._C._disabled_torch_function_impl  # type: ignore
 
     @classmethod
@@ -371,20 +273,10 @@ class Index(Tensor):
         args: Iterable[Tuple[Any, ...]] = (),
         kwargs: Optional[Dict[Any, Any]] = None,
     ) -> Any:
-        # `Index` should be treated as a regular PyTorch tensor for all
-        # standard PyTorch functionalities. However,
-        # * some of its metadata can be transferred to new functions, e.g.,
-        #   `torch.narrow()` can inherit the `is_sorted` property.
-        # * not all operations lead to valid `Index` tensors again, e.g.,
-        #   `torch.sum()` does not yield a `Index` as its output, or
-        #   `torch.stack() violates the [*] shape assumption.
 
-        # To account for this, we hold a number of `HANDLED_FUNCTIONS` that
-        # implement specific functions for valid `Index` routines.
         if func in HANDLED_FUNCTIONS:
             return HANDLED_FUNCTIONS[func](*args, **(kwargs or {}))
 
-        # For all other PyTorch functions, we treat them as vanilla tensors.
         args = pytree.tree_map_only(Index, lambda x: x._data, args)
         if kwargs is not None:
             kwargs = pytree.tree_map_only(Index, lambda x: x._data, kwargs)
@@ -419,15 +311,9 @@ class Index(Tensor):
         """"""  # noqa: D419
         return self._data.numpy(force=force)
 
-    # Helpers #################################################################
 
     def _shallow_copy(self) -> 'Index':
-        out = Index(self._data)
-        out._dim_size = self._dim_size
-        out._is_sorted = self._is_sorted
-        out._indptr = self._indptr
-        out._cat_metadata = self._cat_metadata
-        return out
+        pass
 
     def _clear_metadata(self) -> 'Index':
         self._dim_size = None
@@ -455,12 +341,10 @@ def apply_(
         tensor._data = data
         out = tensor
 
-    # Copy metadata:
     out._dim_size = tensor._dim_size
     out._is_sorted = tensor._is_sorted
     out._cat_metadata = tensor._cat_metadata
 
-    # Convert cache:
     if tensor._indptr is not None:
         out._indptr = fn(tensor._indptr, *args, **kwargs)
 
@@ -473,9 +357,7 @@ def _clone(
     *,
     memory_format: torch.memory_format = torch.preserve_format,
 ) -> Index:
-    out = apply_(tensor, aten.clone.default, memory_format=memory_format)
-    assert isinstance(out, Index)
-    return out
+    pass
 
 
 @implements(aten._to_copy.default)
@@ -489,28 +371,17 @@ def _to_copy(
     non_blocking: bool = False,
     memory_format: Optional[torch.memory_format] = None,
 ) -> Union[Index, Tensor]:
-    return apply_(
-        tensor,
-        aten._to_copy.default,
-        dtype=dtype,
-        layout=layout,
-        device=device,
-        pin_memory=pin_memory,
-        non_blocking=non_blocking,
-        memory_format=memory_format,
-    )
+    pass
 
 
 @implements(aten.alias.default)
 def _alias(tensor: Index) -> Index:
-    return tensor._shallow_copy()
+    pass
 
 
 @implements(aten._pin_memory.default)
 def _pin_memory(tensor: Index) -> Index:
-    out = apply_(tensor, aten._pin_memory.default)
-    assert isinstance(out, Index)
-    return out
+    pass
 
 
 @implements(aten.sort.default)
@@ -519,20 +390,7 @@ def _sort(
     dim: int = -1,
     descending: bool = False,
 ) -> Tuple[Index, Tensor]:
-
-    if tensor.is_sorted and not descending:
-        return tensor, torch.arange(tensor._data.numel(),
-                                    device=tensor._data.device)
-
-    data, perm = aten.sort.default(tensor._data, dim, descending)
-
-    out = Index(data)
-    out._dim_size = tensor._dim_size
-
-    if not descending:
-        out._is_sorted = True
-
-    return out, perm
+    pass
 
 
 @implements(aten.sort.stable)
@@ -543,21 +401,7 @@ def _sort_stable(
     dim: int = -1,
     descending: bool = False,
 ) -> Tuple[Index, Tensor]:
-
-    if tensor.is_sorted and not descending:
-        return tensor, torch.arange(tensor._data.numel(),
-                                    device=tensor._data.device)
-
-    data, perm = aten.sort.stable(tensor._data, stable=stable, dim=dim,
-                                  descending=descending)
-
-    out = Index(data)
-    out._dim_size = tensor._dim_size
-
-    if not descending:
-        out._is_sorted = True
-
-    return out, perm
+    pass
 
 
 @implements(aten.cat.default)
@@ -578,7 +422,6 @@ def _cat(
     dim_size_list = [t.dim_size for t in tensors]  # type: ignore
     is_sorted_list = [t.is_sorted for t in tensors]  # type: ignore
 
-    # Post-process `dim_size`:
     total_dim_size: Optional[int] = 0
     for dim_size in dim_size_list:
         if dim_size is None:
@@ -603,13 +446,7 @@ def _flip(
     input: Index,
     dims: Union[List[int], Tuple[int, ...]],
 ) -> Index:
-
-    data = aten.flip.default(input._data, dims)
-
-    out = Index(data)
-    out._dim_size = input.dim_size
-
-    return out
+    pass
 
 
 @implements(aten.index_select.default)
@@ -640,25 +477,7 @@ def _slice(
     end: Optional[int] = None,
     step: int = 1,
 ) -> Index:
-
-    if ((start is None or start <= 0 or start <= -input.size(dim))
-            and (end is None or end > input.size(dim)) and step == 1):
-        return input._shallow_copy()  # No-op.
-
-    data = aten.slice.Tensor(input._data, dim, start, end, step)
-
-    if step != 1:
-        data = data.contiguous()
-
-    out = Index(data)
-    out._dim_size = input.dim_size
-    # NOTE We could potentially maintain the `indptr` attribute here,
-    # but it is not really clear if this is worth it. The most important
-    # information `is_sorted` needs to be maintained though:
-    if step >= 0:
-        out._is_sorted = input.is_sorted
-
-    return out
+    pass
 
 
 @implements(aten.index.Tensor)
@@ -666,30 +485,7 @@ def _index(
     input: Union[Index, Tensor],
     indices: List[Optional[Union[Tensor, Index]]],
 ) -> Union[Index, Tensor]:
-
-    if not isinstance(input, Index):
-        indices = pytree.tree_map_only(Index, lambda x: x._data, indices)
-        return aten.index.Tensor(input, indices)
-
-    data = aten.index.Tensor(input._data, indices)
-
-    if data.dim() != 1:
-        return data
-
-    assert len(indices) == 1
-    index = indices[0]
-    assert index is not None
-
-    out = Index(data)
-
-    if index.dtype in (torch.bool, torch.uint8):  # 1. `index[mask]`.
-        out._dim_size = input.dim_size
-        out._is_sorted = input.is_sorted
-
-    else:  # 2. `index[index]`.
-        out._dim_size = input.dim_size
-
-    return out
+    pass
 
 
 @implements(aten.add.Tensor)
@@ -699,43 +495,7 @@ def _add(
     *,
     alpha: int = 1,
 ) -> Union[Index, Tensor]:
-
-    data = aten.add.Tensor(
-        input._data if isinstance(input, Index) else input,
-        other._data if isinstance(other, Index) else other,
-        alpha=alpha,
-    )
-
-    if data.dtype not in INDEX_DTYPES:
-        return data
-    if data.dim() != 1:
-        return data
-
-    out = Index(data)
-
-    if isinstance(input, Tensor) and input.numel() <= 1:
-        input = int(input)
-
-    if isinstance(other, Tensor) and other.numel() <= 1:
-        other = int(other)
-
-    if isinstance(other, int):
-        assert isinstance(input, Index)
-        if input.dim_size is not None:
-            out._dim_size = input.dim_size + alpha * other
-        out._is_sorted = input.is_sorted
-
-    elif isinstance(input, int):
-        assert isinstance(other, Index)
-        if other.dim_size is not None:
-            out._dim_size = input + alpha * other.dim_size
-        out._is_sorted = other.is_sorted
-
-    elif isinstance(input, Index) and isinstance(other, Index):
-        if input.dim_size is not None and other.dim_size is not None:
-            out._dim_size = input.dim_size + alpha * other.dim_size
-
-    return out
+    pass
 
 
 @implements(aten.add_.Tensor)
@@ -778,32 +538,7 @@ def _sub(
     *,
     alpha: int = 1,
 ) -> Union[Index, Tensor]:
-
-    data = aten.sub.Tensor(
-        input._data if isinstance(input, Index) else input,
-        other._data if isinstance(other, Index) else other,
-        alpha=alpha,
-    )
-
-    if data.dtype not in INDEX_DTYPES:
-        return data
-    if data.dim() != 1:
-        return data
-
-    out = Index(data)
-
-    if not isinstance(input, Index):
-        return out
-
-    if isinstance(other, Tensor) and other.numel() <= 1:
-        other = int(other)
-
-    if isinstance(other, int):
-        if input.dim_size is not None:
-            out._dim_size = input.dim_size - alpha * other
-        out._is_sorted = input.is_sorted
-
-    return out
+    pass
 
 
 @implements(aten.sub_.Tensor)

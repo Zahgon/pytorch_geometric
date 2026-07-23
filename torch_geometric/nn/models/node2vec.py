@@ -12,37 +12,6 @@ from torch_geometric.utils.num_nodes import maybe_num_nodes
 
 
 class Node2Vec(torch.nn.Module):
-    r"""The Node2Vec model from the
-    `"node2vec: Scalable Feature Learning for Networks"
-    <https://arxiv.org/abs/1607.00653>`_ paper where random walks of
-    length :obj:`walk_length` are sampled in a given graph, and node embeddings
-    are learned via negative sampling optimization.
-
-    .. note::
-
-        For an example of using Node2Vec, see `examples/node2vec.py
-        <https://github.com/pyg-team/pytorch_geometric/blob/master/examples/
-        node2vec.py>`_.
-
-    Args:
-        edge_index (torch.Tensor): The edge indices.
-        embedding_dim (int): The size of each embedding vector.
-        walk_length (int): The walk length.
-        context_size (int): The actual context size which is considered for
-            positive samples. This parameter increases the effective sampling
-            rate by reusing samples across different source nodes.
-        walks_per_node (int, optional): The number of walks to sample for each
-            node. (default: :obj:`1`)
-        p (float, optional): Likelihood of immediately revisiting a node in the
-            walk. (default: :obj:`1`)
-        q (float, optional): Control parameter to interpolate between
-            breadth-first strategy and depth-first strategy (default: :obj:`1`)
-        num_negative_samples (int, optional): The number of negative samples to
-            use for each positive sample. (default: :obj:`1`)
-        num_nodes (int, optional): The number of nodes. (default: :obj:`None`)
-        sparse (bool, optional): If set to :obj:`True`, gradients w.r.t. to the
-            weight matrix will be sparse. (default: :obj:`False`)
-    """
     def __init__(
         self,
         edge_index: Tensor,
@@ -94,8 +63,7 @@ class Node2Vec(torch.nn.Module):
         return emb if batch is None else emb[batch]
 
     def loader(self, **kwargs) -> DataLoader:
-        return DataLoader(range(self.num_nodes), collate_fn=self.sample,
-                          **kwargs)
+        pass
 
     @torch.jit.export
     def pos_sample(self, batch: Tensor) -> Tensor:
@@ -134,7 +102,6 @@ class Node2Vec(torch.nn.Module):
     @torch.jit.export
     def loss(self, pos_rw: Tensor, neg_rw: Tensor) -> Tensor:
         r"""Computes the loss given positive and negative random walks."""
-        # Positive loss.
         start, rest = pos_rw[:, 0], pos_rw[:, 1:].contiguous()
 
         h_start = self.embedding(start).view(pos_rw.size(0), 1,
@@ -145,7 +112,6 @@ class Node2Vec(torch.nn.Module):
         out = (h_start * h_rest).sum(dim=-1).view(-1)
         pos_loss = -torch.log(torch.sigmoid(out) + self.EPS).mean()
 
-        # Negative loss.
         start, rest = neg_rw[:, 0], neg_rw[:, 1:].contiguous()
 
         h_start = self.embedding(start).view(neg_rw.size(0), 1,

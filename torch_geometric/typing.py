@@ -49,10 +49,6 @@ try:
     WITH_SEGMM = hasattr(pyg_lib.ops, 'segment_matmul')
     if (WITH_SEGMM and 'PYTEST_CURRENT_TEST' in os.environ
             and torch.cuda.is_available()):
-        # NOTE `segment_matmul` is currently bugged on older NVIDIA cards which
-        # let our GPU tests on CI crash. Try if this error is present on the
-        # current GPU and disable `WITH_SEGMM`/`WITH_GMM` if necessary.
-        # TODO Drop this code block once `segment_matmul` is fixed.
         try:
             x = torch.randn(3, 4, device='cuda')
             ptr = torch.tensor([0, 2, 3], device='cuda')
@@ -335,13 +331,9 @@ class MockTorchCSCTensor:
         )
 
 
-# Types for accessing data ####################################################
 
-# Node-types are denoted by a single string, e.g.: `data['paper']`:
 NodeType = str
 
-# Edge-types are denotes by a triplet of strings, e.g.:
-# `data[('author', 'writes', 'paper')]
 EdgeType = Tuple[str, str, str]
 
 NodeOrEdgeType = Union[NodeType, EdgeType]
@@ -351,14 +343,10 @@ EDGE_TYPE_STR_SPLIT = '__'
 
 
 class EdgeTypeStr(str):
-    r"""A helper class to construct serializable edge types by merging an edge
-    type tuple into a single string.
-    """
     edge_type: tuple[str, str, str]
 
     def __new__(cls, *args: Any) -> 'EdgeTypeStr':
         if isinstance(args[0], (list, tuple)):
-            # Unwrap `EdgeType((src, rel, dst))` and `EdgeTypeStr((src, dst))`:
             args = tuple(args[0])
 
         if len(args) == 1 and isinstance(args[0], str):
@@ -369,12 +357,10 @@ class EdgeTypeStr(str):
                                  f"tuple since it holds invalid characters")
 
         elif len(args) == 2 and all(isinstance(arg, str) for arg in args):
-            # A `(src, dst)` edge type was passed - add `DEFAULT_REL`:
             edge_type = (args[0], DEFAULT_REL, args[1])
             arg = EDGE_TYPE_STR_SPLIT.join(edge_type)
 
         elif len(args) == 3 and all(isinstance(arg, str) for arg in args):
-            # A `(src, rel, dst)` edge type was passed:
             edge_type = tuple(args)
             arg = EDGE_TYPE_STR_SPLIT.join(args)
 
@@ -396,24 +382,14 @@ class EdgeTypeStr(str):
         return (self.__class__, (self.edge_type, ))
 
 
-# There exist some short-cuts to query edge-types (given that the full triplet
-# can be uniquely reconstructed, e.g.:
-# * via str: `data['writes']`
-# * via Tuple[str, str]: `data[('author', 'paper')]`
 QueryType = Union[NodeType, EdgeType, str, Tuple[str, str]]
 
 Metadata = Tuple[List[NodeType], List[EdgeType]]
 
-# A representation of a feature tensor
 FeatureTensorType = Union[Tensor, np.ndarray]
 
-# A representation of an edge index, following the possible formats:
-#   * COO: (row, col)
-#   * CSC: (row, colptr)
-#   * CSR: (rowptr, col)
 EdgeTensorType = Tuple[Tensor, Tensor]
 
-# Types for message passing ###################################################
 
 Adj = Union[Tensor, SparseTensor]
 OptTensor = Optional[Tensor]
@@ -427,12 +403,10 @@ MaybeHeteroNodeTensor = Union[Tensor, Dict[NodeType, Tensor]]
 MaybeHeteroAdjTensor = Union[Tensor, Dict[EdgeType, Adj]]
 MaybeHeteroEdgeTensor = Union[Tensor, Dict[EdgeType, Tensor]]
 
-# Types for sampling ##########################################################
 
 InputNodes = Union[OptTensor, NodeType, Tuple[NodeType, OptTensor]]
 InputEdges = Union[OptTensor, EdgeType, Tuple[EdgeType, OptTensor]]
 
-# Serialization ###############################################################
 
 if WITH_PT24:
     torch.serialization.add_safe_globals([

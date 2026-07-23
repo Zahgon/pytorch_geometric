@@ -13,22 +13,6 @@ from torch_geometric.utils import one_hot, scatter
 
 @functional_transform('grid_sampling')
 class GridSampling(BaseTransform):
-    r"""Clusters points into fixed-sized voxels
-    (functional name: :obj:`grid_sampling`).
-    Each cluster returned is a new point based on the mean of all points
-    inside the given cluster.
-
-    Args:
-        size (float or [float] or Tensor): Size of a voxel (in each dimension).
-        start (float or [float] or Tensor, optional): Start coordinates of the
-            grid (in each dimension). If set to :obj:`None`, will be set to the
-            minimum coordinates found in :obj:`data.pos`.
-            (default: :obj:`None`)
-        end (float or [float] or Tensor, optional): End coordinates of the grid
-            (in each dimension). If set to :obj:`None`, will be set to the
-            maximum coordinates found in :obj:`data.pos`.
-            (default: :obj:`None`)
-    """
     def __init__(
         self,
         size: Union[float, List[float], Tensor],

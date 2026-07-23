@@ -18,17 +18,6 @@ class TrackingData(Data):
 
 
 class TrackMLParticleTrackingDataset(Dataset):
-    r"""The `TrackML Particle Tracking Challenge
-    <https://www.kaggle.com/c/trackml-particle-identification>`_ dataset to
-    reconstruct particle tracks from 3D points left in the silicon detectors.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-    """
 
     url = 'https://www.kaggle.com/c/trackml-particle-identification'
 
@@ -44,13 +33,7 @@ class TrackMLParticleTrackingDataset(Dataset):
 
     @property
     def raw_file_names(self) -> List[str]:
-        event_indices = ['000001000']
-        file_names = []
-        file_names += [f'event{idx}-cells.csv' for idx in event_indices]
-        file_names += [f'event{idx}-hits.csv' for idx in event_indices]
-        file_names += [f'event{idx}-particles.csv' for idx in event_indices]
-        file_names += [f'event{idx}-truth.csv' for idx in event_indices]
-        return file_names
+        pass
 
     def download(self) -> None:
         raise RuntimeError(
@@ -58,19 +41,17 @@ class TrackMLParticleTrackingDataset(Dataset):
             f'all *.csv files to {self.raw_dir}')
 
     def len(self) -> int:
-        return len(glob.glob(osp.join(self.raw_dir, 'event*-hits.csv')))
+        pass
 
     def get(self, i: int) -> TrackingData:
         import pandas as pd
 
         idx = self.events[i]
 
-        # Get hit positions.
         hits_path = osp.join(self.raw_dir, f'event{idx}-hits.csv')
         pos = pd.read_csv(hits_path, usecols=['x', 'y', 'z'], dtype=np.float32)
         pos = torch.from_numpy(pos.values).div_(1000.)
 
-        # Get hit features.
         cells_path = osp.join(self.raw_dir, f'event{idx}-cells.csv')
         cell = pd.read_csv(cells_path, usecols=['hit_id', 'value'])
         hit_id = torch.from_numpy(cell['hit_id'].values).to(torch.long).sub_(1)
@@ -80,7 +61,6 @@ class TrackMLParticleTrackingDataset(Dataset):
         value = scatter(value, hit_id, 0, pos.size(0), 'sum')
         x = torch.stack([num_cells, value], dim=-1)
 
-        # Get ground-truth hit assignments.
         truth_path = osp.join(self.raw_dir, f'event{idx}-truth.csv')
         y = pd.read_csv(truth_path,
                         usecols=['hit_id', 'particle_id', 'weight'])
@@ -89,13 +69,11 @@ class TrackMLParticleTrackingDataset(Dataset):
         particle_id = particle_id.unique(return_inverse=True)[1].sub_(1)
         weight = torch.from_numpy(y['weight'].values).to(torch.float)
 
-        # Sort.
         _, perm = index_sort(particle_id * hit_id.size(0) + hit_id)
         hit_id = hit_id[perm]
         particle_id = particle_id[perm]
         weight = weight[perm]
 
-        # Remove invalid particle ids.
         mask = particle_id >= 0
         hit_id = hit_id[mask]
         particle_id = particle_id[mask]

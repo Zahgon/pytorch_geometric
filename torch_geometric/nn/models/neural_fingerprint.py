@@ -8,19 +8,6 @@ from torch_geometric.typing import Adj
 
 
 class NeuralFingerprint(torch.nn.Module):
-    r"""The Neural Fingerprint model from the
-    `"Convolutional Networks on Graphs for Learning Molecular Fingerprints"
-    <https://arxiv.org/abs/1509.09292>`__ paper to generate fingerprints
-    of molecules.
-
-    Args:
-        in_channels (int): Size of each input sample.
-        hidden_channels (int): Size of each hidden sample.
-        out_channels (int): Size of each output fingerprint.
-        num_layers (int): Number of layers.
-        **kwargs (optional): Additional arguments of
-            :class:`torch_geometric.nn.conv.MFConv`.
-    """
     def __init__(
         self,
         in_channels: int,

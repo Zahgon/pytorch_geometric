@@ -8,30 +8,6 @@ from torch_geometric.data import HeteroData, InMemoryDataset, download_url
 
 
 class IGMCDataset(InMemoryDataset):
-    r"""The user-item heterogeneous rating datasets :obj:`"Douban"`,
-    :obj:`"Flixster"` and :obj:`"Yahoo-Music"` from the `"Inductive Matrix
-    Completion Based on Graph Neural Networks"
-    <https://arxiv.org/abs/1904.12058>`_ paper.
-
-    Nodes represent users and items.
-    Edges and features between users and items represent a (training) rating of
-    the item given by the user.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        name (str): The name of the dataset (:obj:`"Douban"`,
-            :obj:`"Flixster"`, :obj:`"Yahoo-Music"`).
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.HeteroData` object and returns a
-            transformed version. The data object will be transformed before
-            every access. (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.HeteroData` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-    """
     url = 'https://github.com/muhanzhang/IGMC/raw/master/raw_data'
 
     def __init__(
@@ -51,19 +27,19 @@ class IGMCDataset(InMemoryDataset):
 
     @property
     def raw_dir(self) -> str:
-        return osp.join(self.root, self.name, 'raw')
+        pass
 
     @property
     def processed_dir(self) -> str:
-        return osp.join(self.root, self.name, 'processed')
+        pass
 
     @property
     def raw_file_names(self) -> str:
-        return 'training_test_dataset.mat'
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def download(self) -> None:
         path = f'{self.url}/{self.name}/training_test_dataset.mat'

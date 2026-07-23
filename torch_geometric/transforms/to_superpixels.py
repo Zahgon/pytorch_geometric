@@ -11,33 +11,6 @@ from torch_geometric.utils import scatter
 
 @functional_transform('to_slic')
 class ToSLIC(BaseTransform):
-    r"""Converts an image to a superpixel representation using the
-    :meth:`skimage.segmentation.slic` algorithm, resulting in a
-    :obj:`torch_geometric.data.Data` object holding the centroids of
-    superpixels in :obj:`data.pos` and their mean color in :obj:`data.x`
-    (functional name: :obj:`to_slic`).
-
-    This transform can be used with any :obj:`torchvision` dataset.
-
-    .. code-block:: python
-
-        from torchvision.datasets import MNIST
-        import torchvision.transforms as T
-        from torch_geometric.transforms import ToSLIC
-
-        transform = T.Compose([T.ToTensor(), ToSLIC(n_segments=75)])
-        dataset = MNIST('/tmp/MNIST', download=True, transform=transform)
-
-    Args:
-        add_seg (bool, optional): If set to `True`, will add the segmentation
-            result to the data object. (default: :obj:`False`)
-        add_img (bool, optional): If set to `True`, will add the input image
-            to the data object. (default: :obj:`False`)
-        **kwargs (optional): Arguments to adjust the output of the SLIC
-            algorithm. See the `SLIC documentation
-            <https://scikit-image.org/docs/dev/api/skimage.segmentation.html
-            #skimage.segmentation.slic>`_ for an overview.
-    """
     def __init__(
         self,
         add_seg: bool = False,

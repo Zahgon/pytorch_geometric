@@ -17,7 +17,6 @@ from torch_geometric.utils import k_hop_subgraph
 
 
 class ExplainerAlgorithm(torch.nn.Module):
-    r"""An abstract base class for implementing explainer algorithms."""
     @abstractmethod
     def forward(
         self,
@@ -51,29 +50,14 @@ class ExplainerAlgorithm(torch.nn.Module):
         in :obj:`self.explainer_config`, :obj:`self.model_config`.
         """
 
-    ###########################################################################
 
     @property
     def explainer_config(self) -> ExplainerConfig:
-        r"""Returns the connected explainer configuration."""
-        if not hasattr(self, '_explainer_config'):
-            raise ValueError(
-                f"The explanation algorithm '{self.__class__.__name__}' is "
-                f"not yet connected to any explainer configuration. Please "
-                f"call `{self.__class__.__name__}.connect(...)` before "
-                f"proceeding.")
-        return self._explainer_config
+        pass
 
     @property
     def model_config(self) -> ModelConfig:
-        r"""Returns the connected model configuration."""
-        if not hasattr(self, '_model_config'):
-            raise ValueError(
-                f"The explanation algorithm '{self.__class__.__name__}' is "
-                f"not yet connected to any model configuration. Please call "
-                f"`{self.__class__.__name__}.connect(...)` before "
-                f"proceeding.")
-        return self._model_config
+        pass
 
     def connect(
         self,
@@ -91,7 +75,6 @@ class ExplainerAlgorithm(torch.nn.Module):
                 f"The explanation algorithm '{self.__class__.__name__}' does "
                 f"not support the given explanation settings.")
 
-    # Helper functions ########################################################
 
     @staticmethod
     def _post_process_mask(

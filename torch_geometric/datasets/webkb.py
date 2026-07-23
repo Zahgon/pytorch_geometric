@@ -9,56 +9,6 @@ from torch_geometric.utils import coalesce
 
 
 class WebKB(InMemoryDataset):
-    r"""The WebKB datasets used in the
-    `"Geom-GCN: Geometric Graph Convolutional Networks"
-    <https://openreview.net/forum?id=S1e2agrFvS>`_ paper.
-    Nodes represent web pages and edges represent hyperlinks between them.
-    Node features are the bag-of-words representation of web pages.
-    The task is to classify the nodes into one of the five categories, student,
-    project, course, staff, and faculty.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        name (str): The name of the dataset (:obj:`"Cornell"`, :obj:`"Texas"`,
-            :obj:`"Wisconsin"`).
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-
-    **STATS:**
-
-    .. list-table::
-        :widths: 10 10 10 10 10
-        :header-rows: 1
-
-        * - Name
-          - #nodes
-          - #edges
-          - #features
-          - #classes
-        * - Cornell
-          - 183
-          - 298
-          - 1,703
-          - 5
-        * - Texas
-          - 183
-          - 325
-          - 1,703
-          - 5
-        * - Wisconsin
-          - 251
-          - 515
-          - 1,703
-          - 5
-    """
 
     url = 'https://raw.githubusercontent.com/graphdml-uiuc-jlu/geom-gcn/master'
 
@@ -79,21 +29,19 @@ class WebKB(InMemoryDataset):
 
     @property
     def raw_dir(self) -> str:
-        return osp.join(self.root, self.name, 'raw')
+        pass
 
     @property
     def processed_dir(self) -> str:
-        return osp.join(self.root, self.name, 'processed')
+        pass
 
     @property
     def raw_file_names(self) -> List[str]:
-        out = ['out1_node_feature_label.txt', 'out1_graph_edges.txt']
-        out += [f'{self.name}_split_0.6_0.2_{i}.npz' for i in range(10)]
-        return out
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def download(self) -> None:
         for f in self.raw_file_names[:2]:

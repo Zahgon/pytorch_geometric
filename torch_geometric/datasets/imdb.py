@@ -15,29 +15,6 @@ from torch_geometric.data import (
 
 
 class IMDB(InMemoryDataset):
-    r"""A subset of the Internet Movie Database (IMDB), as collected in the
-    `"MAGNN: Metapath Aggregated Graph Neural Network for Heterogeneous Graph
-    Embedding" <https://arxiv.org/abs/2002.01680>`_ paper.
-    IMDB is a heterogeneous graph containing three types of entities - movies
-    (4,278 nodes), actors (5,257 nodes), and directors (2,081 nodes).
-    The movies are divided into three classes (action, comedy, drama) according
-    to their genre.
-    Movie features correspond to elements of a bag-of-words representation of
-    its plot keywords.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.HeteroData` object and returns a
-            transformed version. The data object will be transformed before
-            every access. (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.HeteroData` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-    """
     url = 'https://www.dropbox.com/s/g0btk9ctr1es39x/IMDB_processed.zip?dl=1'
 
     def __init__(
@@ -53,14 +30,11 @@ class IMDB(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> List[str]:
-        return [
-            'adjM.npz', 'features_0.npz', 'features_1.npz', 'features_2.npz',
-            'labels.npy', 'train_val_test_idx.npz'
-        ]
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def download(self) -> None:
         path = download_url(self.url, self.raw_dir)

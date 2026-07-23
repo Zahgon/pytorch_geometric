@@ -7,10 +7,7 @@ class MappingView:
         self._args = args
 
     def _keys(self) -> List[str]:
-        if len(self._args) == 0:
-            return list(self._mapping.keys())
-        else:
-            return [arg for arg in self._args if arg in self._mapping]
+        pass
 
     def __len__(self) -> int:
         return len(self._keys())

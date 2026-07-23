@@ -9,28 +9,6 @@ from torch_geometric.utils import degree
 
 
 class DegreeScalerAggregation(Aggregation):
-    r"""Combines one or more aggregators and transforms its output with one or
-    more scalers as introduced in the `"Principal Neighbourhood Aggregation for
-    Graph Nets" <https://arxiv.org/abs/2004.05718>`_ paper.
-    The scalers are normalised by the in-degree of the training set and so must
-    be provided at time of construction.
-    See :class:`torch_geometric.nn.conv.PNAConv` for more information.
-
-    Args:
-        aggr (str or [str] or Aggregation): The aggregation scheme to use.
-            See :class:`~torch_geometric.nn.conv.MessagePassing` for more
-            information.
-        scaler (str or list): Set of scaling function identifiers, namely one
-            or more of :obj:`"identity"`, :obj:`"amplification"`,
-            :obj:`"attenuation"`, :obj:`"linear"` and :obj:`"inverse_linear"`.
-        deg (Tensor): Histogram of in-degrees of nodes in the training set,
-            used by scalers to normalize.
-        train_norm (bool, optional): Whether normalization parameters
-            are trainable. (default: :obj:`False`)
-        aggr_kwargs (Dict[str, Any], optional): Arguments passed to the
-            respective aggregation function in case it gets automatically
-            resolved. (default: :obj:`None`)
-    """
     def __init__(
         self,
         aggr: Union[str, List[str], Aggregation],
@@ -76,7 +54,6 @@ class DegreeScalerAggregation(Aggregation):
                 ptr: Optional[Tensor] = None, dim_size: Optional[int] = None,
                 dim: int = -2) -> Tensor:
 
-        # TODO Currently, `degree` can only operate on `index`:
         self.assert_index_present(index)
 
         out = self.aggr(x, index, ptr, dim_size, dim)
@@ -94,13 +71,11 @@ class DegreeScalerAggregation(Aggregation):
             elif scaler == 'amplification':
                 out_scaler = out * (torch.log(deg + 1) / self.avg_deg_log)
             elif scaler == 'attenuation':
-                # Clamp minimum degree to one to avoid dividing by zero:
                 out_scaler = out * (self.avg_deg_log /
                                     torch.log(deg.clamp(min=1) + 1))
             elif scaler == 'linear':
                 out_scaler = out * (deg / self.avg_deg_lin)
             elif scaler == 'inverse_linear':
-                # Clamp minimum degree to one to avoid dividing by zero:
                 out_scaler = out * (self.avg_deg_lin / deg.clamp(min=1))
             else:
                 raise ValueError(f"Unknown scaler '{scaler}'")

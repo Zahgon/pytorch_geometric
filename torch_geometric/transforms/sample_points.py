@@ -7,16 +7,6 @@ from torch_geometric.transforms import BaseTransform
 
 @functional_transform('sample_points')
 class SamplePoints(BaseTransform):
-    r"""Uniformly samples a fixed number of points on the mesh faces according
-    to their face area (functional name: :obj:`sample_points`).
-
-    Args:
-        num (int): The number of points to sample.
-        remove_faces (bool, optional): If set to :obj:`False`, the face tensor
-            will not be removed. (default: :obj:`True`)
-        include_normals (bool, optional): If set to :obj:`True`, then compute
-            normals for each sampled point. (default: :obj:`False`)
-    """
     def __init__(
         self,
         num: int,

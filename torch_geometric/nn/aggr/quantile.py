@@ -8,46 +8,6 @@ from torch_geometric.utils import cumsum
 
 
 class QuantileAggregation(Aggregation):
-    r"""An aggregation operator that returns the feature-wise :math:`q`-th
-    quantile of a set :math:`\mathcal{X}`.
-
-    That is, for every feature :math:`d`, it computes
-
-    .. math::
-        {\mathrm{Q}_q(\mathcal{X})}_d = \begin{cases}
-            x_{\pi_i,d} & i = q \cdot n, \\
-            f(x_{\pi_i,d}, x_{\pi_{i+1},d}) & i < q \cdot n < i + 1,\\
-        \end{cases}
-
-    where :math:`x_{\pi_1,d} \le \dots \le x_{\pi_i,d} \le \dots \le
-    x_{\pi_n,d}` and :math:`f(a, b)` is an interpolation
-    function defined by :obj:`interpolation`.
-
-    Args:
-        q (float or list): The quantile value(s) :math:`q`. Can be a scalar or
-            a list of scalars in the range :math:`[0, 1]`. If more than a
-            quantile is passed, the results are concatenated.
-        interpolation (str): Interpolation method applied if the quantile point
-            :math:`q\cdot n` lies between two values
-            :math:`a \le b`. Can be one of the following:
-
-            * :obj:`"lower"`: Returns the one with lowest value.
-
-            * :obj:`"higher"`: Returns the one with highest value.
-
-            * :obj:`"midpoint"`: Returns the average of the two values.
-
-            * :obj:`"nearest"`: Returns the one whose index is nearest to the
-              quantile point.
-
-            * :obj:`"linear"`: Returns a linear combination of the two
-              elements, defined as
-              :math:`f(a, b) = a + (b - a)\cdot(q\cdot n - i)`.
-
-            (default: :obj:`"linear"`)
-        fill_value (float, optional): The default value in the case no entry is
-            found for a given index (default: :obj:`0.0`).
-    """
     interpolations = {'linear', 'lower', 'higher', 'nearest', 'midpoint'}
 
     def __init__(self, q: Union[float, List[float]],
@@ -80,8 +40,6 @@ class QuantileAggregation(Aggregation):
         count = torch.bincount(index, minlength=dim_size or 0)
         ptr = cumsum(count)[:-1]
 
-        # In case there exists dangling indices (`dim_size > index.max()`), we
-        # need to clamp them to prevent out-of-bound issues:
         if dim_size is not None:
             ptr = ptr.clamp(max=x.size(dim) - 1)
 
@@ -92,14 +50,11 @@ class QuantileAggregation(Aggregation):
         shape[dim] = -1
         index = index.view(shape).expand_as(x)
 
-        # Two sorts: the first one on the value,
-        # the second (stable) on the indices:
         x, x_perm = torch.sort(x, dim=dim)
         index = index.take_along_dim(x_perm, dim=dim)
         index, index_perm = torch.sort(index, dim=dim, stable=True)
         x = x.take_along_dim(index_perm, dim=dim)
 
-        # Compute the quantile interpolations:
         if self.interpolation == 'lower':
             quantile = x.index_select(dim, q_point.floor().long())
         elif self.interpolation == 'higher':
@@ -116,7 +71,6 @@ class QuantileAggregation(Aggregation):
             else:  # 'midpoint'
                 quantile = 0.5 * l_quant + 0.5 * r_quant
 
-        # If the number of elements is zero, fill with pre-defined value:
         repeats = self.q.numel()
         mask = (count == 0).repeat_interleave(
             repeats, output_size=repeats * count.numel()).view(shape)
@@ -135,25 +89,6 @@ class QuantileAggregation(Aggregation):
 
 
 class MedianAggregation(QuantileAggregation):
-    r"""An aggregation operator that returns the feature-wise median of a set.
-
-    That is, for every feature :math:`d`, it computes
-
-    .. math::
-        {\mathrm{median}(\mathcal{X})}_d = x_{\pi_i,d}
-
-    where :math:`x_{\pi_1,d} \le x_{\pi_2,d} \le \dots \le
-    x_{\pi_n,d}` and :math:`i = \lfloor \frac{n}{2} \rfloor`.
-
-    .. note::
-        If the median lies between two values, the lowest one is returned.
-        To compute the midpoint (or other kind of interpolation) of the two
-        values, use :class:`QuantileAggregation` instead.
-
-    Args:
-        fill_value (float, optional): The default value in the case no entry is
-            found for a given index (default: :obj:`0.0`).
-    """
     def __init__(self, fill_value: float = 0.0):
         super().__init__(0.5, 'lower', fill_value)
 

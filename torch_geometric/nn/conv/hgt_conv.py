@@ -15,31 +15,6 @@ from torch_geometric.utils.hetero import construct_bipartite_edge_index
 
 
 class HGTConv(MessagePassing):
-    r"""The Heterogeneous Graph Transformer (HGT) operator from the
-    `"Heterogeneous Graph Transformer" <https://arxiv.org/abs/2003.01332>`_
-    paper.
-
-    .. note::
-
-        For an example of using HGT, see `examples/hetero/hgt_dblp.py
-        <https://github.com/pyg-team/pytorch_geometric/blob/master/examples/
-        hetero/hgt_dblp.py>`_.
-
-    Args:
-        in_channels (int or Dict[str, int]): Size of each input sample of every
-            node type, or :obj:`-1` to derive the size from the first input(s)
-            to the forward method.
-        out_channels (int): Size of each output sample.
-        metadata (Tuple[List[str], List[Tuple[str, str, str]]]): The metadata
-            of the heterogeneous graph, *i.e.* its node and edge types given
-            by a list of strings and a list of string triplets, respectively.
-            See :meth:`torch_geometric.data.HeteroData.metadata` for more
-            information.
-        heads (int, optional): Number of multi-head-attentions.
-            (default: :obj:`1`)
-        **kwargs (optional): Additional arguments of
-            :class:`torch_geometric.nn.conv.MessagePassing`.
-    """
     def __init__(
         self,
         in_channels: Union[int, Dict[str, int]],
@@ -124,7 +99,6 @@ class HGTConv(MessagePassing):
         num_edge_types = len(self.edge_types)
         H, D = self.heads, self.out_channels // self.heads
 
-        # Flatten into a single tensor with shape [num_edge_types * heads, D]:
         ks: List[Tensor] = []
         vs: List[Tensor] = []
         type_list: List[Tensor] = []
@@ -135,7 +109,6 @@ class HGTConv(MessagePassing):
             offset[edge_type] = cumsum
             cumsum += N
 
-            # construct type_vec for curr edge_type with shape [H, D]
             edge_type_offset = self.edge_types_map[edge_type]
             type_vec = torch.arange(H, dtype=torch.long).view(-1, 1).repeat(
                 1, N) * num_edge_types + edge_type_offset
@@ -180,7 +153,6 @@ class HGTConv(MessagePassing):
 
         k_dict, q_dict, v_dict, out_dict = {}, {}, {}, {}
 
-        # Compute K, Q, V over node types:
         kqv_dict = self.kqv_lin(x_dict)
         for key, val in kqv_dict.items():
             k, q, v = torch.tensor_split(val, 3, dim=1)
@@ -198,20 +170,17 @@ class HGTConv(MessagePassing):
 
         out = self.propagate(edge_index, k=k, q=q, v=v, edge_attr=edge_attr)
 
-        # Reconstruct output node embeddings dict:
         for node_type, start_offset in dst_offset.items():
             end_offset = start_offset + q_dict[node_type].size(0)
             if node_type in self.dst_node_types:
                 out_dict[node_type] = out[start_offset:end_offset]
 
-        # Transform output node embeddings:
         a_dict = self.out_lin({
             k:
             torch.nn.functional.gelu(v) if v is not None else v
             for k, v in out_dict.items()
         })
 
-        # Iterate over node types:
         for node_type, out in out_dict.items():
             out = a_dict[node_type]
 

@@ -12,37 +12,6 @@ from torch_geometric.nn.aggr.utils import (
 
 
 class GraphMultisetTransformer(Aggregation):
-    r"""The Graph Multiset Transformer pooling operator from the
-    `"Accurate Learning of Graph Representations
-    with Graph Multiset Pooling" <https://arxiv.org/abs/2102.11533>`_ paper.
-
-    The :class:`GraphMultisetTransformer` aggregates elements into
-    :math:`k` representative elements via attention-based pooling, computes the
-    interaction among them via :obj:`num_encoder_blocks` self-attention blocks,
-    and finally pools the representative elements via attention-based pooling
-    into a single cluster.
-
-    .. note::
-
-        :class:`GraphMultisetTransformer` requires sorted indices :obj:`index`
-        as input. Specifically, if you use this aggregation as part of
-        :class:`~torch_geometric.nn.conv.MessagePassing`, ensure that
-        :obj:`edge_index` is sorted by destination nodes, either by manually
-        sorting edge indices via :meth:`~torch_geometric.utils.sort_edge_index`
-        or by calling :meth:`torch_geometric.data.Data.sort`.
-
-    Args:
-        channels (int): Size of each input sample.
-        k (int): Number of :math:`k` representative nodes after pooling.
-        num_encoder_blocks (int, optional): Number of Set Attention Blocks
-            (SABs) between the two pooling blocks. (default: :obj:`1`)
-        heads (int, optional): Number of multi-head-attentions.
-            (default: :obj:`1`)
-        norm (str, optional): If set to :obj:`True`, will apply layer
-            normalization. (default: :obj:`False`)
-        dropout (float, optional): Dropout probability of attention weights.
-            (default: :obj:`0`)
-    """
     def __init__(
         self,
         channels: int,

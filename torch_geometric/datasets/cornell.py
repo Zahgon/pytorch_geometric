@@ -8,42 +8,6 @@ from torch_geometric.data.hypergraph_data import HyperGraphData
 
 
 class CornellTemporalHyperGraphDataset(InMemoryDataset):
-    r"""A collection of temporal higher-order network datasets from the
-    `"Simplicial Closure and higher-order link prediction"
-    <https://arxiv.org/abs/1802.06916>`_ paper.
-    Each of the datasets is a timestamped sequence of simplices, where a
-    simplex is a set of :math:`k` nodes.
-
-    See the original `datasets page
-    <https://www.cs.cornell.edu/~arb/data/>`_ for more details about
-    individual datasets.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        name (str): The name of the dataset.
-        split (str, optional): If :obj:`"train"`, loads the training dataset.
-            If :obj:`"val"`, loads the validation dataset.
-            If :obj:`"test"`, loads the test dataset.
-            (default: :obj:`"train"`)
-        setting (str, optional): If :obj:`"transductive"`, loads the dataset
-            for transductive training.
-            If :obj:`"inductive"`, loads the dataset for inductive training.
-            (default: :obj:`"transductive"`)
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        pre_filter (callable, optional): A function that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a boolean
-            value, indicating whether the data object should be included in the
-            final dataset. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-    """
     names = [
         'email-Eu',
         'email-Enron',
@@ -97,19 +61,19 @@ class CornellTemporalHyperGraphDataset(InMemoryDataset):
 
     @property
     def raw_dir(self) -> str:
-        return osp.join(self.root, self.name, self.setting, 'raw')
+        pass
 
     @property
     def raw_file_names(self) -> List[str]:
-        return ['train_df.csv', 'val_df.csv', 'test_df.csv']
+        pass
 
     @property
     def processed_dir(self) -> str:
-        return osp.join(self.root, self.name, self.setting, 'processed')
+        pass
 
     @property
     def processed_file_names(self) -> List[str]:
-        return ['train_data.pt', 'val_data.pt', 'test_data.pt']
+        pass
 
     def download(self) -> None:
         for filename in self.raw_file_names:

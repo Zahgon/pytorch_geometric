@@ -15,33 +15,6 @@ from torch_geometric.data import (
 
 
 class HGBDataset(InMemoryDataset):
-    r"""A variety of heterogeneous graph benchmark datasets from the
-    `"Are We Really Making Much Progress? Revisiting, Benchmarking, and
-    Refining Heterogeneous Graph Neural Networks"
-    <http://keg.cs.tsinghua.edu.cn/jietang/publications/
-    KDD21-Lv-et-al-HeterGNN.pdf>`_ paper.
-
-    .. note::
-        Test labels are randomly given to prevent data leakage issues.
-        If you want to obtain final test performance, you will need to submit
-        your model predictions to the
-        `HGB leaderboard <https://www.biendata.xyz/hgb/>`_.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        name (str): The name of the dataset (one of :obj:`"ACM"`,
-            :obj:`"DBLP"`, :obj:`"Freebase"`, :obj:`"IMDB"`)
-        transform (callable, optional): A function/transform that takes in an
-            :class:`torch_geometric.data.HeteroData` object and returns a
-            transformed version. The data object will be transformed before
-            every access. (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :class:`torch_geometric.data.HeteroData` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-    """
     names = {
         'acm': 'ACM',
         'dblp': 'DBLP',
@@ -72,20 +45,19 @@ class HGBDataset(InMemoryDataset):
 
     @property
     def raw_dir(self) -> str:
-        return osp.join(self.root, self.name, 'raw')
+        pass
 
     @property
     def processed_dir(self) -> str:
-        return osp.join(self.root, self.name, 'processed')
+        pass
 
     @property
     def raw_file_names(self) -> List[str]:
-        x = ['info.dat', 'node.dat', 'link.dat', 'label.dat', 'label.dat.test']
-        return [osp.join(self.names[self.name], f) for f in x]
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def download(self) -> None:
         id = self.file_ids[self.name]
@@ -96,8 +68,6 @@ class HGBDataset(InMemoryDataset):
     def process(self) -> None:
         data = HeteroData()
 
-        # node_types = {0: 'paper', 1, 'author', ...}
-        # edge_types = {0: ('paper', 'cite', 'paper'), ...}
         if self.name in ['acm', 'dblp', 'imdb']:
             with open(self.raw_paths[0]) as f:  # `info.dat`
                 info = json.load(f)
@@ -131,7 +101,6 @@ class HGBDataset(InMemoryDataset):
         else:  # Link prediction:
             raise NotImplementedError
 
-        # Extract node information:
         mapping_dict = {}  # Maps global node indices to local ones.
         x_dict = defaultdict(list)
         num_nodes_dict: Dict[str, int] = defaultdict(int)
@@ -162,11 +131,9 @@ class HGBDataset(InMemoryDataset):
             edge_index = torch.tensor(edge_index_dict[e_type])
             edge_weight = torch.tensor(edge_weight_dict[e_type])
             data[e_type].edge_index = edge_index.t().contiguous()
-            # Only add "weighted" edgel to the graph:
             if not torch.allclose(edge_weight, torch.ones_like(edge_weight)):
                 data[e_type].edge_weight = edge_weight
 
-        # Node classification:
         if self.name in ['acm', 'dblp', 'freebase', 'imdb']:
             with open(self.raw_paths[3]) as f:  # `label.dat`
                 train_ys = [v.split('\t') for v in f.read().split('\n')[:-1]]

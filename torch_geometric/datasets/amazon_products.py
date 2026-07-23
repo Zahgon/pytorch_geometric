@@ -9,36 +9,6 @@ from torch_geometric.data import Data, InMemoryDataset, download_google_url
 
 
 class AmazonProducts(InMemoryDataset):
-    r"""The Amazon dataset from the `"GraphSAINT: Graph Sampling Based
-    Inductive Learning Method" <https://arxiv.org/abs/1907.04931>`_ paper,
-    containing products and its categories.
-
-    Args:
-        root: Root directory where the dataset should be saved.
-        transform: A function/transform that takes in an
-            :class:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-        pre_transform: A function/transform that takes in a
-            :class:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk.
-        force_reload: Whether to re-process the dataset.
-
-    **STATS:**
-
-    .. list-table::
-        :widths: 10 10 10 10
-        :header-rows: 1
-
-        * - #nodes
-          - #edges
-          - #features
-          - #classes
-        * - 1,569,960
-          - 264,339,468
-          - 200
-          - 107
-    """
     adj_full_id = '17qhNA8H1IpbkkR-T2BmPQm8QNW5do-aa'
     feats_id = '10SW8lCvAj-kb6ckkfTOC5y0l8XXdtMxj'
     class_map_id = '1LIl4kimLfftj4-7NmValuWyCQE8AaE7P'
@@ -57,11 +27,11 @@ class AmazonProducts(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> List[str]:
-        return ['adj_full.npz', 'feats.npy', 'class_map.json', 'role.json']
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def download(self) -> None:
         download_google_url(self.adj_full_id, self.raw_dir, 'adj_full.npz')

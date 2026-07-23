@@ -10,38 +10,6 @@ from torch_geometric.utils import to_dense_batch
 
 
 class Polynormer(torch.nn.Module):
-    r"""The polynormer module from the
-    `"Polynormer: polynomial-expressive graph
-    transformer in linear time"
-    <https://arxiv.org/abs/2403.01232>`_ paper.
-
-    Args:
-        in_channels (int): Input channels.
-        hidden_channels (int): Hidden channels.
-        out_channels (int): Output channels.
-        local_layers (int): The number of local attention layers.
-            (default: :obj:`7`)
-        global_layers (int): The number of global attention layers.
-            (default: :obj:`2`)
-        in_dropout (float): Input dropout rate.
-            (default: :obj:`0.15`)
-        dropout (float): Dropout rate.
-            (default: :obj:`0.5`)
-        global_dropout (float): Global dropout rate.
-            (default: :obj:`0.5`)
-        heads (int): The number of heads.
-            (default: :obj:`1`)
-        beta (float): Aggregate type.
-            (default: :obj:`0.9`)
-        qk_shared (bool optional): Whether weight of query and key are shared.
-            (default: :obj:`True`)
-        pre_ln (bool): Pre layer normalization.
-            (default: :obj:`False`)
-        post_bn (bool): Post batch normalization.
-            (default: :obj:`True`)
-        local_attn (bool): Whether use local attention.
-            (default: :obj:`False`)
-    """
     def __init__(
         self,
         in_channels: int,
@@ -77,7 +45,6 @@ class Polynormer(torch.nn.Module):
         if self.post_bn:
             self.post_bns = torch.nn.ModuleList()
 
-        # first layer
         inner_channels = heads * hidden_channels
         self.h_lins.append(torch.nn.Linear(in_channels, inner_channels))
         if local_attn:
@@ -96,7 +63,6 @@ class Polynormer(torch.nn.Module):
         if self.post_bn:
             self.post_bns.append(torch.nn.BatchNorm1d(inner_channels))
 
-        # following layers
         for _ in range(local_layers - 1):
             self.h_lins.append(torch.nn.Linear(inner_channels, inner_channels))
             if local_attn:
@@ -173,7 +139,6 @@ class Polynormer(torch.nn.Module):
         """
         x = F.dropout(x, p=self.in_drop, training=self.training)
 
-        # equivariant local attention
         x_local = 0
         for i, local_conv in enumerate(self.local_convs):
             if self.pre_ln:
@@ -188,7 +153,6 @@ class Polynormer(torch.nn.Module):
             x = (1 - self.beta) * self.lns[i](h * x) + self.beta * x
             x_local = x_local + x
 
-        # equivariant global attention
         if self._global:
             batch, indices = batch.sort()
             rev_perm = torch.empty_like(indices)

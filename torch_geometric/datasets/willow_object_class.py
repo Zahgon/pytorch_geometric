@@ -18,35 +18,6 @@ from torch_geometric.io import fs
 
 
 class WILLOWObjectClass(InMemoryDataset):
-    r"""The WILLOW-ObjectClass dataset from the `"Learning Graphs to Match"
-    <https://www.di.ens.fr/willow/pdfscurrent/cho2013.pdf>`_ paper,
-    containing 10 equal keypoints of at least 40 images in each category.
-    The keypoints contain interpolated features from a pre-trained VGG16 model
-    on ImageNet (:obj:`relu4_2` and :obj:`relu5_1`).
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        category (str): The category of the images (one of :obj:`"Car"`,
-            :obj:`"Duck"`, :obj:`"Face"`, :obj:`"Motorbike"`,
-            :obj:`"Winebottle"`).
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        pre_filter (callable, optional): A function that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a boolean
-            value, indicating whether the data object should be included in the
-            final dataset. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-        device (str or torch.device, optional): The device to use for
-            processing the raw data. If set to :obj:`None`, will utilize
-            GPU-processing if available. (default: :obj:`None`)
-    """
     url = ('http://www.di.ens.fr/willow/research/graphlearning/'
            'WILLOW-ObjectClass_dataset.zip')
 
@@ -76,19 +47,19 @@ class WILLOWObjectClass(InMemoryDataset):
 
     @property
     def raw_dir(self) -> str:
-        return osp.join(self.root, 'raw')
+        pass
 
     @property
     def processed_dir(self) -> str:
-        return osp.join(self.root, self.category.capitalize(), 'processed')
+        pass
 
     @property
     def raw_file_names(self) -> List[str]:
-        return [category.capitalize() for category in self.categories]
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def download(self) -> None:
         path = download_url(self.url, self.root)
@@ -130,15 +101,12 @@ class WILLOWObjectClass(InMemoryDataset):
             x, y = torch.from_numpy(pos).to(torch.float)
             pos = torch.stack([x, y], dim=1)
 
-            # The "face" category contains a single image with less than 10
-            # keypoints, so we need to skip it.
             if pos.size(0) != 10:
                 continue
 
             with open(f'{name}.png', 'rb') as f:
                 img = Image.open(f).convert('RGB')
 
-            # Rescale keypoints.
             pos[:, 0] = pos[:, 0] * 256.0 / (img.size[0])
             pos[:, 1] = pos[:, 1] * 256.0 / (img.size[1])
 

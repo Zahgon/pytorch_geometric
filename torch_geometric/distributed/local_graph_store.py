@@ -12,9 +12,6 @@ from torch_geometric.utils import sort_edge_index
 
 
 class LocalGraphStore(GraphStore):
-    r"""Implements the :class:`~torch_geometric.data.GraphStore` interface to
-    act as a local graph store for distributed training.
-    """
     def __init__(self):
         super().__init__()
         self._edge_index: Dict[Tuple, EdgeTensorType] = {}
@@ -23,13 +20,9 @@ class LocalGraphStore(GraphStore):
 
         self.num_partitions = 1
         self.partition_idx = 0
-        # Mapping between node ID and partition ID
         self.node_pb: Union[Tensor, Dict[NodeType, Tensor]] = None
-        # Mapping between edge ID and partition ID
         self.edge_pb: Union[Tensor, Dict[EdgeType, Tensor]] = None
-        # Meta information related to partition and graph store info
         self.meta: Optional[Dict[Any, Any]] = None
-        # If data is sorted based on destination nodes (CSC format):
         self.is_sorted: Optional[bool] = None
 
     @staticmethod
@@ -49,11 +42,7 @@ class LocalGraphStore(GraphStore):
 
     def get_partition_ids_from_eids(self, eids: torch.Tensor,
                                     edge_type: Optional[EdgeType] = None):
-        r"""Returns the partition IDs of edge IDs for a specific edge type."""
-        if self.meta['is_hetero']:
-            return self.edge_pb[edge_type][eids]
-        else:
-            return self.edge_pb[eids]
+        pass
 
     def put_edge_id(self, edge_id: Tensor, *args, **kwargs) -> bool:
         edge_attr = self._edge_attr_cls.cast(*args, **kwargs)
@@ -61,12 +50,10 @@ class LocalGraphStore(GraphStore):
         return True
 
     def get_edge_id(self, *args, **kwargs) -> Optional[EdgeTensorType]:
-        edge_attr = self._edge_attr_cls.cast(*args, **kwargs)
-        return self._edge_id.get(self.key(edge_attr))
+        pass
 
     def remove_edge_id(self, *args, **kwargs) -> bool:
-        edge_attr = self._edge_attr_cls.cast(*args, **kwargs)
-        return self._edge_id.pop(self.key(edge_attr), None) is not None
+        pass
 
     def _put_edge_index(self, edge_index: EdgeTensorType,
                         edge_attr: EdgeAttr) -> bool:
@@ -78,13 +65,11 @@ class LocalGraphStore(GraphStore):
         return self._edge_index.get(self.key(edge_attr), None)
 
     def _remove_edge_index(self, edge_attr: EdgeAttr) -> bool:
-        self._edge_attr.pop(self.key(edge_attr), None)
-        return self._edge_index.pop(self.key(edge_attr), None) is not None
+        pass
 
     def get_all_edge_attrs(self) -> List[EdgeAttr]:
         return [self._edge_attr[key] for key in self._edge_index.keys()]
 
-    # Initialization ##########################################################
 
     @classmethod
     def from_data(
@@ -134,39 +119,7 @@ class LocalGraphStore(GraphStore):
         num_nodes_dict: Dict[NodeType, int],
         is_sorted: bool = False,
     ) -> "LocalGraphStore":
-        r"""Creates a local graph store from a heterogeneous :pyg:`PyG` graph.
-
-        Args:
-            edge_id_dict (Dict[EdgeType, torch.Tensor]): The global identifier
-                for every local edge of every edge type.
-            edge_index_dict (Dict[EdgeType, torch.Tensor]): The local edge
-                indices of every edge type.
-            num_nodes_dict: (Dict[str, int]): The number of nodes for every
-                node type.
-            is_sorted (bool): Whether edges are sorted by column/destination
-                nodes (CSC format). (default: :obj:`False`)
-        """
-        graph_store = cls()
-        graph_store.meta = {'is_hetero': True}
-
-        for edge_type, edge_index in edge_index_dict.items():
-            src, _, dst = edge_type
-            attr = dict(
-                edge_type=edge_type,
-                layout='coo',
-                size=(num_nodes_dict[src], num_nodes_dict[dst]),
-                is_sorted=True,
-            )
-            edge_id = edge_id_dict[edge_type]
-            if not is_sorted:
-                edge_index, edge_id = sort_edge_index(
-                    edge_index,
-                    edge_id,
-                    sort_by_row=False,
-                )
-            graph_store.put_edge_index(edge_index, **attr)
-            graph_store.put_edge_id(edge_id, **attr)
-        return graph_store
+        pass
 
     @classmethod
     def from_partition(cls, root: str, pid: int) -> 'LocalGraphStore':

@@ -36,8 +36,6 @@ class Linear(torch.nn.Module):
         uniform(self.weight.size(1), self.bias)
 
     def forward(self, src):
-        # Input: [*, in_channels]
-        # Output: [*, out_channels]
 
         if self.groups > 1:
             size = src.size()[:-1]
@@ -75,16 +73,11 @@ class Attention(torch.nn.Module):
         return self.compute_attention(query, key, value)
 
     def compute_attention(self, query, key, value):
-        # query: [*, query_entries, dim_k]
-        # key: [*, key_entries, dim_k]
-        # value: [*, key_entries, dim_v]
-        # Output: [*, query_entries, dim_v]
 
         assert query.dim() == key.dim() == value.dim() >= 2
         assert query.size(-1) == key.size(-1)
         assert key.size(-2) == value.size(-2)
 
-        # Score: [*, query_entries, key_entries]
         score = torch.matmul(query, key.transpose(-2, -1))
         score = score / math.sqrt(key.size(-1))
         score = restricted_softmax(score, dim=-1)
@@ -123,10 +116,6 @@ class MultiHead(Attention):
         self.lin_v.reset_parameters()
 
     def forward(self, query, key, value):
-        # query: [*, query_entries, in_channels]
-        # key: [*, key_entries, in_channels]
-        # value: [*, key_entries, in_channels]
-        # Output: [*, query_entries, out_channels]
 
         assert query.dim() == key.dim() == value.dim() >= 2
         assert query.size(-1) == key.size(-1) == value.size(-1)
@@ -136,9 +125,6 @@ class MultiHead(Attention):
         key = self.lin_k(key)
         value = self.lin_v(value)
 
-        # query: [*, heads, query_entries, out_channels // heads]
-        # key: [*, heads, key_entries, out_channels // heads]
-        # value: [*, heads, key_entries, out_channels // heads]
         size = query.size()[:-2]
         out_channels_per_head = self.out_channels // self.heads
 
@@ -151,11 +137,8 @@ class MultiHead(Attention):
         value_size = size + (value.size(-2), self.heads, out_channels_per_head)
         value = value.view(value_size).transpose(-2, -3)
 
-        # Output: [*, heads, query_entries, out_channels // heads]
         out = self.compute_attention(query, key, value)
-        # Output: [*, query_entries, heads, out_channels // heads]
         out = out.transpose(-3, -2).contiguous()
-        # Output: [*, query_entries, out_channels]
         out = out.view(size + (query.size(-2), self.out_channels))
 
         return out
@@ -168,64 +151,6 @@ class MultiHead(Attention):
 
 
 class DNAConv(MessagePassing):
-    r"""The dynamic neighborhood aggregation operator from the `"Just Jump:
-    Towards Dynamic Neighborhood Aggregation in Graph Neural Networks"
-    <https://arxiv.org/abs/1904.04849>`_ paper.
-
-    .. math::
-        \mathbf{x}_v^{(t)} = h_{\mathbf{\Theta}}^{(t)} \left( \mathbf{x}_{v
-        \leftarrow v}^{(t)}, \left\{ \mathbf{x}_{v \leftarrow w}^{(t)} : w \in
-        \mathcal{N}(v) \right\} \right)
-
-    based on (multi-head) dot-product attention
-
-    .. math::
-        \mathbf{x}_{v \leftarrow w}^{(t)} = \textrm{Attention} \left(
-        \mathbf{x}^{(t-1)}_v \, \mathbf{\Theta}_Q^{(t)}, [\mathbf{x}_w^{(1)},
-        \ldots, \mathbf{x}_w^{(t-1)}] \, \mathbf{\Theta}_K^{(t)}, \,
-        [\mathbf{x}_w^{(1)}, \ldots, \mathbf{x}_w^{(t-1)}] \,
-        \mathbf{\Theta}_V^{(t)} \right)
-
-    with :math:`\mathbf{\Theta}_Q^{(t)}, \mathbf{\Theta}_K^{(t)},
-    \mathbf{\Theta}_V^{(t)}` denoting (grouped) projection matrices for query,
-    key and value information, respectively.
-    :math:`h^{(t)}_{\mathbf{\Theta}}` is implemented as a non-trainable
-    version of :class:`torch_geometric.nn.conv.GCNConv`.
-
-    .. note::
-        In contrast to other layers, this operator expects node features as
-        shape :obj:`[num_nodes, num_layers, channels]`.
-
-    Args:
-        channels (int): Size of each input/output sample.
-        heads (int, optional): Number of multi-head-attentions.
-            (default: :obj:`1`)
-        groups (int, optional): Number of groups to use for all linear
-            projections. (default: :obj:`1`)
-        dropout (float, optional): Dropout probability of attention
-            coefficients. (default: :obj:`0.`)
-        cached (bool, optional): If set to :obj:`True`, the layer will cache
-            the computation of :math:`\mathbf{\hat{D}}^{-1/2} \mathbf{\hat{A}}
-            \mathbf{\hat{D}}^{-1/2}` on first execution, and will use the
-            cached version for further executions.
-            This parameter should only be set to :obj:`True` in transductive
-            learning scenarios. (default: :obj:`False`)
-        normalize (bool, optional): Whether to add self-loops and apply
-            symmetric normalization. (default: :obj:`True`)
-        add_self_loops (bool, optional): If set to :obj:`False`, will not add
-            self-loops to the input graph. (default: :obj:`True`)
-        bias (bool, optional): If set to :obj:`False`, the layer will not learn
-            an additive bias. (default: :obj:`True`)
-        **kwargs (optional): Additional arguments of
-            :class:`torch_geometric.nn.conv.MessagePassing`.
-
-    Shapes:
-        - **input:**
-          node features :math:`(|\mathcal{V}|, L, F)` where :math:`L` is the
-          number of layers,
-          edge indices :math:`(2, |\mathcal{E}|)`
-        - **output:** node features :math:`(|\mathcal{V}|, F)`
-    """
 
     _cached_edge_index: Optional[OptPairTensor]
     _cached_adj_t: Optional[SparseTensor]
@@ -297,7 +222,6 @@ class DNAConv(MessagePassing):
                 else:
                     edge_index = cache
 
-        # propagate_type: (x: Tensor, edge_weight: OptTensor)
         return self.propagate(edge_index, x=x, edge_weight=edge_weight)
 
     def message(self, x_i: Tensor, x_j: Tensor, edge_weight: Tensor) -> Tensor:

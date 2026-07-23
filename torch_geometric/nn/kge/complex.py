@@ -7,31 +7,6 @@ from torch_geometric.nn.kge import KGEModel
 
 
 class ComplEx(KGEModel):
-    r"""The ComplEx model from the `"Complex Embeddings for Simple Link
-    Prediction" <https://arxiv.org/abs/1606.06357>`_ paper.
-
-    :class:`ComplEx` models relations as complex-valued bilinear mappings
-    between head and tail entities using the Hermetian dot product.
-    The entities and relations are embedded in different dimensional spaces,
-    resulting in the scoring function:
-
-    .. math::
-        d(h, r, t) = Re(< \mathbf{e}_h,  \mathbf{e}_r, \mathbf{e}_t>)
-
-    .. note::
-
-        For an example of using the :class:`ComplEx` model, see
-        `examples/kge_fb15k_237.py
-        <https://github.com/pyg-team/pytorch_geometric/blob/master/examples/
-        kge_fb15k_237.py>`_.
-
-    Args:
-        num_nodes (int): The number of nodes/entities in the graph.
-        num_relations (int): The number of relations in the graph.
-        hidden_channels (int): The hidden embedding size.
-        sparse (bool, optional): If set to :obj:`True`, gradients w.r.t. to
-            the embedding matrices will be sparse. (default: :obj:`False`)
-    """
     def __init__(
         self,
         num_nodes: int,

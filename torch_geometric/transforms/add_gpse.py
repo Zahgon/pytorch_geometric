@@ -9,21 +9,6 @@ from torch_geometric.transforms import BaseTransform, VirtualNode
 
 @functional_transform('add_gpse')
 class AddGPSE(BaseTransform):
-    r"""Adds the GPSE encoding from the `"Graph Positional and Structural
-    Encoder" <https://arxiv.org/abs/2307.07107>`_ paper to the given graph
-    (functional name: :obj:`add_gpse`).
-    To be used with a :class:`~torch_geometric.nn.GPSE` model, which generates
-    the actual encodings.
-
-    Args:
-        model (Module): The pre-trained GPSE model.
-        use_vn (bool, optional): Whether to use virtual nodes.
-            (default: :obj:`True`)
-        rand_type (str, optional): Type of random features to use. Options are
-            :obj:`NormalSE`, :obj:`UniformSE`, :obj:`BernoulliSE`.
-            (default: :obj:`NormalSE`)
-
-    """
     def __init__(
         self,
         model: Module,

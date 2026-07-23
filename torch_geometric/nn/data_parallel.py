@@ -9,50 +9,6 @@ from torch_geometric.utils import cumsum
 
 
 class DataParallel(torch.nn.DataParallel):
-    r"""Implements data parallelism at the module level.
-
-    This container parallelizes the application of the given :attr:`module` by
-    splitting a list of :class:`torch_geometric.data.Data` objects and copying
-    them as :class:`torch_geometric.data.Batch` objects to each device.
-    In the forward pass, the module is replicated on each device, and each
-    replica handles a portion of the input.
-    During the backwards pass, gradients from each replica are summed into the
-    original module.
-
-    The batch size should be larger than the number of GPUs used.
-
-    The parallelized :attr:`module` must have its parameters and buffers on
-    :obj:`device_ids[0]`.
-
-    .. note::
-
-        You need to use the :class:`torch_geometric.loader.DataListLoader` for
-        this module.
-
-    .. warning::
-
-        It is recommended to use
-        :class:`torch.nn.parallel.DistributedDataParallel` instead of
-        :class:`DataParallel` for multi-GPU training.
-        :class:`DataParallel` is usually much slower than
-        :class:`~torch.nn.parallel.DistributedDataParallel` even on a single
-        machine.
-        Take a look `here <https://github.com/pyg-team/pytorch_geometric/blob/
-        master/examples/multi_gpu/distributed_batching.py>`_ for an example on
-        how to use :pyg:`PyG` in combination with
-        :class:`~torch.nn.parallel.DistributedDataParallel`.
-
-    Args:
-        module (Module): Module to be parallelized.
-        device_ids (list of int or torch.device): CUDA devices.
-            (default: all devices)
-        output_device (int or torch.device): Device location of output.
-            (default: :obj:`device_ids[0]`)
-        follow_batch (list or tuple, optional): Creates assignment batch
-            vectors for each key in the list. (default: :obj:`None`)
-        exclude_keys (list or tuple, optional): Will exclude each key in the
-            list. (default: :obj:`None`)
-    """
     def __init__(self, module, device_ids=None, output_device=None,
                  follow_batch=None, exclude_keys=None):
         super().__init__(module, device_ids, output_device)

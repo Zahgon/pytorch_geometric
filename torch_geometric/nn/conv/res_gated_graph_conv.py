@@ -11,49 +11,6 @@ from torch_geometric.typing import Adj, OptTensor, PairTensor
 
 
 class ResGatedGraphConv(MessagePassing):
-    r"""The residual gated graph convolutional operator from the
-    `"Residual Gated Graph ConvNets" <https://arxiv.org/abs/1711.07553>`_
-    paper.
-
-    .. math::
-        \mathbf{x}^{\prime}_i = \mathbf{W}_1 \mathbf{x}_i +
-        \sum_{j \in \mathcal{N}(i)} \eta_{i,j} \odot \mathbf{W}_2 \mathbf{x}_j
-
-    where the gate :math:`\eta_{i,j}` is defined as
-
-    .. math::
-        \eta_{i,j} = \sigma(\mathbf{W}_3 \mathbf{x}_i + \mathbf{W}_4
-        \mathbf{x}_j)
-
-    with :math:`\sigma` denoting the sigmoid function.
-
-    Args:
-        in_channels (int or tuple): Size of each input sample, or :obj:`-1` to
-            derive the size from the first input(s) to the forward method.
-            A tuple corresponds to the sizes of source and target
-            dimensionalities.
-        out_channels (int): Size of each output sample.
-        act (callable, optional): Gating function :math:`\sigma`.
-            (default: :meth:`torch.nn.Sigmoid()`)
-        edge_dim (int, optional): Edge feature dimensionality (in case
-            there are any). (default: :obj:`None`)
-        bias (bool, optional): If set to :obj:`False`, the layer will not learn
-            an additive bias. (default: :obj:`True`)
-        root_weight (bool, optional): If set to :obj:`False`, the layer will
-            not add transformed root node features to the output.
-            (default: :obj:`True`)
-        **kwargs (optional): Additional arguments of
-            :class:`torch_geometric.nn.conv.MessagePassing`.
-
-    Shapes:
-        - **inputs:**
-          node features :math:`(|\mathcal{V}|, F_{in})` or
-          :math:`((|\mathcal{V_s}|, F_{s}), (|\mathcal{V_t}|, F_{t}))`
-          if bipartite,
-          edge indices :math:`(2, |\mathcal{E}|)`
-        - **outputs:** node features :math:`(|\mathcal{V}|, F_{out})` or
-          :math:`(|\mathcal{V_t}|, F_{out})` if bipartite
-    """
     def __init__(
         self,
         in_channels: Union[int, Tuple[int, int]],
@@ -114,8 +71,6 @@ class ResGatedGraphConv(MessagePassing):
         if isinstance(x, Tensor):
             x = (x, x)
 
-        # In case edge features are not given, we can compute key, query and
-        # value tensors in node-level space, which is a bit more efficient:
         if self.edge_dim is None:
             k = self.lin_key(x[1])
             q = self.lin_query(x[0])
@@ -123,8 +78,6 @@ class ResGatedGraphConv(MessagePassing):
         else:
             k, q, v = x[1], x[0], x[0]
 
-        # propagate_type: (k: Tensor, q: Tensor, v: Tensor,
-        #                  edge_attr: OptTensor)
         out = self.propagate(edge_index, k=k, q=q, v=v, edge_attr=edge_attr)
 
         if self.root_weight:

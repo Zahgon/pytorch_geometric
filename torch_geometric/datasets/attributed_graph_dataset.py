@@ -14,87 +14,6 @@ from torch_geometric.io import fs
 
 
 class AttributedGraphDataset(InMemoryDataset):
-    r"""A variety of attributed graph datasets from the
-    `"Scaling Attributed Network Embedding to Massive Graphs"
-    <https://arxiv.org/abs/2009.00826>`_ paper.
-
-    Args:
-        root: Root directory where the dataset should be saved.
-        name: The name of the dataset (:obj:`"Wiki"`, :obj:`"Cora"`,
-            :obj:`"CiteSeer"`, :obj:`"PubMed"`, :obj:`"BlogCatalog"`,
-            :obj:`"PPI"`, :obj:`"Flickr"`, :obj:`"Facebook"`, :obj:`"Twitter"`,
-            :obj:`"TWeibo"`, :obj:`"MAG"`).
-        transform: A function/transform that takes in a
-            :class:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-        pre_transform: A function/transform that takes in a
-            :class:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk.
-        force_reload: Whether to re-process the dataset.
-
-    **STATS:**
-
-    .. list-table::
-        :widths: 10 10 10 10 10
-        :header-rows: 1
-
-        * - Name
-          - #nodes
-          - #edges
-          - #features
-          - #classes
-        * - Wiki
-          - 2,405
-          - 17,981
-          - 4,973
-          - 17
-        * - Cora
-          - 2,708
-          - 5,429
-          - 1,433
-          - 7
-        * - CiteSeer
-          - 3,312
-          - 4,715
-          - 3,703
-          - 6
-        * - PubMed
-          - 19,717
-          - 44,338
-          - 500
-          - 3
-        * - BlogCatalog
-          - 5,196
-          - 343,486
-          - 8,189
-          - 6
-        * - PPI
-          - 56,944
-          - 1,612,348
-          - 50
-          - 121
-        * - Flickr
-          - 7,575
-          - 479,476
-          - 12,047
-          - 9
-        * - Facebook
-          - 4,039
-          - 88,234
-          - 1,283
-          - 193
-        * - TWeibo
-          - 2,320,895
-          - 9,840,066
-          - 1,657
-          - 8
-        * - MAG
-          - 59,249,719
-          - 978,147,253
-          - 2,000
-          - 100
-    """
     datasets = {
         'wiki': '1EPhlbziZTQv19OsTrKrAJwsElbVPEbiV',
         'cora': '1FyVnpdsTT-lhkVPotUW8OVeuCi1vi3Ey',
@@ -125,19 +44,19 @@ class AttributedGraphDataset(InMemoryDataset):
 
     @property
     def raw_dir(self) -> str:
-        return osp.join(self.root, self.name, 'raw')
+        pass
 
     @property
     def processed_dir(self) -> str:
-        return osp.join(self.root, self.name, 'processed')
+        pass
 
     @property
     def raw_file_names(self) -> List[str]:
-        return ['attrs.npz', 'edgelist.txt', 'labels.txt']
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def download(self) -> None:
         id = self.datasets[self.name]

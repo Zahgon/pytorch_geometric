@@ -13,20 +13,6 @@ from torch_geometric.utils import (
 
 
 class SignedGCN(torch.nn.Module):
-    r"""The signed graph convolutional network model from the `"Signed Graph
-    Convolutional Network" <https://arxiv.org/abs/1808.06354>`_ paper.
-    Internally, this module uses the
-    :class:`torch_geometric.nn.conv.SignedConv` operator.
-
-    Args:
-        in_channels (int): Size of each input sample.
-        hidden_channels (int): Size of each hidden sample.
-        num_layers (int): Number of layers.
-        lamb (float, optional): Balances the contributions of the overall
-            objective. (default: :obj:`5`)
-        bias (bool, optional): If set to :obj:`False`, all layers will not
-            learn an additive bias. (default: :obj:`True`)
-    """
     def __init__(
         self,
         in_channels: int,
@@ -66,20 +52,7 @@ class SignedGCN(torch.nn.Module):
         edge_index: Tensor,
         test_ratio: float = 0.2,
     ) -> Tuple[Tensor, Tensor]:
-        r"""Splits the edges :obj:`edge_index` into train and test edges.
-
-        Args:
-            edge_index (LongTensor): The edge indices.
-            test_ratio (float, optional): The ratio of test edges.
-                (default: :obj:`0.2`)
-        """
-        mask = torch.ones(edge_index.size(1), dtype=torch.bool)
-        mask[torch.randperm(mask.size(0))[:int(test_ratio * mask.size(0))]] = 0
-
-        train_edge_index = edge_index[:, mask]
-        test_edge_index = edge_index[:, ~mask]
-
-        return train_edge_index, test_edge_index
+        pass
 
     def create_spectral_features(
         self,
@@ -87,43 +60,7 @@ class SignedGCN(torch.nn.Module):
         neg_edge_index: Tensor,
         num_nodes: Optional[int] = None,
     ) -> Tensor:
-        r"""Creates :obj:`in_channels` spectral node features based on
-        positive and negative edges.
-
-        Args:
-            pos_edge_index (LongTensor): The positive edge indices.
-            neg_edge_index (LongTensor): The negative edge indices.
-            num_nodes (int, optional): The number of nodes, *i.e.*
-                :obj:`max_val + 1` of :attr:`pos_edge_index` and
-                :attr:`neg_edge_index`. (default: :obj:`None`)
-        """
-        import scipy.sparse as sp
-        from sklearn.decomposition import TruncatedSVD
-
-        edge_index = torch.cat([pos_edge_index, neg_edge_index], dim=1)
-        N = edge_index.max().item() + 1 if num_nodes is None else num_nodes
-        edge_index = edge_index.to(torch.device('cpu'))
-
-        pos_val = torch.full((pos_edge_index.size(1), ), 2, dtype=torch.float)
-        neg_val = torch.full((neg_edge_index.size(1), ), 0, dtype=torch.float)
-        val = torch.cat([pos_val, neg_val], dim=0)
-
-        row, col = edge_index
-        edge_index = torch.cat([edge_index, torch.stack([col, row])], dim=1)
-        val = torch.cat([val, val], dim=0)
-
-        edge_index, val = coalesce(edge_index, val, num_nodes=N)
-        val = val - 1
-
-        # Borrowed from:
-        # https://github.com/benedekrozemberczki/SGCN/blob/master/src/utils.py
-        edge_index = edge_index.detach().numpy()
-        val = val.detach().numpy()
-        A = sp.coo_matrix((val, edge_index), shape=(N, N))
-        svd = TruncatedSVD(n_components=self.in_channels, n_iter=128)
-        svd.fit(A)
-        x = svd.components_.T
-        return torch.from_numpy(x).to(torch.float).to(pos_edge_index.device)
+        pass
 
     def forward(
         self,

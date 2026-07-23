@@ -8,18 +8,6 @@ from torch_geometric.transforms import BaseTransform
 
 @functional_transform('random_jitter')
 class RandomJitter(BaseTransform):
-    r"""Translates node positions by randomly sampled translation values
-    within a given interval (functional name: :obj:`random_jitter`).
-    In contrast to other random transformations,
-    translation is applied separately at each position.
-
-    Args:
-        translate (sequence or float or int): Maximum translation in each
-            dimension, defining the range
-            :math:`(-\mathrm{translate}, +\mathrm{translate})` to sample from.
-            If :obj:`translate` is a number instead of a sequence, the same
-            range is used for each dimension.
-    """
     def __init__(
         self,
         translate: Union[float, int, Sequence[Union[float, int]]],

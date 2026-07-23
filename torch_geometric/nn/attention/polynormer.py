@@ -6,24 +6,6 @@ from torch import Tensor
 
 
 class PolynormerAttention(torch.nn.Module):
-    r"""The polynomial-expressive attention mechanism from the
-    `"Polynormer: Polynomial-Expressive Graph Transformer in Linear Time"
-    <https://arxiv.org/abs/2403.01232>`_ paper.
-
-    Args:
-        channels (int): Size of each input sample.
-        heads (int, optional): Number of parallel attention heads.
-        head_channels (int, optional): Size of each attention head.
-            (default: :obj:`64.`)
-        beta (float, optional): Polynormer beta initialization.
-            (default: :obj:`0.9`)
-        qkv_bias (bool, optional): If specified, add bias to query, key
-            and value in the self attention. (default: :obj:`False`)
-        qk_shared (bool optional): Whether weight of query and key are shared.
-            (default: :obj:`True`)
-        dropout (float, optional): Dropout probability of the final
-            attention output. (default: :obj:`0.0`)
-    """
     def __init__(
         self,
         channels: int,
@@ -76,15 +58,12 @@ class PolynormerAttention(torch.nn.Module):
             mask = mask[:, :, None, None]
             v.masked_fill_(~mask, 0.)
 
-        # numerator
         kv = torch.einsum('bndh, bnmh -> bdmh', k, v)
         num = torch.einsum('bndh, bdmh -> bnmh', q, kv)
 
-        # denominator
         k_sum = torch.einsum('bndh -> bdh', k)
         den = torch.einsum('bndh, bdh -> bnh', q, k_sum).unsqueeze(2)
 
-        # linear global attention based on kernel trick
         x = (num / (den + 1e-6)).reshape(B, N, -1)
         x = self.lns(x) * (h + self.beta)
         x = F.relu(self.lin_out(x))

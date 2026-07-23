@@ -23,51 +23,6 @@ RATING_HEADERS = ["userId", "movieId", "rating", "timestamp"]
 
 
 class MovieLens100K(InMemoryDataset):
-    r"""The MovieLens 100K heterogeneous rating dataset, assembled by GroupLens
-    Research from the `MovieLens web site <https://movielens.org>`__,
-    consisting of movies (1,682 nodes) and users (943 nodes) with 100K
-    ratings between them.
-    User ratings for movies are available as ground truth labels.
-    Features of users and movies are encoded according to the `"Inductive
-    Matrix Completion Based on Graph Neural Networks"
-    <https://arxiv.org/abs/1904.12058>`__ paper.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.HeteroData` object and returns a
-            transformed version. The data object will be transformed before
-            every access. (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.HeteroData` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-
-    **STATS:**
-
-    .. list-table::
-        :widths: 20 10 10 10
-        :header-rows: 1
-
-        * - Node/Edge Type
-          - #nodes/#edges
-          - #features
-          - #tasks
-        * - Movie
-          - 1,682
-          - 18
-          -
-        * - User
-          - 943
-          - 24
-          -
-        * - User-Movie
-          - 80,000
-          - 1
-          - 1
-    """
     url = 'https://files.grouplens.org/datasets/movielens/ml-100k.zip'
 
     def __init__(
@@ -83,11 +38,11 @@ class MovieLens100K(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> List[str]:
-        return ['u.item', 'u.user', 'u1.base', 'u1.test']
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def download(self) -> None:
         path = download_url(self.url, self.root)
@@ -102,7 +57,6 @@ class MovieLens100K(InMemoryDataset):
 
         data = HeteroData()
 
-        # Process movie data:
         df = pd.read_csv(
             self.raw_paths[0],
             sep='|',
@@ -116,7 +70,6 @@ class MovieLens100K(InMemoryDataset):
         x = df[MOVIE_HEADERS[6:]].values
         data['movie'].x = torch.from_numpy(x).to(torch.float)
 
-        # Process user data:
         df = pd.read_csv(
             self.raw_paths[1],
             sep='|',
@@ -138,7 +91,6 @@ class MovieLens100K(InMemoryDataset):
 
         data['user'].x = torch.cat([age, gender, occupation], dim=-1)
 
-        # Process rating data for training:
         df = pd.read_csv(
             self.raw_paths[2],
             sep='\t',
@@ -161,7 +113,6 @@ class MovieLens100K(InMemoryDataset):
         data['movie', 'rated_by', 'user'].rating = rating
         data['movie', 'rated_by', 'user'].time = time
 
-        # Process rating data for testing:
         df = pd.read_csv(
             self.raw_paths[3],
             sep='\t',

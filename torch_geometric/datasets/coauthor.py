@@ -6,50 +6,6 @@ from torch_geometric.io import read_npz
 
 
 class Coauthor(InMemoryDataset):
-    r"""The Coauthor CS and Coauthor Physics networks from the
-    `"Pitfalls of Graph Neural Network Evaluation"
-    <https://arxiv.org/abs/1811.05868>`_ paper.
-    Nodes represent authors that are connected by an edge if they co-authored a
-    paper.
-    Given paper keywords for each author's papers, the task is to map authors
-    to their respective field of study.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        name (str): The name of the dataset (:obj:`"CS"`, :obj:`"Physics"`).
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-
-    **STATS:**
-
-    .. list-table::
-        :widths: 10 10 10 10 10
-        :header-rows: 1
-
-        * - Name
-          - #nodes
-          - #edges
-          - #features
-          - #classes
-        * - CS
-          - 18,333
-          - 163,788
-          - 6,805
-          - 15
-        * - Physics
-          - 34,493
-          - 495,924
-          - 8,415
-          - 5
-    """
 
     url = 'https://github.com/shchur/gnn-benchmark/raw/master/data/npz/'
 
@@ -69,19 +25,19 @@ class Coauthor(InMemoryDataset):
 
     @property
     def raw_dir(self) -> str:
-        return osp.join(self.root, self.name, 'raw')
+        pass
 
     @property
     def processed_dir(self) -> str:
-        return osp.join(self.root, self.name, 'processed')
+        pass
 
     @property
     def raw_file_names(self) -> str:
-        return f'ms_academic_{self.name[:3].lower()}.npz'
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def download(self) -> None:
         download_url(self.url + self.raw_file_names, self.raw_dir)

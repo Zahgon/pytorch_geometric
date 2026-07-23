@@ -10,61 +10,6 @@ from torch_geometric.explain import Explanation
 
 
 class ExplainerDataset(InMemoryDataset):
-    r"""Generates a synthetic dataset for evaluating explainabilty algorithms,
-    as described in the `"GNNExplainer: Generating Explanations for Graph
-    Neural Networks" <https://arxiv.org/abs/1903.03894>`__ paper.
-    The :class:`~torch_geometric.datasets.ExplainerDataset` creates synthetic
-    graphs coming from a
-    :class:`~torch_geometric.datasets.graph_generator.GraphGenerator`, and
-    randomly attaches :obj:`num_motifs` many motifs to it coming from a
-    :class:`~torch_geometric.datasets.graph_generator.MotifGenerator`.
-    Ground-truth node-level and edge-level explainabilty masks are given based
-    on whether nodes and edges are part of a certain motif or not.
-
-    For example, to generate a random Barabasi-Albert (BA) graph with 300
-    nodes, in which we want to randomly attach 80 :obj:`"house"` motifs, write:
-
-    .. code-block:: python
-
-        from torch_geometric.datasets import ExplainerDataset
-        from torch_geometric.datasets.graph_generator import BAGraph
-
-        dataset = ExplainerDataset(
-            graph_generator=BAGraph(num_nodes=300, num_edges=5),
-            motif_generator='house',
-            num_motifs=80,
-        )
-
-    .. note::
-
-        For an example of using :class:`ExplainerDataset`, see
-        `examples/explain/gnn_explainer_ba_shapes.py
-        <https://github.com/pyg-team/pytorch_geometric/blob/master/examples/
-        /explain/gnn_explainer_ba_shapes.py>`_.
-
-    Args:
-        graph_generator (GraphGenerator or str): The graph generator to be
-            used, *e.g.*,
-            :class:`torch.geometric.datasets.graph_generator.BAGraph`
-            (or any string that automatically resolves to it).
-        motif_generator (MotifGenerator): The motif generator to be used,
-            *e.g.*,
-            :class:`torch_geometric.datasets.motif_generator.HouseMotif`
-            (or any string that automatically resolves to it).
-        num_motifs (int): The number of motifs to attach to the graph.
-        num_graphs (int, optional): The number of graphs to generate.
-            (default: :obj:`1`)
-        graph_generator_kwargs (Dict[str, Any], optional): Arguments passed to
-            the respective graph generator module in case it gets automatically
-            resolved. (default: :obj:`None`)
-        motif_generator_kwargs (Dict[str, Any], optional): Arguments passed to
-            the respective motif generator module in case it gets automatically
-            resolved. (default: :obj:`None`)
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-    """
     def __init__(
         self,
         graph_generator: Union[GraphGenerator, str],
@@ -91,7 +36,6 @@ class ExplainerDataset(InMemoryDataset):
         )
         self.num_motifs = num_motifs
 
-        # TODO (matthias) support on-the-fly graph generation.
         data_list = [self.get_graph() for _ in range(num_graphs)]
         self.data, self.slices = self.collate(data_list)
 
@@ -112,12 +56,10 @@ class ExplainerDataset(InMemoryDataset):
             assert motif.num_nodes is not None
             assert motif.edge_index is not None
 
-            # Add motif to the graph.
             edge_indices.append(motif.edge_index + num_nodes)
             node_masks.append(torch.ones(motif.num_nodes))
             edge_masks.append(torch.ones(motif.num_edges))
 
-            # Add random motif connection to the graph.
             j = int(torch.randint(0, motif.num_nodes, (1, ))) + num_nodes
             edge_indices.append(torch.tensor([[i, j], [j, i]]))
             edge_masks.append(torch.zeros(2))

@@ -16,64 +16,6 @@ from torch_geometric.utils import coalesce, cumsum
 
 
 class UPFD(InMemoryDataset):
-    r"""The tree-structured fake news propagation graph classification dataset
-    from the `"User Preference-aware Fake News Detection"
-    <https://arxiv.org/abs/2104.12259>`_ paper.
-    It includes two sets of tree-structured fake & real news propagation graphs
-    extracted from Twitter.
-    For a single graph, the root node represents the source news, and leaf
-    nodes represent Twitter users who retweeted the same root news.
-    A user node has an edge to the news node if and only if the user retweeted
-    the root news directly.
-    Two user nodes have an edge if and only if one user retweeted the root news
-    from the other user.
-    Four different node features are encoded using different encoders.
-    Please refer to `GNN-FakeNews
-    <https://github.com/safe-graph/GNN-FakeNews>`_ repo for more details.
-
-    .. note::
-
-        For an example of using UPFD, see `examples/upfd.py
-        <https://github.com/pyg-team/pytorch_geometric/blob/master/examples/
-        upfd.py>`_.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        name (str): The name of the graph set (:obj:`"politifact"`,
-            :obj:`"gossipcop"`).
-        feature (str): The node feature type (:obj:`"profile"`, :obj:`"spacy"`,
-            :obj:`"bert"`, :obj:`"content"`).
-            If set to :obj:`"profile"`, the 10-dimensional node feature
-            is composed of ten Twitter user profile attributes.
-            If set to :obj:`"spacy"`, the 300-dimensional node feature is
-            composed of Twitter user historical tweets encoded by
-            the `spaCy word2vec encoder
-            <https://spacy.io/models/en#en_core_web_lg>`_.
-            If set to :obj:`"bert"`, the 768-dimensional node feature is
-            composed of Twitter user historical tweets encoded by the
-            `bert-as-service <https://github.com/hanxiao/bert-as-service>`_.
-            If set to :obj:`"content"`, the 310-dimensional node feature is
-            composed of a 300-dimensional "spacy" vector plus a
-            10-dimensional "profile" vector.
-        split (str, optional): If :obj:`"train"`, loads the training dataset.
-            If :obj:`"val"`, loads the validation dataset.
-            If :obj:`"test"`, loads the test dataset.
-            (default: :obj:`"train"`)
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        pre_filter (callable, optional): A function that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a boolean
-            value, indicating whether the data object should be included in the
-            final dataset. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-    """
     file_ids = {
         'politifact': '1toou2GO0agoY_OS54LaCWEECQfe93nuq',
         'gossipcop': '1DkMAzC7XUUciAxsSujRJt3sq1MqaVI3g',
@@ -105,22 +47,19 @@ class UPFD(InMemoryDataset):
 
     @property
     def raw_dir(self) -> str:
-        return osp.join(self.root, self.name, 'raw')
+        pass
 
     @property
     def processed_dir(self) -> str:
-        return osp.join(self.root, self.name, 'processed', self.feature)
+        pass
 
     @property
     def raw_file_names(self) -> List[str]:
-        return [
-            'node_graph_id.npy', 'graph_labels.npy', 'A.txt', 'train_idx.npy',
-            'val_idx.npy', 'test_idx.npy', f'new_{self.feature}_feature.npz'
-        ]
+        pass
 
     @property
     def processed_file_names(self) -> List[str]:
-        return ['train.pt', 'val.pt', 'test.pt']
+        pass
 
     def download(self) -> None:
         id = self.file_ids[self.name]

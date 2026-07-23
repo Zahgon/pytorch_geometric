@@ -25,7 +25,6 @@ def add_node_attr(
     value: Any,
     attr_name: Optional[str] = None,
 ) -> Data:
-    # TODO Move to `BaseTransform`.
     if attr_name is None:
         if data.x is not None:
             x = data.x.view(-1, 1) if data.x.dim() == 1 else data.x
@@ -40,26 +39,6 @@ def add_node_attr(
 
 @functional_transform('add_laplacian_eigenvector_pe')
 class AddLaplacianEigenvectorPE(BaseTransform):
-    r"""Adds the Laplacian eigenvector positional encoding from the
-    `"Benchmarking Graph Neural Networks" <https://arxiv.org/abs/2003.00982>`_
-    paper to the given graph
-    (functional name: :obj:`add_laplacian_eigenvector_pe`).
-
-    Args:
-        k (int): The number of non-trivial eigenvectors to consider.
-        attr_name (str, optional): The attribute name of the data object to add
-            positional encodings to. If set to :obj:`None`, will be
-            concatenated to :obj:`data.x`.
-            (default: :obj:`"laplacian_eigenvector_pe"`)
-        is_undirected (bool, optional): If set to :obj:`True`, this transform
-            expects undirected graphs as input, and can hence speed up the
-            computation of eigenvectors. (default: :obj:`False`)
-        **kwargs (optional): Additional arguments of
-            :meth:`scipy.sparse.linalg.eigs` (when :attr:`is_undirected` is
-            :obj:`False`) or :meth:`scipy.sparse.linalg.eigsh` (when
-            :attr:`is_undirected` is :obj:`True`).
-    """
-    # Number of nodes from which to use sparse eigenvector computation:
     SPARSE_THRESHOLD: int = 100
 
     def __init__(
@@ -116,18 +95,6 @@ class AddLaplacianEigenvectorPE(BaseTransform):
 
 @functional_transform('add_random_walk_pe')
 class AddRandomWalkPE(BaseTransform):
-    r"""Adds the random walk positional encoding from the `"Graph Neural
-    Networks with Learnable Structural and Positional Representations"
-    <https://arxiv.org/abs/2110.07875>`_ paper to the given graph
-    (functional name: :obj:`add_random_walk_pe`).
-
-    Args:
-        walk_length (int): The number of random walk steps.
-        attr_name (str, optional): The attribute name of the data object to add
-            positional encodings to. If set to :obj:`None`, will be
-            concatenated to :obj:`data.x`.
-            (default: :obj:`"random_walk_pe"`)
-    """
     def __init__(
         self,
         walk_length: int,

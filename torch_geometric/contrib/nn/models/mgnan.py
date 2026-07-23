@@ -21,17 +21,6 @@ def _init_weights(module: nn.Module, std: float = 1.0) -> None:
 
 
 class _PerFeatureMLP(nn.Module):
-    """Simple MLP that is applied to a single scalar feature.
-
-    Args:
-        out_channels (int): Output dimension per feature ("f" in the paper).
-        n_layers (int): Number of layers. If ``1``, the MLP is a single Linear.
-        hidden_channels (int, optional): Hidden dimension. Required when
-            ``n_layers > 1``.
-        bias (bool, optional): Use bias terms. (default: ``True``)
-        dropout (float, optional): Dropout probability after hidden layers.
-            (default: ``0.0``)
-    """
     def __init__(
         self,
         out_channels: int,
@@ -68,18 +57,6 @@ class _PerFeatureMLP(nn.Module):
 
 
 class _MultiFeatureMLP(nn.Module):
-    """MLP that processes multiple features together.
-
-    Args:
-        in_channels (int): Number of input features to process together.
-        out_channels (int): Output dimension per feature group.
-        n_layers (int): Number of layers. If ``1``, the MLP is a single Linear.
-        hidden_channels (int, optional): Hidden dimension. Required when
-            ``n_layers > 1``.
-        bias (bool, optional): Use bias terms. (default: ``True``)
-        dropout (float, optional): Dropout probability after hidden layers.
-            (default: ``0.0``)
-    """
     def __init__(
         self,
         in_channels: int,
@@ -117,7 +94,6 @@ class _MultiFeatureMLP(nn.Module):
 
 
 class _RhoMLP(nn.Module):
-    """MLP that turns a scalar distance into a scalar or vector weight."""
     def __init__(
         self,
         out_channels: int,
@@ -152,37 +128,6 @@ class _RhoMLP(nn.Module):
 
 
 class MGNAN(nn.Module):
-    r"""M-GNAN: an extension of the
-    `Graph Neural Additive Network (GNAN)
-    <https://arxiv.org/abs/2406.01317>`_ to *multivariate* shape functions.
-
-    Whereas the original GNAN learns a univariate shape function per input
-    feature, M-GNAN allows arbitrary groups of features to be modelled jointly
-    by a single multivariate shape function (an MLP that takes all features in
-    the group as input). The univariate per-feature case is recovered when
-    every feature lives in its own group, which is the default behaviour.
-
-    By default it aggregates node scores to produce *graph‐level* predictions
-    (shape ``[batch_size, out_channels]``).  Set ``graph_level=False`` to
-    obtain *node‐level* predictions instead, in which case the forward returns
-    a tensor of shape ``[num_nodes, out_channels]``.
-
-    Args:
-        in_channels (int): Number of input node features.
-        out_channels (int): Output dimension.
-        n_layers (int): Number of layers in the MLPs.
-        hidden_channels (int, optional): Hidden dimension in the MLPs.
-        bias (bool, optional): Use bias terms. (default: ``True``)
-        dropout (float, optional): Dropout probability. (default: ``0.0``)
-        normalize_rho (bool, optional): Whether to normalize rho weights.
-            (default: ``True``)
-        graph_level (bool, optional): Whether to produce graph-level
-            predictions. (default: ``True``)
-        feature_groups (List[List[int]], optional): Groups of feature indices
-            to process together. Each group will be processed by a single MLP
-            that takes multiple features as input. If None, each feature is
-            processed by its own MLP (default behavior). (default: ``None``)
-    """
     def __init__(
         self,
         in_channels: int,
@@ -203,12 +148,10 @@ class MGNAN(nn.Module):
         self.out_channels = out_channels
         self.in_channels = in_channels
 
-        # Set up feature groups - default is each feature in its own group
         if feature_groups is None:
             self.feature_groups = [[i] for i in range(in_channels)]
         else:
             self.feature_groups = feature_groups
-            # Validate feature groups
             all_features = set()
             for group in feature_groups:
                 if not group:
@@ -229,16 +172,13 @@ class MGNAN(nn.Module):
                 raise ValueError(
                     f"Missing feature indices in groups: {missing}")
 
-        # Create MLPs for each feature group
         self.fs = nn.ModuleList()
         for group in self.feature_groups:
             group_size = len(group)
             if group_size == 1:
-                # Single feature - use original MLP
                 mlp = _PerFeatureMLP(out_channels, n_layers, hidden_channels,
                                      bias=bias, dropout=dropout)
             else:
-                # Multiple features - use new multi-feature MLP
                 mlp = _MultiFeatureMLP(group_size, out_channels, n_layers,
                                        hidden_channels, bias=bias,
                                        dropout=dropout)
@@ -288,7 +228,6 @@ class MGNAN(nn.Module):
         _, f_sum = self._process_feature_groups(x)
         rho = self._compute_rho(dist, norm, data)
 
-        # Perform Σ_i Σ_j ρ(d_ij) Σ_k f_k(x_jk)
         out = torch.einsum('ijc,jc->ic', rho, f_sum)  # [N, C]
 
         if self.graph_level:
@@ -302,21 +241,4 @@ class MGNAN(nn.Module):
         return out
 
     def node_importance(self, data: Data | Batch) -> torch.Tensor:
-        """Returns the  contribution of every node to the
-        graph‐level prediction. UsingEq. (3) in the paper.
-        """
-        x: torch.Tensor = data.x  # type: ignore  # [N, F]
-        dist: torch.Tensor = data.node_distances  # type: ignore  # [N, N]
-        norm: torch.Tensor = data.normalization_matrix  # type: ignore
-        # [N, N]
-
-        _, f_sum = self._process_feature_groups(x)
-        rho = self._compute_rho(dist, norm, data)
-
-        # Aggregate over *receiver* nodes i to obtain \sum_i rho(d_{ij}).
-        rho_sum_over_i = rho.sum(dim=0)  # [N, C]
-
-        # Node contribution s_j = (sum_k f_k(x_jk)) * (sum_i rho(d_{ij})).
-        node_contrib = f_sum * rho_sum_over_i  # [N, C]
-
-        return node_contrib
+        pass

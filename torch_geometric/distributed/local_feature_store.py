@@ -20,7 +20,6 @@ from torch_geometric.typing import EdgeType, NodeOrEdgeType, NodeType
 
 
 class RPCCallFeatureLookup(RPCCallBase):
-    r"""A wrapper for RPC calls to the feature store."""
     def __init__(self, dist_feature: FeatureStore):
         super().__init__()
         self.dist_feature = dist_feature
@@ -34,7 +33,6 @@ class RPCCallFeatureLookup(RPCCallBase):
 
 @dataclass
 class LocalTensorAttr(TensorAttr):
-    r"""Tensor attribute for storing features without :obj:`index`."""
     def __init__(
         self,
         group_name: Optional[Union[NodeType, EdgeType]] = _FieldStatus.UNSET,
@@ -45,24 +43,15 @@ class LocalTensorAttr(TensorAttr):
 
 
 class LocalFeatureStore(FeatureStore):
-    r"""Implements the :class:`~torch_geometric.data.FeatureStore` interface to
-    act as a local feature store for distributed training.
-    """
     def __init__(self):
         super().__init__(tensor_attr_cls=LocalTensorAttr)
         self._feat: Dict[Tuple[Union[NodeType, EdgeType], str], Tensor] = {}
-        # Save the global node/edge IDs:
         self._global_id: Dict[Union[NodeType, EdgeType], Tensor] = {}
-        # Save the mapping from global node/edge IDs to indices in `_feat`:
         self._global_id_to_index: Dict[Union[NodeType, EdgeType], Tensor] = {}
-        # For partition/RPC info related to distributed features:
         self.num_partitions: int = 1
         self.partition_idx: int = 0
-        # Mapping between node ID and partition ID:
         self.node_feat_pb: Union[Tensor, Dict[NodeType, Tensor]]
-        # Mapping between edge ID and partition ID:
         self.edge_feat_pb: Union[Tensor, Dict[EdgeType, Tensor]]
-        # Node labels:
         self.labels: Optional[Tensor] = None
 
         self.local_only: bool = False
@@ -90,7 +79,7 @@ class LocalFeatureStore(FeatureStore):
         return self._global_id.get(group_name)
 
     def remove_global_id(self, group_name: Union[NodeType, EdgeType]) -> bool:
-        return self._global_id.pop(group_name) is not None
+        pass
 
     def _set_global_id_to_index(self, group_name: Union[NodeType, EdgeType]):
         global_id = self.get_global_id(group_name)
@@ -98,7 +87,6 @@ class LocalFeatureStore(FeatureStore):
         if global_id is None:
             return
 
-        # TODO Compute this mapping without materializing a full-sized tensor:
         global_id_to_index = global_id.new_full((int(global_id.max()) + 1, ),
                                                 fill_value=-1)
         global_id_to_index[global_id] = torch.arange(global_id.numel())
@@ -121,8 +109,7 @@ class LocalFeatureStore(FeatureStore):
         return tensor[attr.index]
 
     def _remove_tensor(self, attr: TensorAttr) -> bool:
-        assert attr.index is None
-        return self._feat.pop(self.key(attr), None) is not None
+        pass
 
     def get_tensor_from_global_id(self, *args, **kwargs) -> Optional[Tensor]:
         attr = self._tensor_attr_cls.cast(*args, **kwargs)
@@ -174,21 +161,7 @@ class LocalFeatureStore(FeatureStore):
         res_fut = torch.futures.Future()
 
         def when_finish(*_):
-            try:
-                remote_feature_list = remote_fut.wait()
-                # combine the feature from remote and local
-                result = torch.zeros(
-                    index.size(0),
-                    local_feature[0].size(1),
-                    dtype=local_feature[0].dtype,
-                )
-                result[local_feature[1]] = local_feature[0]
-                for remote in remote_feature_list:
-                    result[remote[1]] = remote[0]
-            except Exception as e:
-                res_fut.set_exception(e)
-            else:
-                res_fut.set_result(result)
+            pass
 
         remote_fut.add_done_callback(when_finish)
         return res_fut
@@ -267,15 +240,7 @@ class LocalFeatureStore(FeatureStore):
         res_fut = torch.futures.Future()
 
         def when_finish(*_):
-            try:
-                fut_list = collect_fut.wait()
-                result = []
-                for i, fut in enumerate(fut_list):
-                    result.append((fut.wait(), indexes[i]))
-            except Exception as e:
-                res_fut.set_exception(e)
-            else:
-                res_fut.set_result(result)
+            pass
 
         collect_fut.add_done_callback(when_finish)
         return res_fut
@@ -310,7 +275,6 @@ class LocalFeatureStore(FeatureStore):
 
         return ret_feat
 
-    # Initialization ##########################################################
 
     @classmethod
     def from_data(
@@ -358,43 +322,7 @@ class LocalFeatureStore(FeatureStore):
         edge_id_dict: Optional[Dict[EdgeType, Tensor]] = None,
         edge_attr_dict: Optional[Dict[EdgeType, Tensor]] = None,
     ) -> 'LocalFeatureStore':
-        r"""Creates a local graph store from heterogeneous :pyg:`PyG` tensors.
-
-        Args:
-            node_id_dict (Dict[NodeType, torch.Tensor]): The global identifier
-                for every local node of every node type.
-            x_dict (Dict[NodeType, torch.Tensor], optional): The node features
-                of every node type. (default: :obj:`None`)
-            y_dict (Dict[NodeType, torch.Tensor], optional): The node labels of
-                every node type. (default: :obj:`None`)
-            edge_id_dict (Dict[EdgeType, torch.Tensor], optional): The global
-                identifier for every local edge of every edge types.
-                (default: :obj:`None`)
-            edge_attr_dict (Dict[EdgeType, torch.Tensor], optional): The edge
-                features of every edge type. (default: :obj:`None`)
-        """
-        feat_store = cls()
-
-        for node_type, node_id in node_id_dict.items():
-            feat_store.put_global_id(node_id, group_name=node_type)
-        if x_dict is not None:
-            for node_type, x in x_dict.items():
-                feat_store.put_tensor(x, group_name=node_type, attr_name='x')
-        if y_dict is not None:
-            for node_type, y in y_dict.items():
-                feat_store.put_tensor(y, group_name=node_type, attr_name='y')
-        if edge_id_dict is not None:
-            for edge_type, edge_id in edge_id_dict.items():
-                feat_store.put_global_id(edge_id, group_name=edge_type)
-        if edge_attr_dict is not None:
-            for edge_type, edge_attr in edge_attr_dict.items():
-                if edge_id_dict is None or edge_type not in edge_id_dict:
-                    raise ValueError("'edge_id' needs to be present in case "
-                                     "'edge_attr' is passed")
-                feat_store.put_tensor(edge_attr, group_name=edge_type,
-                                      attr_name='edge_attr')
-
-        return feat_store
+        pass
 
     @classmethod
     def from_partition(cls, root: str, pid: int) -> 'LocalFeatureStore':

@@ -8,18 +8,6 @@ from torch_geometric.utils import coalesce
 
 @functional_transform('remove_duplicated_edges')
 class RemoveDuplicatedEdges(BaseTransform):
-    r"""Removes duplicated edges from a given homogeneous or heterogeneous
-    graph. Useful to clean-up known repeated edges/self-loops in common
-    benchmark datasets, *e.g.*, in :obj:`ogbn-products`.
-    (functional name: :obj:`remove_duplicated_edges`).
-
-    Args:
-        key (str or [str], optional): The name of edge attribute(s) to merge in
-            case of duplication. (default: :obj:`["edge_weight", "edge_attr"]`)
-        reduce (str, optional): The reduce operation to use for merging edge
-            attributes (:obj:`"add"`, :obj:`"mean"`, :obj:`"min"`,
-            :obj:`"max"`, :obj:`"mul"`). (default: :obj:`"add"`)
-    """
     def __init__(
         self,
         key: Optional[Union[str, List[str]]] = None,

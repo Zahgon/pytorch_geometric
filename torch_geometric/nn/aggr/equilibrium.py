@@ -48,16 +48,6 @@ class ResNetPotential(torch.nn.Module):
 
 
 class MomentumOptimizer(torch.nn.Module):
-    r"""Provides an inner loop optimizer for the implicitly defined output
-    layer. It is based on an unrolled Nesterov momentum algorithm.
-
-    Args:
-        learning_rate (float): learning rate for optimizer.
-        momentum (float): momentum for optimizer.
-        learnable (bool): If :obj:`True` then the :obj:`learning_rate` and
-            :obj:`momentum` will be learnable parameters. If False they
-            are fixed. (default: :obj:`True`)
-    """
     def __init__(self, learning_rate: float = 0.1, momentum: float = 0.9,
                  learnable: bool = True):
         super().__init__()
@@ -77,11 +67,11 @@ class MomentumOptimizer(torch.nn.Module):
 
     @property
     def learning_rate(self):
-        return self.softplus(self._lr)
+        pass
 
     @property
     def momentum(self):
-        return self.sigmoid(self._mom)
+        pass
 
     def forward(
         self,
@@ -105,32 +95,6 @@ class MomentumOptimizer(torch.nn.Module):
 
 
 class EquilibriumAggregation(Aggregation):
-    r"""The equilibrium aggregation layer from the `"Equilibrium Aggregation:
-    Encoding Sets via Optimization" <https://arxiv.org/abs/2202.12795>`_ paper.
-
-    The output of this layer :math:`\mathbf{y}` is defined implicitly via a
-    potential function :math:`F(\mathbf{x}, \mathbf{y})`, a regularization term
-    :math:`R(\mathbf{y})`, and the condition
-
-    .. math::
-        \mathbf{y} = \min_\mathbf{y} R(\mathbf{y}) + \sum_{i}
-        F(\mathbf{x}_i, \mathbf{y}).
-
-    The given implementation uses a ResNet-like model for the potential
-    function and a simple :math:`L_2` norm :math:`R(\mathbf{y}) =
-    \textrm{softplus}(\lambda) \cdot {\| \mathbf{y} \|}^2_2` for the
-    regularizer with learnable weight :math:`\lambda`.
-
-    Args:
-        in_channels (int): Size of each input sample.
-        out_channels (int): Size of each output sample.
-        num_layers (List[int): List of hidden channels in the potential
-            function.
-        grad_iter (int): The number of steps to take in the internal gradient
-            descent. (default: :obj:`5`)
-        lamb (float): The initial regularization constant.
-            (default: :obj:`0.1`)
-    """
     def __init__(self, in_channels: int, out_channels: int,
                  num_layers: List[int], grad_iter: int = 5, lamb: float = 0.1):
         super().__init__()
@@ -155,11 +119,11 @@ class EquilibriumAggregation(Aggregation):
                            device=self.lamb.device).float()
 
     def reg(self, y: Tensor) -> Tensor:
-        return self.softplus(self.lamb) * y.square().sum(dim=-1).mean()
+        pass
 
     def energy(self, x: Tensor, y: Tensor, index: Optional[Tensor],
                dim_size: Optional[int] = None):
-        return self.potential(x, y, index, dim_size) + self.reg(y)
+        pass
 
     def forward(self, x: Tensor, index: Optional[Tensor] = None,
                 ptr: Optional[Tensor] = None, dim_size: Optional[int] = None,

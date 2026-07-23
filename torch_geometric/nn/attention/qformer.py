@@ -4,23 +4,6 @@ import torch
 
 
 class QFormer(torch.nn.Module):
-    r"""The Querying Transformer (Q-Former) from
-    `"BLIP-2: Bootstrapping Language-Image Pre-training
-    with Frozen Image Encoders and Large Language Models"
-    <https://arxiv.org/pdf/2301.12597>`_ paper.
-
-    Args:
-        input_dim (int): The number of features in the input.
-        hidden_dim (int): The dimension of the fnn in the encoder layer.
-        output_dim (int): The final output dimension.
-        num_heads (int): The number of multi-attention-heads.
-        num_layers (int): The number of sub-encoder-layers in the encoder.
-        dropout (int): The dropout value in each encoder layer.
-
-
-    .. note::
-        This is a simplified version of the original Q-Former implementation.
-    """
     def __init__(
             self,
             input_dim: int,

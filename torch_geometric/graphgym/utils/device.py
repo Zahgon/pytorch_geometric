@@ -8,13 +8,7 @@ from torch_geometric.graphgym.config import cfg
 
 
 def get_gpu_memory_map():
-    """Get the current GPU usage."""
-    result = subprocess.check_output([
-        'nvidia-smi', '--query-gpu=memory.used',
-        '--format=csv,nounits,noheader'
-    ], encoding='utf-8')
-    gpu_memory = np.array([int(x) for x in result.strip().split('\n')])
-    return gpu_memory
+    pass
 
 
 def get_current_gpu_usage():

@@ -33,11 +33,11 @@ class MPCaptOutput:
 
     @property
     def stdout_str(self) -> str:
-        return self.stdout.getvalue()
+        pass
 
     @property
     def stderr_str(self) -> str:
-        return self.stderr.getvalue()
+        pass
 
 
 def ps_std_capture(
@@ -46,14 +46,7 @@ def ps_std_capture(
     *args: Any,
     **kwargs: Any,
 ) -> None:
-    with MPCaptOutput() as capt:
-        try:
-            func(*args, **kwargs)
-        except Exception as e:
-            traceback.print_exc(file=sys.stderr)
-            raise e
-        finally:
-            queue.put((capt.stdout_str, capt.stderr_str))
+    pass
 
 
 def assert_run_mproc(

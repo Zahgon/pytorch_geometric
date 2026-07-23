@@ -10,40 +10,6 @@ from torch_geometric.utils import spmm
 
 
 class PDNConv(MessagePassing):
-    r"""The pathfinder discovery network convolutional operator from the
-    `"Pathfinder Discovery Networks for Neural Message Passing"
-    <https://arxiv.org/abs/2010.12878>`_ paper.
-
-    .. math::
-        \mathbf{x}^{\prime}_i = \sum_{j \in \mathcal{N}(i) \cup
-        \{i\}}f_{\Theta}(\textbf{e}_{(j,i)}) \cdot f_{\Omega}(\mathbf{x}_{j})
-
-    where :math:`z_{i,j}` denotes the edge feature vector from source node
-    :math:`j` to target node :math:`i`, and :math:`\mathbf{x}_{j}` denotes the
-    node feature vector of node :math:`j`.
-
-    Args:
-        in_channels (int): Size of each input sample.
-        out_channels (int): Size of each output sample.
-        edge_dim (int): Edge feature dimensionality.
-        hidden_channels (int): Hidden edge feature dimensionality.
-        add_self_loops (bool, optional): If set to :obj:`False`, will not add
-            self-loops to the input graph. (default: :obj:`True`)
-        normalize (bool, optional): Whether to add self-loops and compute
-            symmetric normalization coefficients on the fly.
-            (default: :obj:`True`)
-        bias (bool, optional): If set to :obj:`False`, the layer will not learn
-            an additive bias. (default: :obj:`True`)
-        **kwargs (optional): Additional arguments of
-            :class:`torch_geometric.nn.conv.MessagePassing`.
-
-    Shapes:
-        - **input:**
-          node features :math:`(|\mathcal{V}|, F_{in})`,
-          edge indices :math:`(2, |\mathcal{E}|)`,
-          edge features :math:`(|\mathcal{E}|, D)` *(optional)*
-        - **output:** node features :math:`(|\mathcal{V}|, F_{out})`
-    """
     def __init__(self, in_channels: int, out_channels: int, edge_dim: int,
                  hidden_channels: int, add_self_loops: bool = True,
                  normalize: bool = True, bias: bool = True, **kwargs):
@@ -108,7 +74,6 @@ class PDNConv(MessagePassing):
 
         x = self.lin(x)
 
-        # propagate_type: (x: Tensor, edge_weight: OptTensor)
         out = self.propagate(edge_index, x=x, edge_weight=edge_attr)
 
         if self.bias is not None:

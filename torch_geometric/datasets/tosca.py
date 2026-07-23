@@ -15,45 +15,6 @@ from torch_geometric.io import read_txt_array
 
 
 class TOSCA(InMemoryDataset):
-    r"""The TOSCA dataset from the `"Numerical Geometry of Non-Ridig Shapes"
-    <https://www.amazon.com/Numerical-Geometry-Non-Rigid-Monographs-Computer/
-    dp/0387733000>`_ book, containing 80 meshes.
-    Meshes within the same category have the same triangulation and an equal
-    number of vertices numbered in a compatible way.
-
-    .. note::
-
-        Data objects hold mesh faces instead of edge indices.
-        To convert the mesh to a graph, use the
-        :obj:`torch_geometric.transforms.FaceToEdge` as :obj:`pre_transform`.
-        To convert the mesh to a point cloud, use the
-        :obj:`torch_geometric.transforms.SamplePoints` as :obj:`transform` to
-        sample a fixed number of points on the mesh faces according to their
-        face area.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        categories (list, optional): List of categories to include in the
-            dataset. Can include the categories :obj:`"Cat"`, :obj:`"Centaur"`,
-            :obj:`"David"`, :obj:`"Dog"`, :obj:`"Gorilla"`, :obj:`"Horse"`,
-            :obj:`"Michael"`, :obj:`"Victoria"`, :obj:`"Wolf"`. If set to
-            :obj:`None`, the dataset will contain all categories. (default:
-            :obj:`None`)
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        pre_filter (callable, optional): A function that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a boolean
-            value, indicating whether the data object should be included in the
-            final dataset. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-    """
 
     url = 'http://tosca.cs.technion.ac.il/data/toscahires-asci.zip'
 
@@ -82,12 +43,11 @@ class TOSCA(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> List[str]:
-        return ['cat0.vert', 'cat0.tri']
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        name = '_'.join([cat[:2] for cat in self.categories])
-        return f'{name}.pt'
+        pass
 
     def download(self) -> None:
         path = download_url(self.url, self.raw_dir)

@@ -38,9 +38,6 @@ NumNeighborsType = Union[NumNeighbors, List[int], Dict[EdgeType, List[int]]]
 
 
 class NeighborSampler(BaseSampler):
-    r"""An implementation of an in-memory (heterogeneous) neighbor sampler used
-    by :class:`~torch_geometric.loader.NeighborLoader`.
-    """
     def __init__(
         self,
         data: Union[Data, HeteroData, Tuple[FeatureStore, GraphStore]],
@@ -75,7 +72,6 @@ class NeighborSampler(BaseSampler):
         self.sample_direction = sample_direction
 
         if self.sample_direction == 'backward':
-            # TODO(zaristei)
             if time_attr is not None:
                 raise NotImplementedError(
                     "Temporal Sampling not yet supported for backward sampling"
@@ -97,7 +93,6 @@ class NeighborSampler(BaseSampler):
                         f"The time attribute '{time_attr}' is neither a "
                         f"node-level or edge-level attribute")
 
-            # Convert the graph data into CSC format for sampling:
             self.colptr, self.row, self.perm = to_csc(
                 data, device='cpu', share_memory=share_memory,
                 is_sorted=is_sorted, src_node_time=self.node_time,
@@ -116,7 +111,6 @@ class NeighborSampler(BaseSampler):
         elif self.data_type == DataType.heterogeneous:
             self.node_types, self.edge_types = data.metadata()
 
-            # reverse edge types if sample_direction is backward
             if self.sample_direction == 'backward':
                 self.edge_types = [
                     reverse_edge_type(edge_type)
@@ -157,13 +151,9 @@ class NeighborSampler(BaseSampler):
                 else:
                     self.edge_time = data.collect(time_attr)
 
-            # Conversion to/from C++ string type: Since C++ cannot take
-            # dictionaries with tuples as key as input, edge type triplets need
-            # to be converted into single strings.
             self.to_rel_type = {k: '__'.join(k) for k in self.edge_types}
             self.to_edge_type = {v: k for k, v in self.to_rel_type.items()}
 
-            # Convert the graph data into CSC format for sampling:
             colptr_dict, row_dict, self.perm = to_hetero_csc(
                 data, device='cpu', share_memory=share_memory,
                 is_sorted=is_sorted, node_time_dict=self.node_time,
@@ -193,13 +183,11 @@ class NeighborSampler(BaseSampler):
         else:  # self.data_type == DataType.remote
             feature_store, graph_store = data
 
-            # Obtain graph metadata:
             attrs = [attr for attr in feature_store.get_all_tensor_attrs()]
 
             edge_attrs = graph_store.get_all_edge_attrs()
             self.edge_types = list({attr.edge_type for attr in edge_attrs})
 
-            # reverse edge types if sample_direction is backward
             if self.sample_direction == 'backward':
                 self.edge_types = [
                     reverse_edge_type(edge_type)
@@ -221,10 +209,6 @@ class NeighborSampler(BaseSampler):
                     f"'(FeatureStore, GraphStore)' inputs")
 
             if time_attr is not None:
-                # If the `time_attr` is present, we expect that `GraphStore`
-                # holds all edges sorted by destination, and within local
-                # neighborhoods, node indices should be sorted by time.
-                # TODO (matthias, manan) Find an alternative way to ensure.
                 for edge_attr in edge_attrs:
                     if edge_attr.layout == EdgeLayout.CSR:
                         raise ValueError(
@@ -236,7 +220,6 @@ class NeighborSampler(BaseSampler):
                             "sorted by destination, and by source time "
                             "within local neighborhoods")
 
-                # We obtain all features with `node_attr.name=time_attr`:
                 time_attrs = [
                     copy.copy(attr) for attr in attrs
                     if attr.attr_name == time_attr
@@ -256,8 +239,6 @@ class NeighborSampler(BaseSampler):
                                          "not find any temporal data")
                     time_attrs[0].index = None  # Reset index for full data.
                     time_tensor = feature_store.get_tensor(time_attrs[0])
-                    # Currently, we determine whether to use node-level or
-                    # edge-level temporal sampling based on the attribute name.
                     if time_attr == 'time':
                         self.node_time = time_tensor
                     else:
@@ -303,7 +284,6 @@ class NeighborSampler(BaseSampler):
                             f"Found time attribute '{time_attr}' for both "
                             f"node-level and edge-level types")
 
-                # Conversion to/from C++ string type (see above):
                 self.to_rel_type = {k: '__'.join(k) for k in self.edge_types}
                 self.to_edge_type = {v: k for k, v in self.to_rel_type.items()}
                 if self.sample_direction == 'forward':
@@ -339,62 +319,28 @@ class NeighborSampler(BaseSampler):
 
     @property
     def num_neighbors(self) -> NumNeighbors:
-        if self.sample_direction == 'backward':
-            return self._input_num_neighbors \
-                if self._input_num_neighbors is not None \
-                else self._num_neighbors
-        return self._num_neighbors
+        pass
 
     @num_neighbors.setter
     def num_neighbors(self, num_neighbors: NumNeighborsType):
-        # only used if sample direction is backward and num_neighbors has edge
-        # keys
-        self._input_num_neighbors = None
-
-        if isinstance(num_neighbors, NumNeighbors):
-            num_neighbors_values = num_neighbors.values
-            if isinstance(num_neighbors_values,
-                          dict) and self.sample_direction == 'backward':
-                # reverse the edge_types if sample_direction is backward
-                self._input_num_neighbors = num_neighbors
-                num_neighbors_values = remap_keys(num_neighbors_values,
-                                                  self.to_backward_edge_type)
-                self._num_neighbors = NumNeighbors(num_neighbors_values)
-            else:
-                self._num_neighbors = num_neighbors
-        else:
-            if isinstance(num_neighbors,
-                          dict) and self.sample_direction == 'backward':
-                # intentionally recursing here to make sure num_neighbors is
-                # set as expected for the user
-                self.num_neighbors = NumNeighbors(
-                    remap_keys(num_neighbors, self.to_backward_edge_type))
-            else:
-                self._num_neighbors = NumNeighbors(num_neighbors)
+        pass
 
     @property
     def is_hetero(self) -> bool:
-        if self.data_type == DataType.homogeneous:
-            return False
-        if self.data_type == DataType.heterogeneous:
-            return True
-
-        # self.data_type == DataType.remote
-        return self.edge_types != [None]
+        pass
 
     @property
     def is_temporal(self) -> bool:
-        return self.node_time is not None or self.edge_time is not None
+        pass
 
     @property
     def disjoint(self) -> bool:
-        return self._disjoint or self.is_temporal
+        pass
 
     @disjoint.setter
     def disjoint(self, disjoint: bool):
-        self._disjoint = disjoint
+        pass
 
-    # Node-based sampling #####################################################
 
     def sample_from_nodes(
         self,
@@ -405,26 +351,19 @@ class NeighborSampler(BaseSampler):
             out = out.to_bidirectional(keep_orig_edges=self.keep_orig_edges)
         return out
 
-    # Edge-based sampling #####################################################
 
     def sample_from_edges(
         self,
         inputs: EdgeSamplerInput,
         neg_sampling: Optional[NegativeSampling] = None,
     ) -> Union[SamplerOutput, HeteroSamplerOutput]:
-        out = edge_sample(inputs, self._sample, self.num_nodes, self.disjoint,
-                          self.node_time, neg_sampling)
-        if self.subgraph_type == SubgraphType.bidirectional:
-            out = out.to_bidirectional(keep_orig_edges=self.keep_orig_edges)
-        return out
+        pass
 
-    # Other Utilities #########################################################
 
     @property
     def edge_permutation(self) -> Union[OptTensor, Dict[EdgeType, OptTensor]]:
-        return self.perm
+        pass
 
-    # Helper functions ########################################################
 
     def _sample(
         self,
@@ -436,10 +375,8 @@ class NeighborSampler(BaseSampler):
         installed) or :obj:`torch-sparse` (if installed) sampling routines.
         """
         if isinstance(seed, dict):  # Heterogeneous sampling:
-            # TODO Support induced subgraph sampling in `pyg-lib`.
             if (torch_geometric.typing.WITH_PYG_LIB
                     and self.subgraph_type != SubgraphType.induced):
-                # TODO (matthias) Ideally, `seed` inherits dtype from `colptr`
                 colptrs = list(self.colptr_dict.values())
                 dtype = colptrs[0].dtype if len(colptrs) > 0 else torch.int64
                 seed = {k: v.to(dtype) for k, v in seed.items()}
@@ -464,14 +401,12 @@ class NeighborSampler(BaseSampler):
                     self.subgraph_type != SubgraphType.induced,
                     self.disjoint,
                     self.temporal_strategy,
-                    # TODO (matthias) `return_edge_id` if edge features present
                     True,  # return_edge_id
                 )
 
                 out = torch.ops.pyg.hetero_neighbor_sample(*args)
                 row, col, node, edge, batch = out[:4] + (None, )
 
-                # `pyg-lib>0.1.0` returns sampled number of nodes/edges:
                 num_sampled_nodes = num_sampled_edges = None
                 if len(out) >= 6:
                     num_sampled_nodes, num_sampled_edges = out[4:6]
@@ -519,8 +454,6 @@ class NeighborSampler(BaseSampler):
             col = remap_keys(col, self.to_edge_type)
             edge = remap_keys(edge, self.to_edge_type)
 
-            # In the case of backward sampling, we need to restore the edges
-            # keys to be forward facing in the HeteroSamplerOutput object.
             if self.sample_direction == 'backward':
                 row = remap_keys(row, self.to_restored_edge_type)
                 col = remap_keys(col, self.to_restored_edge_type)
@@ -546,14 +479,12 @@ class NeighborSampler(BaseSampler):
             )
 
         else:  # Homogeneous sampling:
-            # TODO Support induced subgraph sampling in `pyg-lib`.
             if (torch_geometric.typing.WITH_PYG_LIB
                     and self.subgraph_type != SubgraphType.induced):
 
                 args = (
                     self.colptr,
                     self.row,
-                    # TODO (matthias) `seed` should inherit dtype from `colptr`
                     seed.to(self.colptr.dtype),
                     self.num_neighbors.get_mapped_values(),
                     self.node_time,
@@ -569,14 +500,12 @@ class NeighborSampler(BaseSampler):
                     self.subgraph_type != SubgraphType.induced,
                     self.disjoint,
                     self.temporal_strategy,
-                    # TODO (matthias) `return_edge_id` if edge features present
                     True,  # return_edge_id
                 )
 
                 out = torch.ops.pyg.neighbor_sample(*args)
                 row, col, node, edge, batch = out[:4] + (None, )
 
-                # `pyg-lib>0.1.0` returns sampled number of nodes/edges:
                 num_sampled_nodes = num_sampled_edges = None
                 if len(out) >= 6:
                     num_sampled_nodes, num_sampled_edges = out[4:6]
@@ -621,7 +550,6 @@ class NeighborSampler(BaseSampler):
 
 
 class BidirectionalNeighborSampler(NeighborSampler):
-    """A sampler that allows for both upstream and downstream sampling."""
     def __init__(
         self,
         data: Union[Data, HeteroData, Tuple[FeatureStore, GraphStore]],
@@ -634,11 +562,9 @@ class BidirectionalNeighborSampler(NeighborSampler):
         weight_attr: Optional[str] = None,
         is_sorted: bool = False,
         share_memory: bool = False,
-        # Deprecated:
         directed: bool = True,
     ):
 
-        # TODO(zaristei)
         if isinstance(num_neighbors, NumNeighbors) and isinstance(
                 num_neighbors.values, dict) or isinstance(num_neighbors, dict):
             raise RuntimeError(
@@ -654,39 +580,32 @@ class BidirectionalNeighborSampler(NeighborSampler):
             temporal_strategy, time_attr, weight_attr, is_sorted, share_memory,
             sample_direction='backward', directed=directed)
 
-        # Trigger warnings on init if number of hops is greater than 1
         self.num_neighbors = num_neighbors
         self.subgraph_type = subgraph_type
 
     @property
     def num_neighbors(self) -> NumNeighbors:
-        return self._num_neighbors
+        pass
 
     @num_neighbors.setter
     def num_neighbors(self, num_neighbors: NumNeighborsType):
-        if not isinstance(num_neighbors, NumNeighbors):
-            num_neighbors = NumNeighbors(num_neighbors)
-        if num_neighbors.num_hops > 1:
-            print("Warning: Number of hops is greater than 1, resulting in "
-                  "memory-expensive recursive calls.")
-        self._num_neighbors = num_neighbors
+        pass
 
     @property
     def is_hetero(self) -> bool:
-        return self.forward_sampler.is_hetero
+        pass
 
     @property
     def is_temporal(self) -> bool:
-        return self.forward_sampler.is_temporal
+        pass
 
     @property
     def disjoint(self) -> bool:
-        return self.forward_sampler.disjoint
+        pass
 
     @disjoint.setter
     def disjoint(self, disjoint: bool):
-        self.forward_sampler.disjoint = disjoint
-        self.backward_sampler.disjoint = disjoint
+        pass
 
     def sample_from_nodes(
         self,
@@ -699,18 +618,11 @@ class BidirectionalNeighborSampler(NeighborSampler):
         inputs: EdgeSamplerInput,
         neg_sampling: Optional[NegativeSampling] = None,
     ) -> Union[SamplerOutput, HeteroSamplerOutput]:
-        # TODO(zaristei) Figure out what exactly regular and negative sampling
-        # imply for bidirectional sampling case
-        if neg_sampling is not None:
-            raise RuntimeError(
-                "BidirectionalNeighborSampler does not yet support "
-                "negative sampling.")
-        # Not thoroughly tested yet!
-        return super().sample_from_edges(inputs)
+        pass
 
     @property
     def edge_permutation(self) -> Union[OptTensor, Dict[EdgeType, OptTensor]]:
-        return self.forward_sampler.edge_permutation
+        pass
 
     def _sample(
         self,
@@ -751,12 +663,9 @@ class BidirectionalNeighborSampler(NeighborSampler):
                     current_seed, current_seed_time, **kwargs)
                 bwd_result = self.backward_sampler._sample(
                     current_seed, current_seed_time, **kwargs)
-                # The seeds for the next iteration will be the new nodes in
-                # this iteration
                 iter_result = fwd_result.merge_with(bwd_result)
                 iter_results.append(iter_result)
 
-                # Find the nodes not yet seen to set a seed for next iteration
                 if self.disjoint:
                     iter_seed_global_batch = global_to_local_node_idx(
                         current_seed_batch, iter_result.batch)
@@ -786,13 +695,10 @@ class BidirectionalNeighborSampler(NeighborSampler):
 
                 seen_seed_set |= set(next_seed)
 
-                # TODO(zaristei) figure out how to update seed times for
-                # temporal sampling
 
             return SamplerOutput.collate(iter_results)
 
 
-# Sampling Utilities ##########################################################
 
 
 def node_sample(
@@ -849,17 +755,11 @@ def edge_sample(
     num_pos = src.numel()
     num_neg = 0
 
-    # Negative Sampling #######################################################
 
     if neg_sampling is not None:
-        # When we are doing negative sampling, we append negative information
-        # of nodes/edges to `src`, `dst`, `src_time`, `dst_time`.
-        # Later on, we can easily reconstruct what belongs to positive and
-        # negative examples by slicing via `num_pos`.
         num_neg = math.ceil(num_pos * neg_sampling.amount)
 
         if neg_sampling.is_binary():
-            # In the "binary" case, we randomly sample negative pairs of nodes.
             if isinstance(node_time, dict):
                 src_node_time = node_time.get(input_type[0])
             else:
@@ -889,7 +789,6 @@ def edge_sample(
                     1 + math.ceil(neg_sampling.amount))[:num_pos + num_neg]
 
         elif neg_sampling.is_triplet():
-            # In the "triplet" case, we randomly sample negative destinations.
             if isinstance(node_time, dict):
                 dst_node_time = node_time.get(input_type[-1])
             else:
@@ -904,7 +803,6 @@ def edge_sample(
             if edge_label_time is not None:
                 dst_time = edge_label_time.repeat(1 + neg_sampling.amount)
 
-    # Heterogeneous Neighborhood Sampling #####################################
 
     if input_type is not None:
         seed_time_dict = None
@@ -938,7 +836,6 @@ def edge_sample(
 
         out = sample_fn(seed_dict, seed_time_dict)
 
-        # Enhance `out` by label information ##################################
         if disjoint:
             for key, batch in out.batch.items():
                 out.batch[key] = batch % num_pos
@@ -967,8 +864,6 @@ def edge_sample(
                 src_index = torch.arange(num_pos)
                 if input_type[0] != input_type[-1]:
                     dst_pos_index = torch.arange(num_pos)
-                    # `dst_neg_index` needs to be offset such that indices with
-                    # offset `num_pos` belong to the same triplet:
                     dst_neg_index = torch.arange(
                         num_pos, seed_dict[input_type[-1]].numel())
                     dst_neg_index = dst_neg_index.view(-1, num_pos).t()
@@ -997,7 +892,6 @@ def edge_sample(
                 src_time,
             )
 
-    # Homogeneous Neighborhood Sampling #######################################
 
     else:
 
@@ -1012,7 +906,6 @@ def edge_sample(
 
         out = sample_fn(seed, seed_time)
 
-        # Enhance `out` by label information ##################################
         if neg_sampling is None or neg_sampling.is_binary():
             if disjoint:
                 out.batch = out.batch % num_pos
@@ -1027,8 +920,6 @@ def edge_sample(
                 out.batch = out.batch % num_pos
                 src_index = torch.arange(num_pos)
                 dst_pos_index = torch.arange(num_pos, 2 * num_pos)
-                # `dst_neg_index` needs to be offset such that indices with
-                # offset `num_pos` belong to the same triplet:
                 dst_neg_index = torch.arange(2 * num_pos, seed.numel())
                 dst_neg_index = dst_neg_index.view(-1, num_pos).t()
             else:
@@ -1058,18 +949,9 @@ def neg_sample(
 ) -> Tensor:
     num_neg = math.ceil(seed.numel() * neg_sampling.amount)
 
-    # TODO: Do not sample false negatives.
     if node_time is None:
         return neg_sampling.sample(num_neg, endpoint, num_nodes)
 
-    # If we are in a temporal-sampling scenario, we need to respect the
-    # timestamp of the given nodes we can use as negative examples.
-    # That is, we can only sample nodes for which `node_time <= seed_time`.
-    # For now, we use a greedy algorithm which randomly samples negative
-    # nodes and discard any which do not respect the temporal constraint.
-    # We iteratively repeat this process until we have sampled a valid node for
-    # each seed.
-    # TODO See if this greedy algorithm here can be improved.
     assert seed_time is not None
     num_samples = math.ceil(neg_sampling.amount)
     seed_time = seed_time.view(1, -1).expand(num_samples, -1)
@@ -1084,13 +966,10 @@ def neg_sample(
             neg_sampling_complete = True
             break
 
-        # Greedily search for alternative negatives.
         out[mask] = tmp = neg_sampling.sample(num_invalid, endpoint, num_nodes)
         mask[mask.clone()] = node_time[tmp] >= seed_time[mask]
 
     if not neg_sampling_complete:  # pragma: no cover
-        # Not much options left. In that case, we set remaining negatives
-        # to the node with minimum timestamp.
         out[mask] = node_time.argmin()
 
     return out.view(-1)[:num_neg]

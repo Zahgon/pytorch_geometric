@@ -16,59 +16,6 @@ from torch_geometric.typing import EdgeType, EdgeTypeStr, NodeType
 
 
 class Partitioner:
-    r"""Partitions the graph and its features of a
-    :class:`~torch_geometric.data.Data` or
-    :class:`~torch_geometric.data.HeteroData` object.
-
-    Partitioned data output will be structured as shown below.
-
-    **Homogeneous graphs:**
-
-    .. code-block:: none
-
-        root/
-        |-- META.json
-        |-- node_map.pt
-        |-- edge_map.pt
-        |-- part0/
-            |-- graph.pt
-            |-- node_feats.pt
-            |-- edge_feats.pt
-        |-- part1/
-            |-- graph.pt
-            |-- node_feats.pt
-            |-- edge_feats.pt
-
-    **Heterogeneous graphs:**
-
-    .. code-block:: none
-
-        root/
-        |-- META.json
-        |-- node_map/
-            |-- ntype1.pt
-            |-- ntype2.pt
-        |-- edge_map/
-            |-- etype1.pt
-            |-- etype2.pt
-        |-- part0/
-            |-- graph.pt
-            |-- node_feats.pt
-            |-- edge_feats.pt
-        |-- part1/
-            |-- graph.pt
-            |-- node_feats.pt
-            |-- edge_feats.pt
-
-    Args:
-        data (Data or HeteroData): The data object.
-        num_parts (int): The number of partitions.
-        recursive (bool, optional): If set to :obj:`True`, will use multilevel
-            recursive bisection instead of multilevel k-way partitioning.
-            (default: :obj:`False`)
-        root (str): Root directory where the partitioned dataset should be
-            saved.
-    """
     def __init__(
         self,
         data: Union[Data, HeteroData],
@@ -85,38 +32,23 @@ class Partitioner:
 
     @property
     def is_hetero(self) -> bool:
-        return isinstance(self.data, HeteroData)
+        pass
 
     @property
     def is_node_level_time(self) -> bool:
-        if 'time' not in self.data:
-            return False
-
-        if self.is_hetero:
-            return any(['time' in store for store in self.data.node_stores])
-
-        return self.data.is_node_attr('time')
+        pass
 
     @property
     def is_edge_level_time(self) -> bool:
-        if 'edge_time' in self.data:
-            return True
-
-        if 'time' not in self.data:
-            return False
-
-        if self.is_hetero:
-            return any(['time' in store for store in self.data.edge_stores])
-
-        return self.data.is_edge_attr('time')
+        pass
 
     @property
     def node_types(self) -> Optional[List[NodeType]]:
-        return self.data.node_types if self.is_hetero else None
+        pass
 
     @property
     def edge_types(self) -> Optional[List[EdgeType]]:
-        return self.data.edge_types if self.is_hetero else None
+        pass
 
     def generate_partition(self):
         r"""Generates the partitions."""
@@ -177,8 +109,6 @@ class Partitioner:
                 graph = {}
                 efeat = defaultdict(dict)
                 for i, edge_type in enumerate(self.edge_types):
-                    # Row vector refers to source nodes.
-                    # Column vector refers to destination nodes.
                     src, _, dst = edge_type
                     size = (self.data[src].num_nodes, self.data[dst].num_nodes)
 
@@ -200,8 +130,6 @@ class Partitioner:
 
                     offsetted_row = global_row - node_offset[src]
                     offsetted_col = global_col - node_offset[dst]
-                    # Sort by column to avoid keeping track of permutations in
-                    # `NeighborSampler` when converting to CSC format:
                     offsetted_row, offsetted_col, perm = sort_csc(
                         offsetted_row, offsetted_col, src_node_time, edge_time)
 
@@ -304,8 +232,6 @@ class Partitioner:
                 elif self.is_node_level_time:
                     node_time = data.time
 
-                # Sort by column to avoid keeping track of permutations in
-                # `NeighborSampler` when converting to CSC format:
                 global_row, global_col, perm = sort_csc(
                     global_row, global_col, node_time, edge_time)
 
@@ -371,7 +297,6 @@ def load_partition_info(
     root_dir: str,
     partition_idx: int,
 ) -> Tuple[Dict, int, int, torch.Tensor, torch.Tensor]:
-    # load the partition with PyG format (graphstore/featurestore)
     with open(osp.join(root_dir, 'META.json'), 'rb') as infile:
         meta = json.load(infile)
     num_partitions = meta['num_parts']

@@ -11,38 +11,6 @@ from torch_geometric.utils import degree, spmm
 
 
 class MFConv(MessagePassing):
-    r"""The graph neural network operator from the
-    `"Convolutional Networks on Graphs for Learning Molecular Fingerprints"
-    <https://arxiv.org/abs/1509.09292>`_ paper.
-
-    .. math::
-        \mathbf{x}^{\prime}_i = \mathbf{W}^{(\deg(i))}_1 \mathbf{x}_i +
-        \mathbf{W}^{(\deg(i))}_2 \sum_{j \in \mathcal{N}(i)} \mathbf{x}_j
-
-    which trains a distinct weight matrix for each possible vertex degree.
-
-    Args:
-        in_channels (int or tuple): Size of each input sample, or :obj:`-1` to
-            derive the size from the first input(s) to the forward method.
-            A tuple corresponds to the sizes of source and target
-            dimensionalities.
-        out_channels (int): Size of each output sample.
-        max_degree (int, optional): The maximum node degree to consider when
-            updating weights (default: :obj:`10`)
-        bias (bool, optional): If set to :obj:`False`, the layer will not learn
-            an additive bias. (default: :obj:`True`)
-        **kwargs (optional): Additional arguments of
-            :class:`torch_geometric.nn.conv.MessagePassing`.
-
-    Shapes:
-        - **inputs:**
-          node features :math:`(|\mathcal{V}|, F_{in})` or
-          :math:`((|\mathcal{V_s}|, F_{s}), (|\mathcal{V_t}|, F_{t}))`
-          if bipartite,
-          edge indices :math:`(2, |\mathcal{E}|)`
-        - **outputs:** node features :math:`(|\mathcal{V}|, F_{out})` or
-          :math:`(|\mathcal{V_t}|, F_{out})` if bipartite
-    """
     def __init__(self, in_channels: Union[int, Tuple[int, int]],
                  out_channels: int, max_degree: int = 10, bias=True, **kwargs):
         kwargs.setdefault('aggr', 'add')
@@ -97,7 +65,6 @@ class MFConv(MessagePassing):
             deg = degree(edge_index[i], N, dtype=torch.long)
         deg.clamp_(max=self.max_degree)
 
-        # propagate_type: (x: OptPairTensor)
         h = self.propagate(edge_index, x=x, size=size)
 
         out = h.new_empty(list(h.size())[:-1] + [self.out_channels])

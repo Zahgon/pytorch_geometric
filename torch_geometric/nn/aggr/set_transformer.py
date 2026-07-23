@@ -12,37 +12,6 @@ from torch_geometric.nn.aggr.utils import (
 
 
 class SetTransformerAggregation(Aggregation):
-    r"""Performs "Set Transformer" aggregation in which the elements to
-    aggregate are processed by multi-head attention blocks, as described in
-    the `"Graph Neural Networks with Adaptive Readouts"
-    <https://arxiv.org/abs/2211.04952>`_ paper.
-
-    .. note::
-
-        :class:`SetTransformerAggregation` requires sorted indices :obj:`index`
-        as input. Specifically, if you use this aggregation as part of
-        :class:`~torch_geometric.nn.conv.MessagePassing`, ensure that
-        :obj:`edge_index` is sorted by destination nodes, either by manually
-        sorting edge indices via :meth:`~torch_geometric.utils.sort_edge_index`
-        or by calling :meth:`torch_geometric.data.Data.sort`.
-
-    Args:
-        channels (int): Size of each input sample.
-        num_seed_points (int, optional): Number of seed points.
-            (default: :obj:`1`)
-        num_encoder_blocks (int, optional): Number of Set Attention Blocks
-            (SABs) in the encoder. (default: :obj:`1`).
-        num_decoder_blocks (int, optional): Number of Set Attention Blocks
-            (SABs) in the decoder. (default: :obj:`1`).
-        heads (int, optional): Number of multi-head-attentions.
-            (default: :obj:`1`)
-        concat (bool, optional): If set to :obj:`False`, the seed embeddings
-            are averaged instead of concatenated. (default: :obj:`True`)
-        layer_norm (str, optional): If set to :obj:`True`, will apply layer
-            normalization. (default: :obj:`False`)
-        dropout (float, optional): Dropout probability of attention weights.
-            (default: :obj:`0`)
-    """
     def __init__(
         self,
         channels: int,

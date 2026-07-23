@@ -29,31 +29,6 @@ class Partition:
 
 
 class ClusterData(torch.utils.data.Dataset):
-    r"""Clusters/partitions a graph data object into multiple subgraphs, as
-    motivated by the `"Cluster-GCN: An Efficient Algorithm for Training Deep
-    and Large Graph Convolutional Networks"
-    <https://arxiv.org/abs/1905.07953>`_ paper.
-
-    .. note::
-        The underlying METIS algorithm requires undirected graphs as input.
-
-    Args:
-        data (torch_geometric.data.Data): The graph data object.
-        num_parts (int): The number of partitions.
-        recursive (bool, optional): If set to :obj:`True`, will use multilevel
-            recursive bisection instead of multilevel k-way partitioning.
-            (default: :obj:`False`)
-        save_dir (str, optional): If set, will save the partitioned data to the
-            :obj:`save_dir` directory for faster re-use. (default: :obj:`None`)
-        filename (str, optional): Name of the stored partitioned file.
-            (default: :obj:`None`)
-        log (bool, optional): If set to :obj:`False`, will not log any
-            progress. (default: :obj:`True`)
-        keep_inter_cluster_edges (bool, optional): If set to :obj:`True`,
-            will keep inter-cluster edge connections. (default: :obj:`False`)
-        sparse_format (str, optional): The sparse format to use for computing
-            partitions. (default: :obj:`"csr"`)
-    """
     def __init__(
         self,
         data,
@@ -96,7 +71,6 @@ class ClusterData(torch.utils.data.Dataset):
         self.data = self._permute_data(data, self.partition)
 
     def _metis(self, edge_index: Tensor, num_nodes: int) -> Tensor:
-        # Computes a node-level partition assignment vector via METIS.
         if self.sparse_format == 'csr':  # Calculate CSR representation:
             row, index = sort_edge_index(edge_index, num_nodes=num_nodes)
             indptr = index2ptr(row, size=num_nodes)
@@ -105,7 +79,6 @@ class ClusterData(torch.utils.data.Dataset):
                                          sort_by_row=False)
             indptr = index2ptr(col, size=num_nodes)
 
-        # Compute METIS partitioning:
         cluster: Optional[Tensor] = None
 
         if torch_geometric.typing.WITH_TORCH_SPARSE:
@@ -135,21 +108,16 @@ class ClusterData(torch.utils.data.Dataset):
         return cluster
 
     def _partition(self, edge_index: Tensor, cluster: Tensor) -> Partition:
-        # Computes node-level and edge-level permutations and permutes the edge
-        # connectivity accordingly:
 
-        # Sort `cluster` and compute boundaries `partptr`:
         cluster, node_perm = index_sort(cluster, max_value=self.num_parts)
         partptr = index2ptr(cluster, size=self.num_parts)
 
-        # Permute `edge_index` based on node permutation:
         edge_perm = torch.arange(edge_index.size(1), device=edge_index.device)
         arange = torch.empty_like(node_perm)
         arange[node_perm] = torch.arange(cluster.numel(),
                                          device=cluster.device)
         edge_index = arange[edge_index]
 
-        # Compute final CSR representation:
         (row, col), edge_perm = sort_edge_index(
             edge_index,
             edge_attr=edge_perm,
@@ -165,8 +133,6 @@ class ClusterData(torch.utils.data.Dataset):
                          self.sparse_format)
 
     def _permute_data(self, data: Data, partition: Partition) -> Data:
-        # Permute node-level and edge-level attributes according to the
-        # calculated permutations in `Partition`:
         out = copy.copy(data)
         for key, value in data.items():
             if key == 'edge_index':
@@ -233,30 +199,6 @@ class ClusterData(torch.utils.data.Dataset):
 
 
 class ClusterLoader(torch.utils.data.DataLoader):
-    r"""The data loader scheme from the `"Cluster-GCN: An Efficient Algorithm
-    for Training Deep and Large Graph Convolutional Networks"
-    <https://arxiv.org/abs/1905.07953>`_ paper which merges partitioned
-    subgraphs and their between-cluster links from a large-scale graph data
-    object to form a mini-batch.
-
-    .. note::
-
-        Use :class:`~torch_geometric.loader.ClusterData` and
-        :class:`~torch_geometric.loader.ClusterLoader` in conjunction to
-        form mini-batches of clusters.
-        For an example of using Cluster-GCN, see
-        `examples/cluster_gcn_reddit.py <https://github.com/pyg-team/
-        pytorch_geometric/blob/master/examples/cluster_gcn_reddit.py>`_ or
-        `examples/cluster_gcn_ppi.py <https://github.com/pyg-team/
-        pytorch_geometric/blob/master/examples/cluster_gcn_ppi.py>`_.
-
-    Args:
-        cluster_data (torch_geometric.loader.ClusterData): The already
-            partitioned data object.
-        **kwargs (optional): Additional arguments of
-            :class:`torch.utils.data.DataLoader`, such as :obj:`batch_size`,
-            :obj:`shuffle`, :obj:`drop_last` or :obj:`num_workers`.
-    """
     def __init__(self, cluster_data, **kwargs):
         self.cluster_data = cluster_data
         iterator = range(len(cluster_data))
@@ -269,17 +211,11 @@ class ClusterLoader(torch.utils.data.DataLoader):
         global_indptr = self.cluster_data.partition.indptr
         global_index = self.cluster_data.partition.index
 
-        # Get all node-level and edge-level start and end indices for the
-        # current mini-batch:
         node_start = self.cluster_data.partition.partptr[batch]
         node_end = self.cluster_data.partition.partptr[batch + 1]
         edge_start = global_indptr[node_start]
         edge_end = global_indptr[node_end]
 
-        # Iterate over each partition in the batch and calculate new edge
-        # connectivity. This is done by slicing the corresponding source and
-        # destination indices for each partition and adjusting their indices to
-        # start from zero:
         rows, cols, nodes, cumsum = [], [], [], 0
         for i in range(batch.numel()):
             nodes.append(torch.arange(node_start[i], node_end[i]))
@@ -301,8 +237,6 @@ class ClusterLoader(torch.utils.data.DataLoader):
         row = torch.cat(rows, dim=0)
         col = torch.cat(cols, dim=0)
 
-        # Map `col` vector to valid entries and remove any entries that do not
-        # connect two nodes within the same mini-batch:
         if self.cluster_data.partition.sparse_format == 'csr':
             col, edge_mask = map_index(col, node)
             row = row[edge_mask]
@@ -311,7 +245,6 @@ class ClusterLoader(torch.utils.data.DataLoader):
             col = col[edge_mask]
         out = copy.copy(self.cluster_data.data)
 
-        # Slice node-level and edge-level attributes according to its offsets:
         for key, value in self.cluster_data.data.items():
             if key == 'num_nodes':
                 out.num_nodes = cumsum

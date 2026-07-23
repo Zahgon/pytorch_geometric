@@ -13,7 +13,7 @@ def selu():
 
 
 def prelu():
-    return torch.nn.PReLU()
+    pass
 
 
 def elu():
@@ -21,15 +21,15 @@ def elu():
 
 
 def lrelu_01():
-    return torch.nn.LeakyReLU(0.1, inplace=cfg.mem.inplace)
+    pass
 
 
 def lrelu_025():
-    return torch.nn.LeakyReLU(0.25, inplace=cfg.mem.inplace)
+    pass
 
 
 def lrelu_05():
-    return torch.nn.LeakyReLU(0.5, inplace=cfg.mem.inplace)
+    pass
 
 
 if cfg is not None:

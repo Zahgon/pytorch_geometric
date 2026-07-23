@@ -9,18 +9,6 @@ from torch_geometric.transforms import BaseTransform
 
 @functional_transform('constant')
 class Constant(BaseTransform):
-    r"""Appends a constant value to each node feature :obj:`x`
-    (functional name: :obj:`constant`).
-
-    Args:
-        value (float, optional): The value to add. (default: :obj:`1.0`)
-        cat (bool, optional): If set to :obj:`False`, existing node features
-            will be replaced. (default: :obj:`True`)
-        node_types (str or List[str], optional): The specified node type(s) to
-            append constant values for if used on heterogeneous graphs.
-            If set to :obj:`None`, constants will be added to each node feature
-            :obj:`x` for all existing node types. (default: :obj:`None`)
-    """
     def __init__(
         self,
         value: float = 1.0,

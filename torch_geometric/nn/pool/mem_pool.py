@@ -10,33 +10,6 @@ EPS = 1e-15
 
 
 class MemPooling(torch.nn.Module):
-    r"""Memory based pooling layer from `"Memory-Based Graph Networks"
-    <https://arxiv.org/abs/2002.09518>`_ paper, which learns a coarsened graph
-    representation based on soft cluster assignments.
-
-    .. math::
-        S_{i,j}^{(h)} &= \frac{
-        (1+{\| \mathbf{x}_i-\mathbf{k}^{(h)}_j \|}^2 / \tau)^{
-        -\frac{1+\tau}{2}}}{
-        \sum_{k=1}^K (1 + {\| \mathbf{x}_i-\mathbf{k}^{(h)}_k \|}^2 / \tau)^{
-        -\frac{1+\tau}{2}}}
-
-        \mathbf{S} &= \textrm{softmax}(\textrm{Conv2d}
-        (\Vert_{h=1}^H \mathbf{S}^{(h)})) \in \mathbb{R}^{N \times K}
-
-        \mathbf{X}^{\prime} &= \mathbf{S}^{\top} \mathbf{X} \mathbf{W} \in
-        \mathbb{R}^{K \times F^{\prime}}
-
-    where :math:`H` denotes the number of heads, and :math:`K` denotes the
-    number of clusters.
-
-    Args:
-        in_channels (int): Size of each input sample :math:`F`.
-        out_channels (int): Size of each output sample :math:`F^{\prime}`.
-        heads (int): The number of heads :math:`H`.
-        num_clusters (int): number of clusters :math:`K` per head.
-        tau (int, optional): The temperature :math:`\tau`. (default: :obj:`1.`)
-    """
     def __init__(self, in_channels: int, out_channels: int, heads: int,
                  num_clusters: int, tau: float = 1.):
         super().__init__()
@@ -60,23 +33,7 @@ class MemPooling(torch.nn.Module):
 
     @staticmethod
     def kl_loss(S: Tensor) -> Tensor:
-        r"""The additional KL divergence-based loss.
-
-        .. math::
-            P_{i,j} &= \frac{S_{i,j}^2 / \sum_{n=1}^N S_{n,j}}{\sum_{k=1}^K
-            S_{i,k}^2 / \sum_{n=1}^N S_{n,k}}
-
-            \mathcal{L}_{\textrm{KL}} &= \textrm{KLDiv}(\mathbf{P} \Vert
-            \mathbf{S})
-        """
-        S_2 = S**2
-        P = S_2 / S.sum(dim=1, keepdim=True)
-        denom = P.sum(dim=2, keepdim=True)
-        denom[S.sum(dim=2, keepdim=True) == 0.0] = 1.0
-        P /= denom
-
-        loss = KLDivLoss(reduction='batchmean', log_target=False)
-        return loss(S.clamp(EPS).log(), P.clamp(EPS))
+        pass
 
     def forward(
         self,

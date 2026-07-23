@@ -16,37 +16,6 @@ from .basic_gnn import GCN
 
 
 class LPFormer(nn.Module):
-    r"""The LPFormer model from the
-    `"LPFormer: An Adaptive Graph Transformer for Link Prediction"
-    <https://arxiv.org/abs/2310.11009>`_ paper.
-
-    .. note::
-
-        For an example of using LPFormer, see
-        `examples/lpformer.py
-        <https://github.com/pyg-team/pytorch_geometric/blob/master/examples/
-        lpformer.py>`_.
-
-    Args:
-        in_channels (int): Size of input dimension
-        hidden_channels (int): Size of hidden dimension
-        num_gnn_layers (int, optional): Number of GNN layers
-            (default: :obj:`2`)
-        gnn_dropout(float, optional): Dropout used for GNN
-            (default: :obj:`0.1`)
-        num_transformer_layers (int, optional): Number of Transformer layers
-            (default: :obj:`1`)
-        num_heads (int, optional): Number of heads to use in MHA
-            (default: :obj:`1`)
-        transformer_dropout (float, optional): Dropout used for Transformer
-            (default: :obj:`0.1`)
-        ppr_thresholds (list): PPR thresholds for different types of nodes.
-            Types include (in order) common neighbors, 1-Hop nodes
-            (that aren't CNs), and all other nodes.
-            (default: :obj:`[0, 1e-4, 1e-2]`)
-        gcn_cache (bool, optional): Whether to cache edge indices
-            during message passing. (default: :obj:`False`)
-    """
     def __init__(
         self,
         in_channels: int,
@@ -61,7 +30,6 @@ class LPFormer(nn.Module):
     ):
         super().__init__()
 
-        # Default thresholds
         if ppr_thresholds is None:
             ppr_thresholds = [0, 1e-4, 1e-2]
 
@@ -83,7 +51,6 @@ class LPFormer(nn.Module):
                        cached=gcn_cache)
         self.gnn_norm = nn.LayerNorm(hidden_channels)
 
-        # Create Transformer Layers
         self.att_layers = nn.ModuleList()
         for il in range(num_transformer_layers):
             if il == 0:
@@ -106,8 +73,6 @@ class LPFormer(nn.Module):
         self.ppr_encoder_onehop = MLP(2, self.hid_dim, self.hid_dim)
         self.ppr_encoder_non1hop = MLP(2, self.hid_dim, self.hid_dim)
 
-        # thresh=1 implies ignoring some set of nodes
-        # Also allows us to be more efficient later
         if self.thresh_non1hop == 1 and self.thresh_1hop == 1:
             self.mask = "cn"
         elif self.thresh_non1hop == 1 and self.thresh_1hop < 1:
@@ -115,7 +80,6 @@ class LPFormer(nn.Module):
         else:
             self.mask = "all"
 
-        # 4 is for counts of diff nodes
         pairwise_dim = self.hid_dim * num_heads + 4
         self.pairwise_lin = MLP(pairwise_dim, pairwise_dim, self.hid_dim)
 
@@ -164,19 +128,14 @@ class LPFormer(nn.Module):
         x_i, x_j = X_node[batch[0]], X_node[batch[1]]
         elementwise_edge_feats = self.elementwise_lin(x_i * x_j)
 
-        # Ensure in sparse format
-        # Need as native torch.sparse for later computations
-        # (necessary operations are not supported by PyG SparseTensor)
         if not edge_index.is_sparse:
             num_nodes = ppr_matrix.size(1)
             vals = torch.ones(len(edge_index[0]), device=edge_index.device)
             edge_index = torch.sparse_coo_tensor(edge_index, vals,
                                                  [num_nodes, num_nodes])
-        # Checks if SparseTensor, if so the convert
         if is_sparse(edge_index) and not edge_index.is_sparse:
             edge_index = edge_index.to_torch_sparse_coo_tensor()
 
-        # Ensure {0, 1}
         edge_index = edge_index.coalesce().bool().int()
 
         pairwise_feats = self.calc_pairwise(batch, X_node, edge_index,
@@ -300,10 +259,8 @@ class LPFormer(nn.Module):
         tgt_adj = torch.index_select(adj, 0, batch[1])
 
         if self.mask == "cn":
-            # 1 when CN, 0 otherwise
             pair_adj = src_adj * tgt_adj
         else:
-            # Equals: {0: ">1-Hop", 1: "1-Hop (Non-CN)", 2: "CN"}
             pair_adj = src_adj + tgt_adj
 
         pair_ix, node_type, src_ppr, tgt_ppr = self.get_ppr_vals(
@@ -324,12 +281,10 @@ class LPFormer(nn.Module):
         pair_ix, node_type = pair_ix[:, filt_cond], node_type[filt_cond]
         src_ppr, tgt_ppr = src_ppr[filt_cond], tgt_ppr[filt_cond]
 
-        # >1-Hop mask is gotten separately
         if self.mask == "all":
             non1hop_ix, non1hop_sppr, non1hop_tppr = self.get_non_1hop_ppr(
                 batch, adj, ppr_matrix)
 
-        # Dropout
         if self.training and self.trans_drop > 0:
             pair_ix, src_ppr, tgt_ppr, node_type = self.drop_pairwise(
                 pair_ix, src_ppr, tgt_ppr, node_type)
@@ -337,7 +292,6 @@ class LPFormer(nn.Module):
                 non1hop_ix, non1hop_sppr, non1hop_tppr, _ = self.drop_pairwise(
                     non1hop_ix, non1hop_sppr, non1hop_tppr)
 
-        # Separate out CN and 1-Hop
         if self.mask != "cn":
             cn_ind = node_type == 2
             cn_ix = pair_ix[:, cn_ind]
@@ -375,23 +329,15 @@ class LPFormer(nn.Module):
                 adjacency for src and tgt nodes (e.g., X1 + X2)
             ppr_matrix (Tensor): PPR matrix
         """
-        # Additional terms for also choosing scores when ppr=0
-        # Multiplication removes any values for nodes not in batch
-        # Addition then adds offset to ensure we select when ppr=0
-        # All selected scores are +1 higher than their true val
         src_ppr_adj = torch.index_select(
             ppr_matrix, 0, batch[0]) * pair_diff_adj + pair_diff_adj
         tgt_ppr_adj = torch.index_select(
             ppr_matrix, 0, batch[1]) * pair_diff_adj + pair_diff_adj
 
-        # Can now convert ppr scores to dense
         ppr_ix = src_ppr_adj.coalesce().indices()
         src_ppr = src_ppr_adj.coalesce().values()
         tgt_ppr = tgt_ppr_adj.coalesce().values()
 
-        # TODO: Needed due to a bug in recent torch versions
-        # see here for more - https://github.com/pytorch/pytorch/issues/114529
-        # note that if one is 0 so is the other
         zero_vals = (src_ppr != 0)
         src_ppr = src_ppr[zero_vals]
         tgt_ppr = tgt_ppr[tgt_ppr != 0]
@@ -400,7 +346,6 @@ class LPFormer(nn.Module):
         pair_diff_adj = pair_diff_adj.coalesce().values()
         node_type = pair_diff_adj[src_ppr != 0]
 
-        # Remove additional +1 from each ppr val
         src_ppr = (src_ppr - node_type) / node_type
         tgt_ppr = (tgt_ppr - node_type) / node_type
 
@@ -467,13 +412,11 @@ class LPFormer(nn.Module):
                                            onehop_info[1], onehop_info[2],
                                            self.thresh_1hop)
 
-        # TOTAL num of 1-hop neighbors union
         num_ppr_ones = self.get_num_ppr_thresh(batch, onehop_info[0],
                                                onehop_info[1], onehop_info[2],
                                                thresh=0)
         num_neighbors = num_cns + num_ppr_ones
 
-        # Process for >1-hop is different which is why we use get_count below
         if non1hop_info is None:
             return num_cns, num_1hop, 0, num_neighbors
         else:
@@ -533,15 +476,7 @@ class LPFormer(nn.Module):
             adj (Tensor): Adjacency matrix
             ppr_matrix (Tensor): Sparse PPR matrix
         """
-        # NOTE: Use original adj (one pass in forward() removes links in batch)
-        # Done since removing them converts src/tgt nodes to >1-hop nodes.
-        # Therefore removing CN and 1-hop will also remove the batch links.
 
-        # During training we add back in the links in the batch
-        # (we're removed from adjacency before being passed to model)
-        # Done since otherwise they will be mistakenly seen as >1-Hop nodes
-        # Instead they're 1-Hop, and get ignored accordingly
-        # Ignored during eval since we know the links aren't in the adj
         adj2 = adj
         if self.training:
             n = adj.size(0)
@@ -559,20 +494,14 @@ class LPFormer(nn.Module):
         src_ppr = torch.index_select(ppr_matrix, 0, batch[0])
         tgt_ppr = torch.index_select(ppr_matrix, 0, batch[1])
 
-        # Remove CN scores
         src_ppr = src_ppr - src_ppr * (src_adj * tgt_adj)
         tgt_ppr = tgt_ppr - tgt_ppr * (src_adj * tgt_adj)
-        # Also need to remove CN entries in Adj
-        # Otherwise they leak into next computation
         src_adj = src_adj - src_adj * (src_adj * tgt_adj)
         tgt_adj = tgt_adj - tgt_adj * (src_adj * tgt_adj)
 
-        # Remove 1-Hop scores
         src_ppr = src_ppr - src_ppr * (src_adj + tgt_adj)
         tgt_ppr = tgt_ppr - tgt_ppr * (src_adj + tgt_adj)
 
-        # Make sure we include both when we convert to dense so indices align
-        # Do so by adding 1 to each based on the other
         src_ppr_add = src_ppr + torch.sign(tgt_ppr)
         tgt_ppr_add = tgt_ppr + torch.sign(src_ppr)
 
@@ -580,9 +509,6 @@ class LPFormer(nn.Module):
         src_vals = src_ppr_add.coalesce().values()
         tgt_vals = tgt_ppr_add.coalesce().values()
 
-        # Now we can remove value which is just 1
-        # Technically creates -1 scores for ppr scores that were 0
-        # Doesn't matter as they'll be filtered out by condition later
         src_vals = src_vals - 1
         tgt_vals = tgt_vals - 1
 
@@ -595,35 +521,10 @@ class LPFormer(nn.Module):
 
     def calc_sparse_ppr(self, edge_index: Tensor, num_nodes: int,
                         alpha: float = 0.15, eps: float = 5e-5) -> Tensor:
-        r"""Calculate the PPR of the graph in sparse format.
-
-        Args:
-            edge_index: The edge indices
-            num_nodes: Number of nodes
-            alpha (float, optional): The alpha value of the PageRank algorithm.
-                (default: :obj:`0.15`)
-            eps (float, optional): Threshold for stopping the PPR calculation
-                (default: :obj:`5e-5`)
-        """
-        ei, ei_w = get_ppr(edge_index.cpu(), alpha=alpha, eps=eps,
-                           num_nodes=num_nodes)
-        ppr_matrix = torch.sparse_coo_tensor(ei, ei_w, [num_nodes, num_nodes])
-
-        return ppr_matrix
+        pass
 
 
 class LPAttLayer(MessagePassing):
-    r"""Attention Layer for pairwise interaction module.
-
-    Args:
-        in_channels (int): Size of input dimension
-        out_channels (int): Size of output dimension
-        node_dim (int): Dimension of nodes being aggregated
-        num_heads (int): Number of heads to use in MHA
-        dropout (float): Dropout on attention values
-        concat (bool, optional): Whether to concat attention
-            heads. Otherwise sum (default: :obj:`True`)
-    """
     _alpha: OptTensor
 
     def __init__(
@@ -726,7 +627,6 @@ class LPAttLayer(MessagePassing):
         x_j = torch.cat((x_j, ppr_rpes), dim=-1)
         x_j = self.lin_r(x_j).view(-1, H, C)
 
-        # e=(a, b) attending to v
         e1, e2 = x_i.chunk(2, dim=-1)
         e1 = self.lin_l(e1).view(-1, H, C)
         e2 = self.lin_l(e2).view(-1, H, C)
@@ -742,7 +642,6 @@ class LPAttLayer(MessagePassing):
 
 
 class MLP(nn.Module):
-    r"""L Layer MLP."""
     def __init__(self, in_channels: int, hid_channels: int, out_channels: int,
                  num_layers: int = 2, drop: int = 0, norm: str = "layer"):
         super().__init__()

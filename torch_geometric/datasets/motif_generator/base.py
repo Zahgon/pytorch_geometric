@@ -6,7 +6,6 @@ from torch_geometric.resolver import resolver
 
 
 class MotifGenerator(ABC):
-    r"""An abstract base class for generating a motif."""
     @abstractmethod
     def __call__(self) -> Data:
         r"""To be implemented by :class:`Motif` subclasses."""

@@ -6,29 +6,6 @@ from torch_geometric.data import HeteroData, InMemoryDataset
 
 
 class HM(InMemoryDataset):
-    r"""The heterogeneous H&M dataset from the `Kaggle H&M Personalized Fashion
-    Recommendations
-    <https://www.kaggle.com/competitions/h-and-m-personalized-fashion-recommendations>`_
-    challenge.
-    The task is to develop product recommendations based on data from previous
-    transactions, as well as from customer and product meta data.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        use_all_tables_as_node_types (bool, optional): If set to :obj:`True`,
-            will use the transaction table as a distinct node type.
-            (default: :obj:`False`)
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.HeteroData` object and returns a
-            transformed version. The data object will be transformed before
-            every access. (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.HeteroData` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-    """
     url = ('https://www.kaggle.com/competitions/'
            'h-and-m-personalized-fashion-recommendations/data')
 
@@ -47,17 +24,11 @@ class HM(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> List[str]:
-        return [
-            'customers.csv.zip', 'articles.csv.zip',
-            'transactions_train.csv.zip'
-        ]
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        if self.use_all_tables_as_node_types:
-            return 'data.pt'
-        else:
-            return 'data_merged.pt'
+        pass
 
     def download(self) -> None:
         raise RuntimeError(
@@ -69,7 +40,6 @@ class HM(InMemoryDataset):
 
         data = HeteroData()
 
-        # Process customer data ###############################################
         df = pd.read_csv(self.raw_paths[0], index_col='customer_id')
         customer_map = {idx: i for i, idx in enumerate(df.index)}
 
@@ -86,14 +56,11 @@ class HM(InMemoryDataset):
 
         data['customer'].x = torch.cat(xs, dim=-1)
 
-        # Process article data ################################################
         df = pd.read_csv(self.raw_paths[1], index_col='article_id')
         article_map = {idx: i for i, idx in enumerate(df.index)}
 
         xs = []
         for name in [  # We drop a few columns here that are high cardinality.
-                # 'product_code',  # Drop.
-                # 'prod_name',  # Drop.
                 'product_type_no',
                 'product_type_name',
                 'product_group_name',
@@ -105,8 +72,6 @@ class HM(InMemoryDataset):
                 'perceived_colour_value_name',
                 'perceived_colour_master_id',
                 'perceived_colour_master_name',
-                # 'department_no',  # Drop.
-                # 'department_name',  # Drop.
                 'index_code',
                 'index_name',
                 'index_group_no',
@@ -115,14 +80,12 @@ class HM(InMemoryDataset):
                 'section_name',
                 'garment_group_no',
                 'garment_group_name',
-                # 'detail_desc',  # Drop.
         ]:
             x = pd.get_dummies(df[name]).values
             xs.append(torch.from_numpy(x).to(torch.float))
 
         data['article'].x = torch.cat(xs, dim=-1)
 
-        # Process transaction data ############################################
         df = pd.read_csv(self.raw_paths[2], parse_dates=['t_dat'])
 
         x1 = pd.get_dummies(df['sales_channel_id']).values

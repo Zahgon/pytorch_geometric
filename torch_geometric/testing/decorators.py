@@ -71,36 +71,11 @@ def noWindows(func: Callable) -> Callable:
 
 
 def noMac(func: Callable) -> Callable:
-    r"""A decorator to specify that this function should not execute on
-    macOS systems.
-    """
-    import pytest
-    return pytest.mark.skipif(
-        sys.platform == 'darwin',
-        reason="macOS system",
-    )(func)
+    pass
 
 
 def minPython(version: str) -> Callable:
-    r"""A decorator to run tests on specific :python:`Python` versions only."""
-    def decorator(func: Callable) -> Callable:
-        import pytest
-
-        major, minor = version.split('.')
-
-        skip = False
-        if sys.version_info.major < int(major):
-            skip = True
-        if (sys.version_info.major == int(major)
-                and sys.version_info.minor < int(minor)):
-            skip = True
-
-        return pytest.mark.skipif(
-            skip,
-            reason=f"Python {version} required",
-        )(func)
-
-    return decorator
+    pass
 
 
 def onlyCUDA(func: Callable) -> Callable:
@@ -122,26 +97,7 @@ def onlyXPU(func: Callable) -> Callable:
 
 
 def onlyOnline(func: Callable) -> Callable:
-    r"""A decorator to skip tests if there exists no connection to the
-    internet.
-    """
-    import http.client as httplib
-
-    import pytest
-
-    has_connection = True
-    connection = httplib.HTTPSConnection('8.8.8.8', timeout=5)
-    try:
-        connection.request('HEAD', '/')
-    except Exception:
-        has_connection = False
-    finally:
-        connection.close()
-
-    return pytest.mark.skipif(
-        not has_connection,
-        reason="No internet connection",
-    )(func)
+    pass
 
 
 def onlyGraphviz(func: Callable) -> Callable:
@@ -198,8 +154,7 @@ def withPackage(*args: str) -> Callable:
         reason = f"Packages {na_packages} not found"
 
     def decorator(func: Callable) -> Callable:
-        import pytest
-        return pytest.mark.skipif(len(na_packages) > 0, reason=reason)(func)
+        pass
 
     return decorator
 
@@ -230,7 +185,6 @@ def withDevice(func: Callable) -> Callable:
     if torch_geometric.is_xpu_available():
         devices.append(pytest.param(torch.device('xpu:0'), id='xpu'))
 
-    # Additional devices can be registered through environment variables:
     device = os.getenv('TORCH_DEVICE')
     if device:
         backend = os.getenv('TORCH_BACKEND')
@@ -253,8 +207,6 @@ def withMETIS(func: Callable) -> Callable:
 
     if with_metis:
         try:  # Test that METIS can successfully execute:
-            # TODO Using `pyg-lib` metis partitioning leads to some weird bugs
-            # in the # CI. As such, we require `torch-sparse` for now.
             rowptr = torch.tensor([0, 2, 4, 6])
             col = torch.tensor([1, 2, 0, 2, 1, 0])
             torch.ops.torch_sparse.partition(rowptr, col, None, 2, True)

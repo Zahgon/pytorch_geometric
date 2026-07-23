@@ -62,13 +62,6 @@ def GNNPreMP(dim_in: int, dim_out: int, num_layers: int) -> GeneralMultiLayer:
 @register_stage('skipsum')
 @register_stage('skipconcat')
 class GNNStackStage(torch.nn.Module):
-    r"""Stacks a number of GNN layers.
-
-    Args:
-        dim_in (int): The input dimension
-        dim_out (int): The output dimension.
-        num_layers (int): The number of layers.
-    """
     def __init__(self, dim_in, dim_out, num_layers):
         super().__init__()
         self.num_layers = num_layers
@@ -95,17 +88,10 @@ class GNNStackStage(torch.nn.Module):
 
 
 class FeatureEncoder(torch.nn.Module):
-    r"""Encodes node and edge features, given the specified input dimension and
-    the underlying configuration in :obj:`cfg`.
-
-    Args:
-        dim_in (int): The input feature dimension.
-    """
     def __init__(self, dim_in: int):
         super().__init__()
         self.dim_in = dim_in
         if cfg.dataset.node_encoder:
-            # Encode integer node features via `torch.nn.Embedding`:
             NodeEncoder = register.node_encoder_dict[
                 cfg.dataset.node_encoder_name]
             self.node_encoder = NodeEncoder(cfg.gnn.dim_inner)
@@ -119,10 +105,8 @@ class FeatureEncoder(torch.nn.Module):
                         has_bias=False,
                         cfg=cfg,
                     ))
-            # Update `dim_in` to reflect the new dimension fo the node features
             self.dim_in = cfg.gnn.dim_inner
         if cfg.dataset.edge_encoder:
-            # Encode integer edge features via `torch.nn.Embedding`:
             EdgeEncoder = register.edge_encoder_dict[
                 cfg.dataset.edge_encoder_name]
             self.edge_encoder = EdgeEncoder(cfg.gnn.dim_inner)
@@ -144,24 +128,6 @@ class FeatureEncoder(torch.nn.Module):
 
 
 class GNN(torch.nn.Module):
-    r"""A general Graph Neural Network (GNN) model.
-
-    The GNN model consists of three main components:
-
-    1. An encoder to transform input features into a fixed-size embedding
-       space.
-    2. A processing or message passing stage for information exchange between
-       nodes.
-    3. A head to produce the final output features/predictions.
-
-    The configuration of each component is determined by the underlying
-    configuration in :obj:`cfg`.
-
-    Args:
-        dim_in (int): The input feature dimension.
-        dim_out (int): The output feature dimension.
-        **kwargs (optional): Additional keyword arguments.
-    """
     def __init__(self, dim_in: int, dim_out: int, **kwargs):
         super().__init__()
         GNNStage = register.stage_dict[cfg.gnn.stage_type]

@@ -8,23 +8,6 @@ from torch_geometric.transforms import BaseTransform
 
 @functional_transform('point_pair_features')
 class PointPairFeatures(BaseTransform):
-    r"""Computes the rotation-invariant Point Pair Features
-    (functional name: :obj:`point_pair_features`).
-
-    .. math::
-        \left( \| \mathbf{d_{j,i}} \|, \angle(\mathbf{n}_i, \mathbf{d_{j,i}}),
-        \angle(\mathbf{n}_j, \mathbf{d_{j,i}}), \angle(\mathbf{n}_i,
-        \mathbf{n}_j) \right)
-
-    of linked nodes in its edge attributes, where :math:`\mathbf{d}_{j,i}`
-    denotes the difference vector between, and :math:`\mathbf{n}_i` and
-    :math:`\mathbf{n}_j` denote the surface normals of node :math:`i` and
-    :math:`j` respectively.
-
-    Args:
-        cat (bool, optional): If set to :obj:`False`, all existing edge
-            attributes will be replaced. (default: :obj:`True`)
-    """
     def __init__(self, cat: bool = True):
         self.cat = cat
 

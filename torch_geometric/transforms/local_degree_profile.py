@@ -8,18 +8,6 @@ from torch_geometric.utils import degree
 
 @functional_transform('local_degree_profile')
 class LocalDegreeProfile(BaseTransform):
-    r"""Appends the Local Degree Profile (LDP) from the `"A Simple yet
-    Effective Baseline for Non-attribute Graph Classification"
-    <https://arxiv.org/abs/1811.03508>`_ paper
-    (functional name: :obj:`local_degree_profile`).
-
-    .. math::
-        \mathbf{x}_i = \mathbf{x}_i \, \Vert \, (\deg(i), \min(DN(i)),
-        \max(DN(i)), \textrm{mean}(DN(i)), \textrm{std}(DN(i)))
-
-    to the node features, where :math:`DN(i) = \{ \deg(j) \mid j \in
-    \mathcal{N}(i) \}`.
-    """
     def __init__(self) -> None:
         from torch_geometric.nn.aggr.fused import FusedAggregation
         self.aggr = FusedAggregation(['min', 'max', 'mean', 'std'])

@@ -6,30 +6,10 @@ from torch.utils.data import DataLoader
 
 
 def to_device(inputs: Any, device: Optional[torch.device] = None) -> Any:
-    if hasattr(inputs, 'to'):
-        return inputs.to(device)
-    elif isinstance(inputs, Mapping):
-        return {key: to_device(value, device) for key, value in inputs.items()}
-    elif isinstance(inputs, tuple) and hasattr(inputs, '_fields'):
-        return type(inputs)(*(to_device(s, device) for s in zip(*inputs)))
-    elif isinstance(inputs, Sequence) and not isinstance(inputs, str):
-        return [to_device(s, device) for s in zip(*inputs)]
-
-    return inputs
+    pass
 
 
 class CachedLoader:
-    r"""A loader to cache mini-batch outputs, e.g., obtained during
-    :class:`NeighborLoader` iterations.
-
-    Args:
-        loader (torch.utils.data.DataLoader): The data loader.
-        device (torch.device, optional): The device to load the data to.
-            (default: :obj:`None`)
-        transform (callable, optional): A function/transform that takes in
-            a sampled mini-batch and returns a transformed version.
-            (default: :obj:`None`)
-    """
     def __init__(
         self,
         loader: DataLoader,

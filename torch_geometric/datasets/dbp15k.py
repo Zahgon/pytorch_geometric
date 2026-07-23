@@ -16,29 +16,6 @@ from torch_geometric.utils import sort_edge_index
 
 
 class DBP15K(InMemoryDataset):
-    r"""The DBP15K dataset from the
-    `"Cross-lingual Entity Alignment via Joint Attribute-Preserving Embedding"
-    <https://arxiv.org/abs/1708.05045>`_ paper, where Chinese, Japanese and
-    French versions of DBpedia were linked to its English version.
-    Node features are given by pre-trained and aligned monolingual word
-    embeddings from the `"Cross-lingual Knowledge Graph Alignment via Graph
-    Matching Neural Network" <https://arxiv.org/abs/1905.11605>`_ paper.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        pair (str): The pair of languages (:obj:`"en_zh"`, :obj:`"en_fr"`,
-            :obj:`"en_ja"`, :obj:`"zh_en"`, :obj:`"fr_en"`, :obj:`"ja_en"`).
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-    """
     file_id = '1ggYlYf2_kTyi7oF9g07oTNn3VDhjl7so'
 
     def __init__(
@@ -57,11 +34,11 @@ class DBP15K(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> List[str]:
-        return ['en_zh', 'en_fr', 'en_ja', 'zh_en', 'fr_en', 'ja_en']
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return f'{self.pair}.pt'
+        pass
 
     def download(self) -> None:
         path = download_google_url(self.file_id, self.root, 'data.zip')

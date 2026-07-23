@@ -9,21 +9,6 @@ from torch_geometric.transforms import BaseTransform
 
 @functional_transform('cartesian')
 class Cartesian(BaseTransform):
-    r"""Saves the relative Cartesian coordinates of linked nodes in its edge
-    attributes (functional name: :obj:`cartesian`). Each coordinate gets
-    globally normalized to a specified interval (:math:`[0, 1]` by default).
-
-    Args:
-        norm (bool, optional): If set to :obj:`False`, the output will not be
-            normalized. (default: :obj:`True`)
-        max_value (float, optional): If set and :obj:`norm=True`, normalization
-            will be performed based on this value instead of the maximum value
-            found in the data. (default: :obj:`None`)
-        cat (bool, optional): If set to :obj:`False`, all existing edge
-            attributes will be replaced. (default: :obj:`True`)
-        interval ((float, float), optional): A tuple specifying the lower and
-            upper bound for normalization. (default: :obj:`(0.0, 1.0)`)
-    """
     def __init__(
             self,
             norm: bool = True,

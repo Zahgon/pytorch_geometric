@@ -3,29 +3,6 @@ from torch import Tensor
 
 
 class MaskLabel(torch.nn.Module):
-    r"""The label embedding and masking layer from the `"Masked Label
-    Prediction: Unified Message Passing Model for Semi-Supervised
-    Classification" <https://arxiv.org/abs/2009.03509>`_ paper.
-
-    Here, node labels :obj:`y` are merged to the initial node features :obj:`x`
-    for a subset of their nodes according to :obj:`mask`.
-
-    .. note::
-
-        For an example of using :class:`MaskLabel`, see
-        `examples/unimp_arxiv.py <https://github.com/pyg-team/
-        pytorch_geometric/blob/master/examples/unimp_arxiv.py>`_.
-
-
-    Args:
-        num_classes (int): The number of classes.
-        out_channels (int): Size of each output sample.
-        method (str, optional): If set to :obj:`"add"`, label embeddings are
-            added to the input. If set to :obj:`"concat"`, label embeddings are
-            concatenated. In case :obj:`method="add"`, then :obj:`out_channels`
-            needs to be identical to the input dimensionality of node features.
-            (default: :obj:`"add"`)
-    """
     def __init__(self, num_classes: int, out_channels: int,
                  method: str = "add"):
         super().__init__()
@@ -55,17 +32,7 @@ class MaskLabel(torch.nn.Module):
 
     @staticmethod
     def ratio_mask(mask: Tensor, ratio: float):
-        r"""Modifies :obj:`mask` by setting :obj:`ratio` of :obj:`True`
-        entries to :obj:`False`. Does not operate in-place.
-
-        Args:
-            mask (torch.Tensor): The mask to re-mask.
-            ratio (float): The ratio of entries to keep.
-        """
-        n = int(mask.sum())
-        out = mask.clone()
-        out[mask] = torch.rand(n, device=mask.device) < ratio
-        return out
+        pass
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}()'

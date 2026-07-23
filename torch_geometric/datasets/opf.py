@@ -16,54 +16,6 @@ from torch_geometric.data import (
 
 
 class OPFDataset(InMemoryDataset):
-    r"""The heterogeneous OPF data from the `"Large-scale Datasets for AC
-    Optimal Power Flow with Topological Perturbations"
-    <https://arxiv.org/abs/2406.07234>`_ paper.
-
-    :class:`OPFDataset` is a large-scale dataset of solved optimal power flow
-    problems, derived from the
-    `pglib-opf <https://github.com/power-grid-lib/pglib-opf>`_ dataset.
-
-    The physical topology of the grid is represented by the :obj:`"bus"` node
-    type, and the connecting AC lines and transformers. Additionally,
-    :obj:`"generator"`, :obj:`"load"`, and :obj:`"shunt"` nodes are connected
-    to :obj:`"bus"` nodes using a dedicated edge type each, *e.g.*,
-    :obj:`"generator_link"`.
-
-    Edge direction corresponds to the properties of the line, *e.g.*,
-    :obj:`b_fr` is the line charging susceptance at the :obj:`from`
-    (source/sender) bus.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        split (str, optional): If :obj:`"train"`, loads the training dataset.
-            If :obj:`"val"`, loads the validation dataset.
-            If :obj:`"test"`, loads the test dataset. (default: :obj:`"train"`)
-        case_name (str, optional): The name of the original pglib-opf case.
-            (default: :obj:`"pglib_opf_case14_ieee"`)
-        num_groups (int, optional): The dataset is divided into 20 groups with
-            each group containing 15,000 samples.
-            For large networks, this amount of data can be overwhelming.
-            The :obj:`num_groups` parameters controls the amount of data being
-            downloaded. Allowed values are :obj:`[1, 20]`.
-            (default: :obj:`20`)
-        topological_perturbations (bool, optional): Whether to use the dataset
-            with added topological perturbations. (default: :obj:`False`)
-        transform (callable, optional): A function/transform that takes in
-            a :obj:`torch_geometric.data.HeteroData` object and returns a
-            transformed version. The data object will be transformed before
-            every access. (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes
-            in a :obj:`torch_geometric.data.HeteroData` object and returns
-            a transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        pre_filter (callable, optional): A function that takes in a
-            :obj:`torch_geometric.data.HeteroData` object and returns a boolean
-            value, indicating whether the data object should be included in the
-            final dataset. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-    """
     url = 'https://storage.googleapis.com/gridopt-dataset'
 
     def __init__(
@@ -107,20 +59,19 @@ class OPFDataset(InMemoryDataset):
 
     @property
     def raw_dir(self) -> str:
-        return osp.join(self.root, self._release, self.case_name, 'raw')
+        pass
 
     @property
     def processed_dir(self) -> str:
-        return osp.join(self.root, self._release, self.case_name,
-                        f'processed_{self.num_groups}')
+        pass
 
     @property
     def raw_file_names(self) -> List[str]:
-        return [f'{self.case_name}_{i}.tar.gz' for i in range(self.num_groups)]
+        pass
 
     @property
     def processed_file_names(self) -> List[str]:
-        return ['train.pt', 'val.pt', 'test.pt']
+        pass
 
     def download(self) -> None:
         for name in self.raw_file_names:
@@ -150,13 +101,11 @@ class OPFDataset(InMemoryDataset):
                 solution = obj['solution']
                 metadata = obj['metadata']
 
-                # Graph-level properties:
                 data = HeteroData()
                 data.x = torch.tensor(grid['context']).view(-1)
 
                 data.objective = torch.tensor(metadata['objective'])
 
-                # Nodes (only some have a target):
                 data['bus'].x = torch.tensor(grid['nodes']['bus'])
                 data['bus'].y = torch.tensor(solution['nodes']['bus'])
 
@@ -168,7 +117,6 @@ class OPFDataset(InMemoryDataset):
 
                 data['shunt'].x = torch.tensor(grid['nodes']['shunt'])
 
-                # Edges (only ac lines and transformers have features):
                 data['bus', 'ac_line', 'bus'].edge_index = (  #
                     extract_edge_index(obj, 'ac_line'))
                 data['bus', 'ac_line', 'bus'].edge_attr = torch.tensor(

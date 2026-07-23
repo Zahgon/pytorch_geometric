@@ -42,7 +42,6 @@ except ImportError:
     DataFrame = None
 RemoteGraphBackend = Tuple[FeatureStore, GraphStore]
 
-# TODO: Make everything compatible with Hetero graphs aswell
 
 
 def preprocess_triplet(triplet: TripletLike) -> TripletLike:
@@ -62,7 +61,6 @@ def retrieval_via_pcst(
     num_clusters: int = 1,
 ) -> Tuple[Data, str]:
 
-    # skip PCST for bad graphs
     booly = data.edge_attr is None or data.edge_attr.numel() == 0
     booly = booly or data.x is None or data.x.numel() == 0
     booly = booly or data.edge_index is None or data.edge_index.numel() == 0
@@ -99,7 +97,6 @@ def retrieval_via_pcst(
                 value = min((topk_e - k) / sum(indices), last_topk_e_value - c)
                 e_prizes[indices] = value
                 last_topk_e_value = value * (1 - c)
-            # reduce the cost of the edges so that at least one edge is chosen
             cost_e = min(cost_e, e_prizes.max().item() * (1 - c / 2))
         else:
             e_prizes = torch.zeros(data.num_edges)
@@ -165,7 +162,6 @@ def retrieval_via_pcst(
     src = [mapping[i] for i in edge_index[0].tolist()]
     dst = [mapping[i] for i in edge_index[1].tolist()]
 
-    # HACK Added so that the subset of nodes and edges selected can be tracked
     node_idx = np.array(data.node_idx)[selected_nodes]
     edge_idx = np.array(data.edge_idx)[selected_edges]
 
@@ -173,7 +169,6 @@ def retrieval_via_pcst(
         x=data.x[selected_nodes],
         edge_index=torch.tensor([src, dst]).to(torch.long),
         edge_attr=data.edge_attr[selected_edges],
-        # HACK: track subset of selected nodes/edges
         node_idx=node_idx,
         edge_idx=edge_idx,
     )
@@ -191,7 +186,6 @@ def batch_knn(query_enc: Tensor, embeds: Tensor,
         yield indices, query_enc[i].unsqueeze(0)
 
 
-# Adapted from LocalGraphStore
 @runtime_checkable
 class ConvertableGraphStore(Protocol):
     @classmethod
@@ -219,7 +213,6 @@ class ConvertableGraphStore(Protocol):
         ...
 
 
-# Adapted from LocalFeatureStore
 @runtime_checkable
 class ConvertableFeatureStore(Protocol):
     @classmethod
@@ -256,7 +249,6 @@ class RemoteDataType(Enum):
 
 @dataclass
 class RemoteGraphBackendLoader:
-    """Utility class to load triplets into a RAG Backend."""
     path: str
     datatype: RemoteDataType
     graph_store_type: Type[ConvertableGraphStore]
@@ -265,7 +257,6 @@ class RemoteGraphBackendLoader:
     def load(self, pid: Optional[int] = None) -> RemoteGraphBackend:
         if self.datatype == RemoteDataType.DATA:
             data_obj = torch.load(self.path, weights_only=False)
-            # is_sorted=true since assume nodes come sorted from indexer
             graph_store = self.graph_store_type.from_data(
                 edge_id=data_obj['edge_id'], edge_index=data_obj.edge_index,
                 num_nodes=data_obj.num_nodes, is_sorted=True)
@@ -296,7 +287,6 @@ def create_graph_from_triples(
     pre_transform: Optional[Callable[[TripletLike], TripletLike]] = None,
 ) -> Data:
     """Utility function that can be used to create a graph from triples."""
-    # Resolve callable methods
     embedding_method_kwargs = embedding_method_kwargs \
         if embedding_method_kwargs is not None else dict()
 
@@ -342,7 +332,6 @@ def create_remote_backend_from_graph_data(
         RemoteGraphBackendLoader: Loader to load RAG backend from disk or
             memory.
     """
-    # Will return attribute errors for missing attributes
     if not issubclass(graph_db, ConvertableGraphStore):
         _ = graph_db.from_data
         _ = graph_db.from_hetero_data
@@ -382,64 +371,22 @@ def make_pcst_filter(triples: List[Tuple[str, str,
         raise Exception("PCST requires `pip install pandas`"
                         )  # Check if pandas is installed
 
-    # Remove duplicate triples to ensure unique set
     triples = list(dict.fromkeys(triples))
 
-    # Initialize empty list to store nodes (entities) from triples
     nodes = []
 
-    # Iterate over triples to extract unique nodes (entities)
     for h, _, t in triples:
         for node in (h, t):  # Extract head and tail entities from each triple
             nodes.append(node)
 
-    # Remove duplicates and create final list of unique nodes
     nodes = list(dict.fromkeys(nodes))
 
-    # Create full list of textual nodes (entities) for filtering
     full_textual_nodes = nodes
 
     def apply_retrieval_via_pcst(
             graph: Data,  # Input graph data
             query: str,  # Search query
     ) -> Data:
-        """Applies PCST filtering for retrieval.
-
-        :param graph: Input graph data
-        :param query: Search query
-        :return: Retrieved graph/query data
-        """
-        # PCST relies on numpy and pcst_fast pypi libs, hence to("cpu")
-        with torch.no_grad():
-            q_emb = model.encode([query]).to("cpu")
-        textual_nodes = [(int(i), full_textual_nodes[i])
-                         for i in graph["node_idx"]]
-        textual_nodes = DataFrame(textual_nodes,
-                                  columns=["node_id", "node_attr"])
-        textual_edges = [triples[i] for i in graph["edge_idx"]]
-        textual_edges = DataFrame(textual_edges,
-                                  columns=["src", "edge_attr", "dst"])
-        out_graph, desc = retrieval_via_pcst(graph.to(q_emb.device), q_emb,
-                                             textual_nodes, textual_edges,
-                                             topk=topk, topk_e=topk_e,
-                                             cost_e=cost_e,
-                                             num_clusters=num_clusters)
-        out_graph["desc"] = desc
-        where_trips_start = desc.find("src,edge_attr,dst")
-        parsed_trips = []
-        for trip in desc[where_trips_start + 18:-1].split("\n"):
-            parsed_trips.append(tuple(trip.split(",")))
-
-        # Handle case where PCST returns an isolated node
-        """
-        TODO find a better solution since these failed subgraphs
-        severely hurt accuracy.
-        """
-        if str(parsed_trips) == "[('',)]" or out_graph.edge_index.numel() == 0:
-            out_graph["triples"] = []
-        else:
-            out_graph["triples"] = parsed_trips
-        out_graph["question"] = query
-        return out_graph
+        pass
 
     return apply_retrieval_via_pcst

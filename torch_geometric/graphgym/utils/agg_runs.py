@@ -59,24 +59,11 @@ def agg_dict_list(dict_list):
 
 
 def name_to_dict(run):
-    run = run.split('-', 1)[-1]
-    cols = run.split('=')
-    keys, vals = [], []
-    keys.append(cols[0])
-    for col in cols[1:-1]:
-        try:
-            val, key = col.rsplit('-', 1)
-        except Exception:
-            print(col)
-        keys.append(key)
-        vals.append(string_to_python(val))
-    vals.append(cols[-1])
-    return dict(zip(keys, vals))
+    pass
 
 
 def rm_keys(dict, keys):
-    for key in keys:
-        dict.pop(key, None)
+    pass
 
 
 def agg_runs(dir, metric_best='auto'):
@@ -137,7 +124,6 @@ def agg_runs(dir, metric_best='auto'):
             results[key][i] = agg_dict_list(results[key][i])
     for key in results_best:
         results_best[key] = agg_dict_list(results_best[key])
-    # save aggregated results
     for key, value in results.items():
         dir_out = osp.join(dir, 'agg', key)
         makedirs_rm_exist(dir_out)
@@ -160,92 +146,4 @@ def agg_runs(dir, metric_best='auto'):
 
 
 def agg_batch(dir, metric_best='auto'):
-    r"""Aggregate across results from multiple experiments via grid search.
-
-    Args:
-        dir (str): Directory of the results, containing multiple experiments
-        metric_best (str, optional): The metric for selecting the best
-        validation performance. Options: auto, accuracy, auc.
-
-    """
-    import pandas as pd
-    results = {'train': [], 'val': [], 'test': []}
-    for run in os.listdir(dir):
-        if run != 'agg':
-            dict_name = name_to_dict(run)
-            dir_run = osp.join(dir, run, 'agg')
-            if osp.isdir(dir_run):
-                for split in os.listdir(dir_run):
-                    dir_split = osp.join(dir_run, split)
-                    fname_stats = osp.join(dir_split, 'best.json')
-                    dict_stats = json_to_dict_list(fname_stats)[
-                        -1]  # get best val epoch
-                    rm_keys(dict_stats,
-                            ['lr', 'lr_std', 'eta', 'eta_std', 'params_std'])
-                    results[split].append({**dict_name, **dict_stats})
-    dir_out = osp.join(dir, 'agg')
-    makedirs_rm_exist(dir_out)
-    for key in results:
-        if len(results[key]) > 0:
-            results[key] = pd.DataFrame(results[key])
-            results[key] = results[key].sort_values(
-                list(dict_name.keys()), ascending=[True] * len(dict_name))
-            fname = osp.join(dir_out, f'{key}_best.csv')
-            results[key].to_csv(fname, index=False)
-
-    results = {'train': [], 'val': [], 'test': []}
-    for run in os.listdir(dir):
-        if run != 'agg':
-            dict_name = name_to_dict(run)
-            dir_run = osp.join(dir, run, 'agg')
-            if osp.isdir(dir_run):
-                for split in os.listdir(dir_run):
-                    dir_split = osp.join(dir_run, split)
-                    fname_stats = osp.join(dir_split, 'stats.json')
-                    dict_stats = json_to_dict_list(fname_stats)[
-                        -1]  # get last epoch
-                    rm_keys(dict_stats,
-                            ['lr', 'lr_std', 'eta', 'eta_std', 'params_std'])
-                    results[split].append({**dict_name, **dict_stats})
-    dir_out = osp.join(dir, 'agg')
-    for key in results:
-        if len(results[key]) > 0:
-            results[key] = pd.DataFrame(results[key])
-            results[key] = results[key].sort_values(
-                list(dict_name.keys()), ascending=[True] * len(dict_name))
-            fname = osp.join(dir_out, f'{key}.csv')
-            results[key].to_csv(fname, index=False)
-
-    results = {'train': [], 'val': [], 'test': []}
-    for run in os.listdir(dir):
-        if run != 'agg':
-            dict_name = name_to_dict(run)
-            dir_run = osp.join(dir, run, 'agg')
-            if osp.isdir(dir_run):
-                for split in os.listdir(dir_run):
-                    dir_split = osp.join(dir_run, split)
-                    fname_stats = osp.join(dir_split, 'stats.json')
-                    dict_stats = json_to_dict_list(
-                        fname_stats)  # get best epoch
-                    if metric_best == 'auto':
-                        metric = 'auc' if 'auc' in dict_stats[0] \
-                            else 'accuracy'
-                    else:
-                        metric = metric_best
-                    performance_np = np.array(  # noqa
-                        [stats[metric] for stats in dict_stats])
-                    dict_stats = dict_stats[eval("performance_np.{}()".format(
-                        cfg.metric_agg))]
-                    rm_keys(dict_stats,
-                            ['lr', 'lr_std', 'eta', 'eta_std', 'params_std'])
-                    results[split].append({**dict_name, **dict_stats})
-    dir_out = osp.join(dir, 'agg')
-    for key in results:
-        if len(results[key]) > 0:
-            results[key] = pd.DataFrame(results[key])
-            results[key] = results[key].sort_values(
-                list(dict_name.keys()), ascending=[True] * len(dict_name))
-            fname = osp.join(dir_out, f'{key}_bestepoch.csv')
-            results[key].to_csv(fname, index=False)
-
-    print(f'Results aggregated across models saved in {dir_out}')
+    pass

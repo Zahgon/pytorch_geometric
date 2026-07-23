@@ -18,47 +18,6 @@ from torch_geometric.utils import to_dense_batch
 
 
 class GPSConv(torch.nn.Module):
-    r"""The general, powerful, scalable (GPS) graph transformer layer from the
-    `"Recipe for a General, Powerful, Scalable Graph Transformer"
-    <https://arxiv.org/abs/2205.12454>`_ paper.
-
-    The GPS layer is based on a 3-part recipe:
-
-    1. Inclusion of positional (PE) and structural encodings (SE) to the input
-       features (done in a pre-processing step via
-       :class:`torch_geometric.transforms`).
-    2. A local message passing layer (MPNN) that operates on the input graph.
-    3. A global attention layer that operates on the entire graph.
-
-    .. note::
-
-        For an example of using :class:`GPSConv`, see
-        `examples/graph_gps.py
-        <https://github.com/pyg-team/pytorch_geometric/blob/master/examples/
-        graph_gps.py>`_.
-
-    Args:
-        channels (int): Size of each input sample.
-        conv (MessagePassing, optional): The local message passing layer.
-        heads (int, optional): Number of multi-head-attentions.
-            (default: :obj:`1`)
-        dropout (float, optional): Dropout probability of intermediate
-            embeddings. (default: :obj:`0.`)
-        act (str or Callable, optional): The non-linear activation function to
-            use. (default: :obj:`"relu"`)
-        act_kwargs (Dict[str, Any], optional): Arguments passed to the
-            respective activation function defined by :obj:`act`.
-            (default: :obj:`None`)
-        norm (str or Callable, optional): The normalization function to
-            use. (default: :obj:`"batch_norm"`)
-        norm_kwargs (Dict[str, Any], optional): Arguments passed to the
-            respective normalization function defined by :obj:`norm`.
-            (default: :obj:`None`)
-        attn_type (str): Global attention type, :obj:`multihead` or
-            :obj:`performer`. (default: :obj:`multihead`)
-        attn_kwargs (Dict[str, Any], optional): Arguments passed to the
-            attention layer. (default: :obj:`None`)
-    """
     def __init__(
         self,
         channels: int,
@@ -95,7 +54,6 @@ class GPSConv(torch.nn.Module):
                 **attn_kwargs,
             )
         else:
-            # TODO: Support BigBird
             raise ValueError(f'{attn_type} is not supported')
 
         self.mlp = Sequential(
@@ -149,7 +107,6 @@ class GPSConv(torch.nn.Module):
                     h = self.norm1(h)
             hs.append(h)
 
-        # Global attention transformer-style model.
         h, mask = to_dense_batch(x, batch)
 
         if isinstance(self.attn, torch.nn.MultiheadAttention):

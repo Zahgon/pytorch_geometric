@@ -19,64 +19,9 @@ TAGS = ['graph-machine-learning']
 
 
 class PyGModelHubMixin(ModelHubMixin):
-    r"""A mixin for saving and loading models to the
-    `Huggingface Model Hub <https://huggingface.co/docs/hub/index>`_.
-
-    .. code-block:: python
-
-       from torch_geometric.datasets import Planetoid
-       from torch_geometric.nn import Node2Vec
-       from torch_geometric.nn.model_hub import PyGModelHubMixin
-
-       # Define your class with the mixin:
-       class N2V(Node2Vec, PyGModelHubMixin):
-           def __init__(self,model_name, dataset_name, model_kwargs):
-               Node2Vec.__init__(self,**model_kwargs)
-               PyGModelHubMixin.__init__(self, model_name,
-                   dataset_name, model_kwargs)
-
-       # Instantiate your model:
-       n2v = N2V(model_name='node2vec',
-           dataset_name='Cora', model_kwargs=dict(
-           edge_index=data.edge_index, embedding_dim=128,
-           walk_length=20, context_size=10, walks_per_node=10,
-           num_negative_samples=1, p=1, q=1, sparse=True))
-
-       # Train the model:
-       ...
-
-       # Push to the HuggingFace hub:
-       repo_id = ...  # your repo id
-       n2v.save_pretrained(
-           local_file_path,
-           push_to_hub=True,
-           repo_id=repo_id,
-        )
-
-       # Load the model for inference:
-       # The required arguments are the repo id/local folder, and any model
-       # initialisation arguments that are not native python types (e.g
-       # Node2Vec requires the edge_index argument which is not stored in the
-       # model hub).
-       model = N2V.from_pretrained(
-           repo_id,
-           model_name='node2vec',
-           dataset_name='Cora',
-           edge_index=data.edge_index,
-       )
-
-    Args:
-        model_name (str): Name of the model.
-        dataset_name (str): Name of the dataset the model was trained against.
-        model_kwargs (Dict[str, Any]): The arguments to initialise the model.
-    """
     def __init__(self, model_name: str, dataset_name: str, model_kwargs: Dict):
         ModelHubMixin.__init__(self)
 
-        # Huggingface Hub API only accepts saving the config as a dict.
-        # If the model is instantiated with non-native python types
-        # such as torch Tensors (node2vec being an example), we have to remove
-        # these as they are not json serialisable
         self.model_config = {
             k: v
             for k, v in model_kwargs.items() if type(v) in [str, int, float]
@@ -85,57 +30,15 @@ class PyGModelHubMixin(ModelHubMixin):
         self.dataset_name = dataset_name
 
     def construct_model_card(self, model_name: str, dataset_name: str) -> Any:
-        from huggingface_hub import ModelCard, ModelCardData
-        card_data = ModelCardData(
-            language='en',
-            license='mit',
-            library_name=MODEL_HUB_ORGANIZATION,
-            tags=TAGS,
-            datasets=dataset_name,
-            model_name=model_name,
-        )
-        card = ModelCard.from_template(card_data)
-        return card
+        pass
 
     def _save_pretrained(self, save_directory: Union[Path, str]):
-        path = osp.join(save_directory, MODEL_WEIGHTS_NAME)
-        model_to_save = self.module if hasattr(self, 'module') else self
-        torch.save(model_to_save.state_dict(), path)
+        pass
 
     def save_pretrained(self, save_directory: Union[str, Path],
                         push_to_hub: bool = False,
                         repo_id: Optional[str] = None, **kwargs):
-        r"""Save a trained model to a local directory or to the HuggingFace
-        model hub.
-
-        Args:
-            save_directory (str): The directory where weights are saved.
-            push_to_hub (bool, optional): If :obj:`True`, push the model to the
-                HuggingFace model hub. (default: :obj:`False`)
-            repo_id (str, optional): The repository name in the hub.
-                If not provided will default to the name of
-                :obj:`save_directory` in your namespace. (default: :obj:`None`)
-            **kwargs: Additional keyword arguments passed to
-                :meth:`huggingface_hub.ModelHubMixin.save_pretrained`.
-        """
-        config = self.model_config
-        # due to way huggingface hub handles the loading/saving of models,
-        # the model config can end up in one of the items in the kwargs
-        # this has to be removed to prevent a duplication of arguments to
-        # ModelHubMixin.save_pretrained
-        kwargs.pop('config', None)
-
-        super().save_pretrained(
-            save_directory=save_directory,
-            config=config,
-            push_to_hub=push_to_hub,
-            repo_id=repo_id,
-            **kwargs,
-        )
-        model_card = self.construct_model_card(self.model_name,
-                                               self.dataset_name)
-        if push_to_hub:
-            model_card.push_to_hub(repo_id)
+        pass
 
     @classmethod
     def _from_pretrained(
@@ -154,32 +57,7 @@ class PyGModelHubMixin(ModelHubMixin):
         strict=False,
         **model_kwargs,
     ):
-        map_location = torch.device(map_location)
-
-        if osp.isdir(model_id):
-            model_file = osp.join(model_id, MODEL_WEIGHTS_NAME)
-        else:
-            model_file = hf_hub_download(
-                repo_id=model_id,
-                filename=MODEL_WEIGHTS_NAME,
-                revision=revision,
-                cache_dir=cache_dir,
-                force_download=force_download,
-                token=token,
-                local_files_only=local_files_only,
-            )
-
-        config = model_kwargs.pop('config', None)
-        if config is not None:
-            model_kwargs = {**model_kwargs, **config}
-
-        model = cls(dataset_name, model_name, model_kwargs)
-
-        state_dict = fs.torch_load(model_file, map_location=map_location)
-        model.load_state_dict(state_dict, strict=strict)
-        model.eval()
-
-        return model
+        pass
 
     @classmethod
     def from_pretrained(

@@ -9,40 +9,6 @@ from torch_geometric.data import Data, InMemoryDataset
 
 
 class MedShapeNet(InMemoryDataset):
-    r"""The MedShapeNet datasets from the `"MedShapeNet -- A Large-Scale
-    Dataset of 3D Medical Shapes for Computer Vision"
-    <https://arxiv.org/abs/2308.16139>`_ paper,
-    containing 8 different type of structures (classes).
-
-    .. note::
-
-        Data objects hold mesh faces instead of edge indices.
-        To convert the mesh to a graph, use the
-        :obj:`torch_geometric.transforms.FaceToEdge` as :obj:`pre_transform`.
-        To convert the mesh to a point cloud, use the
-        :obj:`torch_geometric.transforms.SamplePoints` as :obj:`transform` to
-        sample a fixed number of points on the mesh faces according to their
-        face area.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        size (int): Number of invividual 3D structures to download per
-            type (classes).
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        pre_filter (callable, optional): A function that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a boolean
-            value, indicating whether the data object should be included in the
-            final dataset. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-    """
     def __init__(
         self,
         root: str,
@@ -61,21 +27,15 @@ class MedShapeNet(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> List[str]:
-        return [
-            '3DTeethSeg', 'CoronaryArteries', 'FLARE', 'KITS', 'PULMONARY',
-            'SurgicalInstruments', 'ThoracicAorta_Saitta', 'ToothFairy'
-        ]
+        pass
 
     @property
     def processed_file_names(self) -> List[str]:
-        return ['dataset.pt']
+        pass
 
     @property
     def raw_paths(self) -> List[str]:
-        r"""The absolute filepaths that must be present in order to skip
-        downloading.
-        """
-        return [osp.join(self.raw_dir, f) for f in self.raw_file_names]
+        pass
 
     def process(self) -> None:
         import urllib3

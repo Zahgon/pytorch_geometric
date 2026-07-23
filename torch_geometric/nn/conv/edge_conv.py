@@ -11,36 +11,6 @@ from torch_geometric.typing import Adj, OptTensor, PairOptTensor, PairTensor
 
 
 class EdgeConv(MessagePassing):
-    r"""The edge convolutional operator from the `"Dynamic Graph CNN for
-    Learning on Point Clouds" <https://arxiv.org/abs/1801.07829>`_ paper.
-
-    .. math::
-        \mathbf{x}^{\prime}_i = \sum_{j \in \mathcal{N}(i)}
-        h_{\mathbf{\Theta}}(\mathbf{x}_i \, \Vert \,
-        \mathbf{x}_j - \mathbf{x}_i),
-
-    where :math:`h_{\mathbf{\Theta}}` denotes a neural network, *.i.e.* a MLP.
-
-    Args:
-        nn (torch.nn.Module): A neural network :math:`h_{\mathbf{\Theta}}` that
-            maps pair-wise concatenated node features :obj:`x` of shape
-            :obj:`[-1, 2 * in_channels]` to shape :obj:`[-1, out_channels]`,
-            *e.g.*, defined by :class:`torch.nn.Sequential`.
-        aggr (str, optional): The aggregation scheme to use
-            (:obj:`"add"`, :obj:`"mean"`, :obj:`"max"`).
-            (default: :obj:`"max"`)
-        **kwargs (optional): Additional arguments of
-            :class:`torch_geometric.nn.conv.MessagePassing`.
-
-    Shapes:
-        - **input:**
-          node features :math:`(|\mathcal{V}|, F_{in})` or
-          :math:`((|\mathcal{V}|, F_{in}), (|\mathcal{V}|, F_{in}))`
-          if bipartite,
-          edge indices :math:`(2, |\mathcal{E}|)`
-        - **output:** node features :math:`(|\mathcal{V}|, F_{out})` or
-          :math:`(|\mathcal{V}_t|, F_{out})` if bipartite
-    """
     def __init__(self, nn: Callable, aggr: str = 'max', **kwargs):
         super().__init__(aggr=aggr, **kwargs)
         self.nn = nn
@@ -54,7 +24,6 @@ class EdgeConv(MessagePassing):
         if isinstance(x, Tensor):
             x = (x, x)
 
-        # propagate_type: (x: PairTensor)
         return self.propagate(edge_index, x=x)
 
     def message(self, x_i: Tensor, x_j: Tensor) -> Tensor:
@@ -65,37 +34,6 @@ class EdgeConv(MessagePassing):
 
 
 class DynamicEdgeConv(MessagePassing):
-    r"""The dynamic edge convolutional operator from the `"Dynamic Graph CNN
-    for Learning on Point Clouds" <https://arxiv.org/abs/1801.07829>`_ paper
-    (see :class:`torch_geometric.nn.conv.EdgeConv`), where the graph is
-    dynamically constructed using nearest neighbors in the feature space.
-
-    Args:
-        nn (torch.nn.Module): A neural network :math:`h_{\mathbf{\Theta}}` that
-            maps pair-wise concatenated node features :obj:`x` of shape
-            `:obj:`[-1, 2 * in_channels]` to shape :obj:`[-1, out_channels]`,
-            *e.g.* defined by :class:`torch.nn.Sequential`.
-        k (int): Number of nearest neighbors.
-        aggr (str, optional): The aggregation scheme to use
-            (:obj:`"add"`, :obj:`"mean"`, :obj:`"max"`).
-            (default: :obj:`"max"`)
-        num_workers (int): Number of workers to use for k-NN computation.
-            Has no effect in case :obj:`batch` is not :obj:`None`, or the input
-            lies on the GPU. (default: :obj:`1`)
-        **kwargs (optional): Additional arguments of
-            :class:`torch_geometric.nn.conv.MessagePassing`.
-
-    Shapes:
-        - **input:**
-          node features :math:`(|\mathcal{V}|, F_{in})` or
-          :math:`((|\mathcal{V}|, F_{in}), (|\mathcal{V}|, F_{in}))`
-          if bipartite,
-          batch vector :math:`(|\mathcal{V}|)` or
-          :math:`((|\mathcal{V}|), (|\mathcal{V}|))`
-          if bipartite *(optional)*
-        - **output:** node features :math:`(|\mathcal{V}|, F_{out})` or
-          :math:`(|\mathcal{V}_t|, F_{out})` if bipartite
-    """
     def __init__(self, nn: Callable, k: int, aggr: str = 'max',
                  num_workers: int = 1, **kwargs):
         super().__init__(aggr=aggr, flow='source_to_target', **kwargs)
@@ -135,7 +73,6 @@ class DynamicEdgeConv(MessagePassing):
         edge_index = torch.ops.pyg.knn(x[0], x[1], ptr_l, ptr_r, self.k, False,
                                        1).flip([0])
 
-        # propagate_type: (x: PairTensor)
         return self.propagate(edge_index, x=x)
 
     def message(self, x_i: Tensor, x_j: Tensor) -> Tensor:

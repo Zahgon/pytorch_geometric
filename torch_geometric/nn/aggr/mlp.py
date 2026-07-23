@@ -6,32 +6,6 @@ from torch_geometric.nn.aggr import Aggregation
 
 
 class MLPAggregation(Aggregation):
-    r"""Performs MLP aggregation in which the elements to aggregate are
-    flattened into a single vectorial representation, and are then processed by
-    a Multi-Layer Perceptron (MLP), as described in the `"Graph Neural Networks
-    with Adaptive Readouts" <https://arxiv.org/abs/2211.04952>`_ paper.
-
-    .. note::
-
-        :class:`MLPAggregation` requires sorted indices :obj:`index` as input.
-        Specifically, if you use this aggregation as part of
-        :class:`~torch_geometric.nn.conv.MessagePassing`, ensure that
-        :obj:`edge_index` is sorted by destination nodes, either by manually
-        sorting edge indices via :meth:`~torch_geometric.utils.sort_edge_index`
-        or by calling :meth:`torch_geometric.data.Data.sort`.
-
-    .. warning::
-
-        :class:`MLPAggregation` is not a permutation-invariant operator.
-
-    Args:
-        in_channels (int): Size of each input sample.
-        out_channels (int): Size of each output sample.
-        max_num_elements (int): The maximum number of elements to aggregate per
-            group.
-        **kwargs (optional): Additional arguments of
-            :class:`torch_geometric.nn.models.MLP`.
-    """
     def __init__(
         self,
         in_channels: int,

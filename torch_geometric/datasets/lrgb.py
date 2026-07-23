@@ -16,88 +16,6 @@ from torch_geometric.io import fs
 
 
 class LRGBDataset(InMemoryDataset):
-    r"""The `"Long Range Graph Benchmark (LRGB)"
-    <https://arxiv.org/abs/2206.08164>`_
-    datasets which is a collection of 5 graph learning datasets with tasks
-    that are based on long-range dependencies in graphs. See the original
-    `source code <https://github.com/vijaydwivedi75/lrgb>`_ for more details
-    on the individual datasets.
-
-    +------------------------+-------------------+----------------------+
-    | Dataset                | Domain            | Task                 |
-    +========================+===================+======================+
-    | :obj:`PascalVOC-SP`    | Computer Vision   | Node Classification  |
-    +------------------------+-------------------+----------------------+
-    | :obj:`COCO-SP`         | Computer Vision   | Node Classification  |
-    +------------------------+-------------------+----------------------+
-    | :obj:`PCQM-Contact`    | Quantum Chemistry | Link Prediction      |
-    +------------------------+-------------------+----------------------+
-    | :obj:`Peptides-func`   | Chemistry         | Graph Classification |
-    +------------------------+-------------------+----------------------+
-    | :obj:`Peptides-struct` | Chemistry         | Graph Regression     |
-    +------------------------+-------------------+----------------------+
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        name (str): The name of the dataset (one of :obj:`"PascalVOC-SP"`,
-            :obj:`"COCO-SP"`, :obj:`"PCQM-Contact"`, :obj:`"Peptides-func"`,
-            :obj:`"Peptides-struct"`)
-        split (str, optional): If :obj:`"train"`, loads the training dataset.
-            If :obj:`"val"`, loads the validation dataset.
-            If :obj:`"test"`, loads the test dataset.
-            (default: :obj:`"train"`)
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        pre_filter (callable, optional): A function that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a boolean
-            value, indicating whether the data object should be included in the
-            final dataset. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-
-    **STATS:**
-
-    .. list-table::
-        :widths: 15 10 10 10 10
-        :header-rows: 1
-
-        * - Name
-          - #graphs
-          - #nodes
-          - #edges
-          - #classes
-        * - PascalVOC-SP
-          - 11,355
-          - ~479.40
-          - ~2,710.48
-          - 21
-        * - COCO-SP
-          - 123,286
-          - ~476.88
-          - ~2,693.67
-          - 81
-        * - PCQM-Contact
-          - 529,434
-          - ~30.14
-          - ~61.09
-          - 1
-        * - Peptides-func
-          - 15,535
-          - ~150.94
-          - ~307.30
-          - 10
-        * - Peptides-struct
-          - 15,535
-          - ~150.94
-          - ~307.30
-          - 11
-    """
     names = [
         'pascalvoc-sp', 'coco-sp', 'pcqm-contact', 'peptides-func',
         'peptides-struct'
@@ -145,22 +63,19 @@ class LRGBDataset(InMemoryDataset):
 
     @property
     def raw_dir(self) -> str:
-        return osp.join(self.root, self.name, 'raw')
+        pass
 
     @property
     def processed_dir(self) -> str:
-        return osp.join(self.root, self.name, 'processed')
+        pass
 
     @property
     def raw_file_names(self) -> List[str]:
-        if self.name.split('-')[1] == 'sp':
-            return ['train.pickle', 'val.pickle', 'test.pickle']
-        else:
-            return ['train.pt', 'val.pt', 'test.pt']
+        pass
 
     @property
     def processed_file_names(self) -> List[str]:
-        return ['train.pt', 'val.pt', 'test.pt']
+        pass
 
     def download(self) -> None:
         fs.rm(self.raw_dir)
@@ -172,22 +87,17 @@ class LRGBDataset(InMemoryDataset):
 
     def process(self) -> None:
         if self.name == 'pcqm-contact':
-            # PCQM-Contact
             self.process_pcqm_contact()
         else:
             if self.name == 'coco-sp':
-                # Label remapping for coco-sp.
-                # See self.label_remap_coco() func
                 label_map = self.label_remap_coco()
 
             for split in ['train', 'val', 'test']:
                 if self.name.split('-')[1] == 'sp':
-                    # PascalVOC-SP and COCO-SP
                     with open(osp.join(self.raw_dir, f'{split}.pickle'),
                               'rb') as f:
                         graphs = pickle.load(f)
                 elif self.name.split('-')[0] == 'peptides':
-                    # Peptides-func and Peptides-struct
                     graphs = fs.torch_load(
                         osp.join(self.raw_dir, f'{split}.pt'))
 
@@ -241,8 +151,6 @@ class LRGBDataset(InMemoryDataset):
                 self.save(data_list, path)
 
     def label_remap_coco(self) -> Dict[int, int]:
-        # Util function for name 'COCO-SP'
-        # to remap the labels as the original label idxs are not contiguous
         original_label_idx = [
             0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 19,
             20, 21, 22, 23, 24, 25, 27, 28, 31, 32, 33, 34, 35, 36, 37, 38, 39,

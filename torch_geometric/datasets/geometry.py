@@ -15,55 +15,6 @@ from torch_geometric.io import read_off
 
 
 class GeometricShapes(InMemoryDataset):
-    r"""Synthetic dataset of various geometric shapes like cubes, spheres or
-    pyramids.
-
-    .. note::
-
-        Data objects hold mesh faces instead of edge indices.
-        To convert the mesh to a graph, use the
-        :obj:`torch_geometric.transforms.FaceToEdge` as :obj:`pre_transform`.
-        To convert the mesh to a point cloud, use the
-        :obj:`torch_geometric.transforms.SamplePoints` as :obj:`transform` to
-        sample a fixed number of points on the mesh faces according to their
-        face area.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        train (bool, optional): If :obj:`True`, loads the training dataset,
-            otherwise the test dataset. (default: :obj:`True`)
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        pre_filter (callable, optional): A function that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a boolean
-            value, indicating whether the data object should be included in the
-            final dataset. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-
-    **STATS:**
-
-    .. list-table::
-        :widths: 10 10 10 10 10
-        :header-rows: 1
-
-        * - #graphs
-          - #nodes
-          - #edges
-          - #features
-          - #classes
-        * - 80
-          - ~148.8
-          - ~859.5
-          - 3
-          - 40
-    """
 
     url = 'https://github.com/Yannick-S/geometric_shapes/raw/master/raw.zip'
 
@@ -83,11 +34,11 @@ class GeometricShapes(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> str:
-        return '2d_circle'
+        pass
 
     @property
     def processed_file_names(self) -> List[str]:
-        return ['training.pt', 'test.pt']
+        pass
 
     def download(self) -> None:
         path = download_url(self.url, self.root)

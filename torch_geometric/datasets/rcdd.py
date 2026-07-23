@@ -14,27 +14,6 @@ from torch_geometric.utils import index_to_mask
 
 
 class RCDD(InMemoryDataset):
-    r"""The risk commodity detection dataset (RCDD) from the
-    `"Datasets and Interfaces for Benchmarking Heterogeneous Graph
-    Neural Networks" <https://dl.acm.org/doi/10.1145/3583780.3615117>`_ paper.
-    RCDD is an industrial-scale heterogeneous graph dataset based on a
-    real risk detection scenario from Alibaba's e-commerce platform.
-    It consists of 13,806,619 nodes and 157,814,864 edges across 7 node types
-    and 7 edge types, respectively.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.HeteroData` object and returns a
-            transformed version. The data object will be transformed before
-            every access. (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.HeteroData` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-    """
     url = ('https://s3.cn-north-1.amazonaws.com.cn/dgl-data/dataset/'
            'openhgnn/AliRCD_ICDM.zip')
 
@@ -51,16 +30,11 @@ class RCDD(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> List[str]:
-        return [
-            'AliRCD_ICDM_nodes.csv',
-            'AliRCD_ICDM_edges.csv',
-            'AliRCD_ICDM_train_labels.csv',
-            'AliRCD_ICDM_test_labels.csv',
-        ]
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def download(self) -> None:
         path = download_url(self.url, self.raw_dir)
@@ -69,7 +43,7 @@ class RCDD(InMemoryDataset):
 
     @property
     def num_classes(self) -> int:
-        return 2
+        pass
 
     def process(self) -> None:
         import pandas as pd
@@ -81,7 +55,6 @@ class RCDD(InMemoryDataset):
             header=None,
             names=['node_id', 'node_type', 'node_feat'],
         )
-        # Map global node IDs to local ones for each node type:
         mapping = torch.empty(len(node_df), dtype=torch.long)
         for node_type in node_df['node_type'].unique():
             mask = node_df['node_type'] == node_type

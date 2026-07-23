@@ -7,40 +7,6 @@ from torch_geometric.data import Data, InMemoryDataset, download_url
 
 
 class RelLinkPredDataset(InMemoryDataset):
-    r"""The relational link prediction datasets from the
-    `"Modeling Relational Data with Graph Convolutional Networks"
-    <https://arxiv.org/abs/1703.06103>`_ paper.
-    Training and test splits are given by sets of triplets.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        name (str): The name of the dataset (:obj:`"FB15k-237"`).
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-
-    **STATS:**
-
-    .. list-table::
-        :widths: 10 10 10 10
-        :header-rows: 1
-
-        * - #nodes
-          - #edges
-          - #features
-          - #classes
-        * - 14,541
-          - 544,230
-          - 0
-          - 0
-    """
 
     urls = {
         'FB15k-237': ('https://raw.githubusercontent.com/MichSchli/'
@@ -63,26 +29,23 @@ class RelLinkPredDataset(InMemoryDataset):
 
     @property
     def num_relations(self) -> int:
-        return int(self._data.edge_type.max()) + 1  # type: ignore
+        pass
 
     @property
     def raw_dir(self) -> str:
-        return osp.join(self.root, self.name, 'raw')
+        pass
 
     @property
     def processed_dir(self) -> str:
-        return osp.join(self.root, self.name, 'processed')
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     @property
     def raw_file_names(self) -> List[str]:
-        return [
-            'entities.dict', 'relations.dict', 'test.txt', 'train.txt',
-            'valid.txt'
-        ]
+        pass
 
     def download(self) -> None:
         for file_name in self.raw_file_names:
@@ -107,7 +70,6 @@ class RelLinkPredDataset(InMemoryDataset):
                 kwargs[f'{split}_edge_index'] = torch.tensor([src, dst])
                 kwargs[f'{split}_edge_type'] = torch.tensor(rel)
 
-        # For message passing, we add reverse edges and types to the graph:
         row, col = kwargs['train_edge_index']
         edge_type = kwargs['train_edge_type']
         row, col = torch.cat([row, col], dim=0), torch.cat([col, row], dim=0)

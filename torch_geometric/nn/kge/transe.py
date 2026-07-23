@@ -8,39 +8,6 @@ from torch_geometric.nn.kge import KGEModel
 
 
 class TransE(KGEModel):
-    r"""The TransE model from the `"Translating Embeddings for Modeling
-    Multi-Relational Data" <https://proceedings.neurips.cc/paper/2013/file/
-    1cecc7a77928ca8133fa24680a88d2f9-Paper.pdf>`_ paper.
-
-    :class:`TransE` models relations as a translation from head to tail
-    entities such that
-
-    .. math::
-        \mathbf{e}_h + \mathbf{e}_r \approx \mathbf{e}_t,
-
-    resulting in the scoring function:
-
-    .. math::
-        d(h, r, t) = - {\| \mathbf{e}_h + \mathbf{e}_r - \mathbf{e}_t \|}_p
-
-    .. note::
-
-        For an example of using the :class:`TransE` model, see
-        `examples/kge_fb15k_237.py
-        <https://github.com/pyg-team/pytorch_geometric/blob/master/examples/
-        kge_fb15k_237.py>`_.
-
-    Args:
-        num_nodes (int): The number of nodes/entities in the graph.
-        num_relations (int): The number of relations in the graph.
-        hidden_channels (int): The hidden embedding size.
-        margin (int, optional): The margin of the ranking loss.
-            (default: :obj:`1.0`)
-        p_norm (int, optional): The order embedding and distance normalization.
-            (default: :obj:`1.0`)
-        sparse (bool, optional): If set to :obj:`True`, gradients w.r.t. to the
-            embedding matrices will be sparse. (default: :obj:`False`)
-    """
     def __init__(
         self,
         num_nodes: int,
@@ -78,7 +45,6 @@ class TransE(KGEModel):
         head = F.normalize(head, p=self.p_norm, dim=-1)
         tail = F.normalize(tail, p=self.p_norm, dim=-1)
 
-        # Calculate *negative* TransE norm:
         return -((head + rel) - tail).norm(p=self.p_norm, dim=-1)
 
     def loss(

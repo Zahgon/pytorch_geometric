@@ -24,33 +24,6 @@ def pad_or_truncate(embeddings: Tensor, max_seq_len: int,
 
 
 class MoleculeGPT(torch.nn.Module):
-    r"""The MoleculeGPT model from the `"MoleculeGPT: Instruction
-    Following Large Language Models for Molecular Property Prediction"
-    <https://ai4d3.github.io/papers/34.pdf>`_ paper.
-
-    Args:
-        llm (LLM): The LLM to use.
-        graph_encoder (torch.nn.Module): Encode 2D molecule graph.
-        smiles_encoder (torch.nn.Module): Encode 1D SMILES.
-        mlp_out_channels (int, optional): The size of each embedding
-            after qformer encoding. (default: :obj:`32`)
-        max_tokens (int, optional): Max output tokens of 1D/2D encoder.
-            (default: :obj:`20`)
-
-    .. warning::
-        This module has been tested with the following HuggingFace models
-
-        * :obj:`llm_to_use="lmsys/vicuna-7b-v1.5"`
-
-        and may not work with other models. See other models at `HuggingFace
-        Models <https://huggingface.co/models>`_ and let us know if you
-        encounter any issues.
-
-    .. note::
-        For an example of using :class:`MoleculeGPT`, see
-        `examples/llm/molecule_gpt.py <https://github.com/pyg-team/
-        pytorch_geometric/blob/master/examples/llm/molecule_gpt.py>`_.
-    """
     def __init__(
         self,
         llm: LLM,
@@ -85,7 +58,6 @@ class MoleculeGPT(torch.nn.Module):
         self.word_embedding = self.llm.word_embedding
         self.llm_generator = self.llm.llm
 
-        # LLMs
         in_dim = 2 * mlp_out_channels * max_tokens
         out_dim = self.llm.llm.model.embed_tokens.embedding_dim
         self.projector = torch.nn.Sequential(
@@ -103,7 +75,6 @@ class MoleculeGPT(torch.nn.Module):
         smiles: List[str],
     ) -> Tensor:
         batch_size = len(smiles)
-        # 2D Graph Branch: [bs, node_len, d]
         x = x.to(self.llm.device)
         edge_index = edge_index.to(self.llm.device)
         if edge_attr is not None:
@@ -117,7 +88,6 @@ class MoleculeGPT(torch.nn.Module):
                                     padding_value=0)
         out_graph = out_graph.view(batch_size, -1)
 
-        # 1D SMILES Branch: [bs, seq_len, d]
         x_smiles = self.smiles_encoder.encode(smiles,
                                               output_device=self.llm.device)
         out_smiles = self.smiles_qformer(x_smiles)
@@ -125,7 +95,6 @@ class MoleculeGPT(torch.nn.Module):
                                      padding_value=0)
         out_smiles = out_smiles.view(batch_size, -1)
 
-        # Merge into LLMs
         x_cat = torch.cat([out_graph, out_smiles], dim=1)
         return x_cat
 
@@ -184,7 +153,6 @@ class MoleculeGPT(torch.nn.Module):
         x = self.projector(x)
         xs = x.split(1, dim=0)
 
-        # Handle questions without node features:
         batch_unique = batch.unique()
         batch_size = len(instructions)
         if len(batch_unique) < batch_size:

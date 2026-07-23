@@ -140,7 +140,6 @@ class BaseData:
     def debug(self):
         raise NotImplementedError
 
-    ###########################################################################
 
     def keys(self) -> List[str]:
         r"""Returns a list of all graph attribute names."""
@@ -205,11 +204,7 @@ class BaseData:
 
     @property
     def num_edges(self) -> int:
-        r"""Returns the number of edges in the graph.
-        For undirected graphs, this will return the number of bi-directional
-        edges, which is double the amount of unique edges.
-        """
-        return sum([v.num_edges for v in self.edge_stores])
+        pass
 
     def node_attrs(self) -> List[str]:
         r"""Returns all node-level tensor attribute names."""
@@ -221,32 +216,13 @@ class BaseData:
 
     @property
     def node_offsets(self) -> Dict[NodeType, int]:
-        out: Dict[NodeType, int] = {}
-        offset: int = 0
-        for store in self.node_stores:
-            out[store._key] = offset
-            offset = offset + store.num_nodes
-        return out
+        pass
 
     def generate_ids(self):
-        r"""Generates and sets :obj:`n_id` and :obj:`e_id` attributes to assign
-        each node and edge to a continuously ascending and unique ID.
-        """
-        for store in self.node_stores:
-            store.n_id = torch.arange(store.num_nodes)
-        for store in self.edge_stores:
-            store.e_id = torch.arange(store.num_edges)
+        pass
 
     def is_sorted(self, sort_by_row: bool = True) -> bool:
-        r"""Returns :obj:`True` if edge indices :obj:`edge_index` are sorted.
-
-        Args:
-            sort_by_row (bool, optional): If set to :obj:`False`, will require
-                column-wise order/by destination node order of
-                :obj:`edge_index`. (default: :obj:`True`)
-        """
-        return all(
-            [store.is_sorted(sort_by_row) for store in self.edge_stores])
+        pass
 
     def sort(self, sort_by_row: bool = True) -> Self:
         r"""Sorts edge indices :obj:`edge_index` and their corresponding edge
@@ -278,15 +254,10 @@ class BaseData:
         return out
 
     def is_sorted_by_time(self) -> bool:
-        r"""Returns :obj:`True` if :obj:`time` is sorted."""
-        return all([store.is_sorted_by_time() for store in self.stores])
+        pass
 
     def sort_by_time(self) -> Self:
-        r"""Sorts data associated with :obj:`time` according to :obj:`time`."""
-        out = copy.copy(self)
-        for store in out.stores:
-            store.sort_by_time()
-        return out
+        pass
 
     def snapshot(
         self,
@@ -294,22 +265,10 @@ class BaseData:
         end_time: Union[float, int],
         attr: str = 'time',
     ) -> Self:
-        r"""Returns a snapshot of :obj:`data` to only hold events that occurred
-        in period :obj:`[start_time, end_time]`.
-        """
-        out = copy.copy(self)
-        for store in out.stores:
-            store.snapshot(start_time, end_time, attr)
-        return out
+        pass
 
     def up_to(self, end_time: Union[float, int]) -> Self:
-        r"""Returns a snapshot of :obj:`data` to only hold events that occurred
-        up to :obj:`end_time` (inclusive of :obj:`edge_time`).
-        """
-        out = copy.copy(self)
-        for store in out.stores:
-            store.up_to(end_time)
-        return out
+        pass
 
     def has_isolated_nodes(self) -> bool:
         r"""Returns :obj:`True` if the graph contains isolated nodes."""
@@ -371,19 +330,10 @@ class BaseData:
 
     def cuda(self, device: Optional[Union[int, str]] = None, *args: str,
              non_blocking: bool = False):
-        r"""Copies attributes to CUDA memory, either for all attributes or only
-        the ones given in :obj:`*args`.
-        """
-        # Some PyTorch tensor like objects require a default value for `cuda`:
-        device = 'cuda' if device is None else device
-        return self.apply(lambda x: x.cuda(device, non_blocking=non_blocking),
-                          *args)
+        pass
 
     def pin_memory(self, *args: str):
-        r"""Copies attributes to pinned memory, either for all attributes or
-        only the ones given in :obj:`*args`.
-        """
-        return self.apply(lambda x: x.pin_memory(), *args)
+        pass
 
     def share_memory_(self, *args: str):
         r"""Moves attributes to shared memory, either for all attributes or
@@ -412,11 +362,7 @@ class BaseData:
             lambda x: x.requires_grad_(requires_grad=requires_grad), *args)
 
     def record_stream(self, stream: torch.cuda.Stream, *args: str):
-        r"""Ensures that the tensor memory is not reused for another tensor
-        until all current work queued on :obj:`stream` has been completed,
-        either for all attributes or only the ones given in :obj:`*args`.
-        """
-        return self.apply_(lambda x: x.record_stream(stream), *args)
+        pass
 
     @property
     def is_cuda(self) -> bool:
@@ -429,7 +375,6 @@ class BaseData:
                     return True
         return False
 
-    # Deprecated functions ####################################################
 
     @deprecated(details="use 'has_isolated_nodes' instead")
     def contains_isolated_nodes(self) -> bool:
@@ -440,12 +385,10 @@ class BaseData:
         return self.has_self_loops()
 
 
-###############################################################################
 
 
 @dataclass
 class DataTensorAttr(TensorAttr):
-    r"""Tensor attribute for `Data` without group name."""
     def __init__(
         self,
         attr_name=_FieldStatus.UNSET,
@@ -456,7 +399,6 @@ class DataTensorAttr(TensorAttr):
 
 @dataclass
 class DataEdgeAttr(EdgeAttr):
-    r"""Edge attribute class for `Data` without edge type."""
     def __init__(
         self,
         layout: Optional[EdgeLayout] = None,
@@ -466,56 +408,9 @@ class DataEdgeAttr(EdgeAttr):
         super().__init__(None, layout, is_sorted, size)
 
 
-###############################################################################
 
 
 class Data(BaseData, FeatureStore, GraphStore):
-    r"""A data object describing a homogeneous graph.
-    The data object can hold node-level, link-level and graph-level attributes.
-    In general, :class:`~torch_geometric.data.Data` tries to mimic the
-    behavior of a regular :python:`Python` dictionary.
-    In addition, it provides useful functionality for analyzing graph
-    structures, and provides basic PyTorch tensor functionalities.
-    See `here <https://pytorch-geometric.readthedocs.io/en/latest/get_started/
-    introduction.html#data-handling-of-graphs>`__ for the accompanying
-    tutorial.
-
-    .. code-block:: python
-
-        from torch_geometric.data import Data
-
-        data = Data(x=x, edge_index=edge_index, ...)
-
-        # Add additional arguments to `data`:
-        data.train_idx = torch.tensor([...], dtype=torch.long)
-        data.test_mask = torch.tensor([...], dtype=torch.bool)
-
-        # Analyzing the graph structure:
-        data.num_nodes
-        >>> 23
-
-        data.is_directed()
-        >>> False
-
-        # PyTorch tensor functionality:
-        data = data.pin_memory()
-        data = data.to('cuda:0', non_blocking=True)
-
-    Args:
-        x (torch.Tensor, optional): Node feature matrix with shape
-            :obj:`[num_nodes, num_node_features]`. (default: :obj:`None`)
-        edge_index (LongTensor, optional): Graph connectivity in COO format
-            with shape :obj:`[2, num_edges]`. (default: :obj:`None`)
-        edge_attr (torch.Tensor, optional): Edge feature matrix with shape
-            :obj:`[num_edges, num_edge_features]`. (default: :obj:`None`)
-        y (torch.Tensor, optional): Graph-level or node-level ground-truth
-            labels with arbitrary shape. (default: :obj:`None`)
-        pos (torch.Tensor, optional): Node position matrix with shape
-            :obj:`[num_nodes, num_dimensions]`. (default: :obj:`None`)
-        time (torch.Tensor, optional): The timestamps for each event with shape
-            :obj:`[num_edges]` or :obj:`[num_nodes]`. (default: :obj:`None`)
-        **kwargs (optional): Additional attributes.
-    """
     def __init__(
         self,
         x: Optional[Tensor] = None,
@@ -526,12 +421,8 @@ class Data(BaseData, FeatureStore, GraphStore):
         time: OptTensor = None,
         **kwargs,
     ):
-        # `Data` doesn't support group_name, so we need to adjust `TensorAttr`
-        # accordingly here to avoid requiring `group_name` to be set:
         super().__init__(tensor_attr_cls=DataTensorAttr)
 
-        # `Data` doesn't support edge_type, so we need to adjust `EdgeAttr`
-        # accordingly here to avoid requiring `edge_type` to be set:
         GraphStore.__init__(self, edge_attr_cls=DataEdgeAttr)
 
         self.__dict__['_store'] = GlobalStorage(_parent=self)
@@ -571,9 +462,6 @@ class Data(BaseData, FeatureStore, GraphStore):
     def __delattr__(self, key: str):
         delattr(self._store, key)
 
-    # TODO consider supporting the feature store interface for
-    # __getitem__, __setitem__, and __delitem__ so, for example, we
-    # can accept key: Union[str, TensorAttr] in __getitem__.
     def __getitem__(self, key: str) -> Any:
         return self._store[key]
 
@@ -625,21 +513,21 @@ class Data(BaseData, FeatureStore, GraphStore):
 
     @property
     def stores(self) -> List[BaseStorage]:
-        return [self._store]
+        pass
 
     @property
     def node_stores(self) -> List[NodeStorage]:
-        return [self._store]
+        pass
 
     @property
     def edge_stores(self) -> List[EdgeStorage]:
-        return [self._store]
+        pass
 
     def to_dict(self) -> Dict[str, Any]:
         return self._store.to_dict()
 
     def to_namedtuple(self) -> NamedTuple:
-        return self._store.to_namedtuple()
+        pass
 
     def update(self, data: Union[Self, Dict[str, Any]]) -> Self:
         for key, value in data.items():
@@ -764,22 +652,7 @@ class Data(BaseData, FeatureStore, GraphStore):
         return data
 
     def edge_subgraph(self, subset: Tensor) -> Self:
-        r"""Returns the induced subgraph given by the edge indices
-        :obj:`subset`.
-        Will currently preserve all the nodes in the graph, even if they are
-        isolated after subgraph computation.
-
-        Args:
-            subset (LongTensor or BoolTensor): The edges to keep.
-        """
-        data = copy.copy(self)
-
-        for key, value in self:
-            if self.is_edge_attr(key):
-                cat_dim = self.__cat_dim__(key, value)
-                data[key] = select(value, subset, dim=cat_dim)
-
-        return data
+        pass
 
     def to_heterogeneous(
         self,
@@ -846,17 +719,12 @@ class Data(BaseData, FeatureStore, GraphStore):
                 edge_type_names.append((node_type_names[src_types[0]], str(i),
                                         node_type_names[dst_types[0]]))
 
-        # We iterate over node types to find the local node indices belonging
-        # to each node type. Furthermore, we create a global `index_map` vector
-        # that maps global node indices to local ones in the final
-        # heterogeneous graph:
         node_ids, index_map = {}, torch.empty_like(node_type)
         for i in range(len(node_type_names)):
             node_ids[i] = (node_type == i).nonzero(as_tuple=False).view(-1)
             index_map[node_ids[i]] = torch.arange(len(node_ids[i]),
                                                   device=index_map.device)
 
-        # We iterate over edge types to find the local edge indices:
         edge_ids = {}
         for i in range(len(edge_type_names)):
             edge_ids[i] = (edge_type == i).nonzero(as_tuple=False).view(-1)
@@ -894,7 +762,6 @@ class Data(BaseData, FeatureStore, GraphStore):
                       and self.is_edge_attr(attr)):
                     data[key][attr] = value[edge_ids[i]]
 
-        # Add global attributes.
         exclude_keys = set(data.keys()) | {
             'node_type', 'edge_type', 'edge_index', 'num_nodes', 'ptr'
         }
@@ -930,36 +797,29 @@ class Data(BaseData, FeatureStore, GraphStore):
         Returns:
             List[Data]: A list of disconnected components.
         """
-        # Union-Find algorithm to find connected components
         self._parents: Dict[int, int] = {}
         self._ranks: Dict[int, int] = {}
         for edge in self.edge_index.t().tolist():
             self._union(edge[0], edge[1])
 
-        # Rerun _find_parent to ensure all nodes are covered correctly
         for node in range(self.num_nodes):
             self._find_parent(node)
 
-        # Group parents
         grouped_parents = defaultdict(list)
         for node, parent in self._parents.items():
             grouped_parents[parent].append(node)
         del self._ranks
         del self._parents
 
-        # Create components based on the found parents (roots)
         components: List[Self] = []
         for nodes in grouped_parents.values():
-            # Convert the list of node IDs to a tensor
             subset = torch.tensor(nodes, dtype=torch.long)
 
-            # Use the existing subgraph function
             component_data = self.subgraph(subset)
             components.append(component_data)
 
         return components
 
-    ###########################################################################
 
     @classmethod
     def from_dict(cls, mapping: Dict[str, Any]) -> Self:
@@ -970,30 +830,23 @@ class Data(BaseData, FeatureStore, GraphStore):
 
     @property
     def num_node_features(self) -> int:
-        r"""Returns the number of features per node in the graph."""
-        return self._store.num_node_features
+        pass
 
     @property
     def num_features(self) -> int:
-        r"""Returns the number of features per node in the graph.
-        Alias for :py:attr:`~num_node_features`.
-        """
-        return self.num_node_features
+        pass
 
     @property
     def num_edge_features(self) -> int:
-        r"""Returns the number of features per edge in the graph."""
-        return self._store.num_edge_features
+        pass
 
     @property
     def num_node_types(self) -> int:
-        r"""Returns the number of node types in the graph."""
-        return int(self.node_type.max()) + 1 if 'node_type' in self else 1
+        pass
 
     @property
     def num_edge_types(self) -> int:
-        r"""Returns the number of edge types in the graph."""
-        return int(self.edge_type.max()) + 1 if 'edge_type' in self else 1
+        pass
 
     def __iter__(self) -> Iterable:
         r"""Iterates over all attributes in the data, yielding their attribute
@@ -1010,59 +863,59 @@ class Data(BaseData, FeatureStore, GraphStore):
 
     @property
     def x(self) -> Optional[Tensor]:
-        return self['x'] if 'x' in self._store else None
+        pass
 
     @x.setter
     def x(self, x: Optional[Tensor]):
-        self._store.x = x
+        pass
 
     @property
     def edge_index(self) -> Optional[Tensor]:
-        return self['edge_index'] if 'edge_index' in self._store else None
+        pass
 
     @edge_index.setter
     def edge_index(self, edge_index: Optional[Tensor]):
-        self._store.edge_index = edge_index
+        pass
 
     @property
     def edge_weight(self) -> Optional[Tensor]:
-        return self['edge_weight'] if 'edge_weight' in self._store else None
+        pass
 
     @edge_weight.setter
     def edge_weight(self, edge_weight: Optional[Tensor]):
-        self._store.edge_weight = edge_weight
+        pass
 
     @property
     def edge_attr(self) -> Optional[Tensor]:
-        return self['edge_attr'] if 'edge_attr' in self._store else None
+        pass
 
     @edge_attr.setter
     def edge_attr(self, edge_attr: Optional[Tensor]):
-        self._store.edge_attr = edge_attr
+        pass
 
     @property
     def y(self) -> Optional[Union[Tensor, int, float]]:
-        return self['y'] if 'y' in self._store else None
+        pass
 
     @y.setter
     def y(self, y: Optional[Tensor]):
-        self._store.y = y
+        pass
 
     @property
     def pos(self) -> Optional[Tensor]:
-        return self['pos'] if 'pos' in self._store else None
+        pass
 
     @pos.setter
     def pos(self, pos: Optional[Tensor]):
-        self._store.pos = pos
+        pass
 
     @property
     def batch(self) -> Optional[Tensor]:
-        return self['batch'] if 'batch' in self._store else None
+        pass
 
     @batch.setter
     def batch(self, batch: Optional[Tensor]):
-        self._store.batch = batch
+        pass
 
     @property
     def time(self) -> Optional[Tensor]:
@@ -1074,23 +927,18 @@ class Data(BaseData, FeatureStore, GraphStore):
 
     @property
     def face(self) -> Optional[Tensor]:
-        return self['face'] if 'face' in self._store else None
+        pass
 
     @face.setter
     def face(self, face: Optional[Tensor]):
-        self._store.face = face
+        pass
 
-    # Deprecated functions ####################################################
 
     @property
     @deprecated(details="use 'data.face.size(-1)' instead")
     def num_faces(self) -> Optional[int]:
-        r"""Returns the number of faces in the mesh."""
-        if 'face' in self._store and isinstance(self.face, Tensor):
-            return self.face.size(self.__cat_dim__('face', self.face))
-        return None
+        pass
 
-    # FeatureStore interface ##################################################
 
     def _put_tensor(self, tensor: FeatureTensorType, attr: TensorAttr) -> bool:
         out = self.get(attr.attr_name)
@@ -1104,18 +952,11 @@ class Data(BaseData, FeatureStore, GraphStore):
     def _get_tensor(self, attr: TensorAttr) -> Optional[FeatureTensorType]:
         tensor = getattr(self, attr.attr_name, None)
         if tensor is not None:
-            # TODO this behavior is a bit odd, since TensorAttr requires that
-            # we set `index`. So, we assume here that indexing by `None` is
-            # equivalent to not indexing at all, which is not in line with
-            # Python semantics.
             return tensor[attr.index] if attr.index is not None else tensor
         return None
 
     def _remove_tensor(self, attr: TensorAttr) -> bool:
-        if hasattr(self, attr.attr_name):
-            delattr(self, attr.attr_name)
-            return True
-        return False
+        pass
 
     def _get_tensor_size(self, attr: TensorAttr) -> Tuple:
         return self._get_tensor(attr).size()
@@ -1127,7 +968,6 @@ class Data(BaseData, FeatureStore, GraphStore):
             if self._store.is_node_attr(name)
         ]
 
-    # GraphStore interface ####################################################
 
     def _put_edge_index(self, edge_index: EdgeTensorType,
                         edge_attr: EdgeAttr) -> bool:
@@ -1174,22 +1014,7 @@ class Data(BaseData, FeatureStore, GraphStore):
         return None
 
     def _remove_edge_index(self, edge_attr: EdgeAttr) -> bool:
-        if edge_attr.layout == EdgeLayout.COO and 'edge_index' in self:
-            del self.edge_index
-            if hasattr(self, '_edge_attrs'):
-                self._edge_attrs.pop(EdgeLayout.COO, None)
-            return True
-        elif edge_attr.layout == EdgeLayout.CSR and 'adj' in self:
-            del self.adj
-            if hasattr(self, '_edge_attrs'):
-                self._edge_attrs.pop(EdgeLayout.CSR, None)
-            return True
-        elif edge_attr.layout == EdgeLayout.CSC and 'adj_t' in self:
-            del self.adj_t
-            if hasattr(self, '_edge_attrs'):
-                self._edge_attrs.pop(EdgeLayout.CSC, None)
-            return True
-        return False
+        pass
 
     def get_all_edge_attrs(self) -> List[EdgeAttr]:
         edge_attrs = getattr(self, '_edge_attrs', {})
@@ -1205,7 +1030,6 @@ class Data(BaseData, FeatureStore, GraphStore):
 
         return list(edge_attrs.values())
 
-    # Connected Components Helper Functions ###################################
 
     def _find_parent(self, node: int) -> int:
         r"""Finds and returns the representative parent of the given node in a
@@ -1249,7 +1073,6 @@ class Data(BaseData, FeatureStore, GraphStore):
                 self._ranks[root1] += 1
 
 
-###############################################################################
 
 
 def size_repr(key: Any, value: Any, indent: int = 0) -> str:

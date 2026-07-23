@@ -47,19 +47,7 @@ def extract_zip(path: str, folder: str, log: bool = True) -> None:
 
 
 def extract_bz2(path: str, folder: str, log: bool = True) -> None:
-    r"""Extracts a bz2 archive to a specific folder.
-
-    Args:
-        path (str): The path to the tar archive.
-        folder (str): The folder.
-        log (bool, optional): If :obj:`False`, will not print anything to the
-            console. (default: :obj:`True`)
-    """
-    maybe_log(path, log)
-    path = osp.abspath(path)
-    with bz2.open(path, 'r') as r:
-        with open(osp.join(folder, '.'.join(path.split('.')[:-1])), 'wb') as w:
-            w.write(r.read())
+    pass
 
 
 def extract_gz(path: str, folder: str, log: bool = True) -> None:

@@ -13,32 +13,6 @@ from torch_geometric.data import (
 
 
 class Taobao(InMemoryDataset):
-    r"""Taobao is a dataset of user behaviors from Taobao offered by Alibaba,
-    provided by the `Tianchi Alicloud platform
-    <https://tianchi.aliyun.com/dataset/649>`_.
-
-    Taobao is a heterogeneous graph for recommendation.
-    Nodes represent users with user IDs, items with item IDs, and categories
-    with category ID.
-    Edges between users and items represent different types of user behaviors
-    towards items (alongside with timestamps).
-    Edges between items and categories assign each item to its set of
-    categories.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.HeteroData` object and returns a
-            transformed version. The data object will be transformed before
-            every access. (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.HeteroData` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-
-    """
     url = ('https://alicloud-dev.oss-cn-hangzhou.aliyuncs.com/'
            'UserBehavior.csv.zip')
 
@@ -55,11 +29,11 @@ class Taobao(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> str:
-        return 'UserBehavior.csv'
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def download(self) -> None:
         path = download_url(self.url, self.raw_dir)
@@ -72,9 +46,6 @@ class Taobao(InMemoryDataset):
         cols = ['userId', 'itemId', 'categoryId', 'behaviorType', 'timestamp']
         df = pd.read_csv(self.raw_paths[0], names=cols)
 
-        # Time representation (YYYY.MM.DD-HH:MM:SS -> Integer)
-        # start: 1511539200 = 2017.11.25-00:00:00
-        # end:   1512316799 = 2017.12.03-23:59:59
         start = 1511539200
         end = 1512316799
         df = df[(df["timestamp"] >= start) & (df["timestamp"] <= end)]
@@ -86,7 +57,6 @@ class Taobao(InMemoryDataset):
 
         num_entries = {}
         for name in ['userId', 'itemId', 'categoryId']:
-            # Map IDs to consecutive integers:
             value, df[name] = np.unique(df[[name]].values, return_inverse=True)
             num_entries[name] = value.shape[0]
 

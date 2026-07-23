@@ -8,7 +8,6 @@ from torch_geometric.typing import InputEdges, InputNodes
 
 
 class RAGFeatureStore(Protocol):
-    """Feature store template for remote GNN RAG backend."""
     @abstractmethod
     def retrieve_seed_nodes(self, query: Any, **kwargs) -> InputNodes:
         """Makes a comparison between the query and all the nodes to get all
@@ -46,7 +45,6 @@ class RAGFeatureStore(Protocol):
 
 
 class RAGGraphStore(Protocol):
-    """Graph store template for remote GNN RAG backend."""
     @abstractmethod
     def sample_subgraph(self, seed_nodes: InputNodes, seed_edges: InputEdges,
                         **kwargs) -> Union[SamplerOutput, HeteroSamplerOutput]:
@@ -73,11 +71,9 @@ class RAGGraphStore(Protocol):
         ...
 
 
-# TODO: Make compatible with Heterographs
 
 
 class RAGQueryLoader:
-    """Loader meant for making RAG queries from a remote backend."""
     def __init__(self, graph_data: Tuple[RAGFeatureStore, RAGGraphStore],
                  subgraph_filter: Optional[Callable[[Data, Any], Data]] = None,
                  augment_query: bool = False,
@@ -111,24 +107,15 @@ class RAGQueryLoader:
         self.config = config
 
     def _propagate_config(self, config: Dict[str, Any]):
-        """Propagate the config the relevant components."""
-        self.feature_store.config = config
-        self.graph_store.config = config
+        pass
 
     @property
     def config(self):
-        """Get the config for the RAGQueryLoader."""
-        return self._config
+        pass
 
     @config.setter
     def config(self, config: Dict[str, Any]):
-        """Set the config for the RAGQueryLoader.
-
-        Args:
-            config (Dict[str, Any]): The config to set.
-        """
-        self._propagate_config(config)
-        self._config = config
+        pass
 
     def query(self, query: Any) -> Data:
         """Retrieve a subgraph associated with the query with all its feature
@@ -146,7 +133,6 @@ class RAGQueryLoader:
 
         data = self.feature_store.load_subgraph(sample=subgraph_sample)
 
-        # apply local filter
         if self.subgraph_filter:
             data = self.subgraph_filter(data, query)
         if self.vector_retriever:

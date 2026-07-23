@@ -12,76 +12,6 @@ from torch_geometric.io import fs
 
 
 class AirfRANS(InMemoryDataset):
-    r"""The AirfRANS dataset from the `"AirfRANS: High Fidelity Computational
-    Fluid Dynamics Dataset for Approximating Reynolds-Averaged Navier-Stokes
-    Solutions" <https://arxiv.org/abs/2212.07564>`_ paper, consisting of 1,000
-    simulations of steady-state aerodynamics over 2D airfoils in a subsonic
-    flight regime.
-    The different tasks (:obj:`"full"`, :obj:`"scarce"`, :obj:`"reynolds"`,
-    :obj:`"aoa"`) define the utilized training and test splits.
-
-    Each simulation is given as a point cloud defined as the nodes of the
-    simulation mesh. Each point of a point cloud is described via 5
-    features: the inlet velocity (two components in meter per second), the
-    distance to the airfoil (one component in meter), and the normals (two
-    components in meter, set to :obj:`0` if the point is not on the airfoil).
-    Each point is given a target of 4 components for the underlying regression
-    task: the velocity (two components in meter per second), the pressure
-    divided by the specific mass (one component in meter squared per second
-    squared), the turbulent kinematic viscosity (one component in meter squared
-    per second).
-    Finally, a boolean is attached to each point to inform if this point lies
-    on the airfoil or not.
-
-    A library for manipulating simulations of the dataset is available `here
-    <https://airfrans.readthedocs.io/en/latest/index.html>`_.
-
-    The dataset is released under the `ODbL v1.0 License
-    <https://opendatacommons.org/licenses/odbl/1-0/>`_.
-
-    .. note::
-
-        Data objects contain no edge indices to be agnostic to the simulation
-        mesh. You are free to build a graph via the
-        :obj:`torch_geometric.transforms.RadiusGraph` transform.
-
-    Args:
-        root: Root directory where the dataset should be saved.
-        task: The task to study (:obj:`"full"`, :obj:`"scarce"`,
-            :obj:`"reynolds"`, :obj:`"aoa"`) that defines the utilized training
-            and test splits.
-        train: If :obj:`True`, loads the training dataset, otherwise the test
-            dataset.
-        transform: A function/transform that takes in an
-            :class:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-        pre_transform: A function/transform that takes in an
-            :class:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk.
-        pre_filter: A function that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a boolean
-            value, indicating whether the data object should be included in the
-            final dataset.
-        force_reload: Whether to re-process the dataset.
-
-    **STATS:**
-
-    .. list-table::
-        :widths: 10 10 10 10 10
-        :header-rows: 1
-
-        * - #graphs
-          - #nodes
-          - #edges
-          - #features
-          - #tasks
-        * - 1,000
-          - ~180,000
-          - 0
-          - 5
-          - 4
-    """
     url = 'https://data.isir.upmc.fr/extrality/pytorch_geometric/AirfRANS.zip'
     tasks = ['full', 'scarce', 'reynolds', 'aoa']
 
@@ -108,11 +38,11 @@ class AirfRANS(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> List[str]:
-        return ['AirfRANS.pt', 'manifest.json']
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return f'{self.task}_{self.split}.pt'
+        pass
 
     def download(self) -> None:
         path = download_url(self.url, self.raw_dir)

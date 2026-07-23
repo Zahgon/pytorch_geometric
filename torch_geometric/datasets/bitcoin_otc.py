@@ -13,44 +13,6 @@ from torch_geometric.data import (
 
 
 class BitcoinOTC(InMemoryDataset):
-    r"""The Bitcoin-OTC dataset from the `"EvolveGCN: Evolving Graph
-    Convolutional Networks for Dynamic Graphs"
-    <https://arxiv.org/abs/1902.10191>`_ paper, consisting of 138
-    who-trusts-whom networks of sequential time steps.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        edge_window_size (int, optional): The window size for the existence of
-            an edge in the graph sequence since its initial creation.
-            (default: :obj:`10`)
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-
-    **STATS:**
-
-    .. list-table::
-        :widths: 10 10 10 10 10
-        :header-rows: 1
-
-        * - #graphs
-          - #nodes
-          - #edges
-          - #features
-          - #classes
-        * - 138
-          - 6,005
-          - ~2,573.2
-          - 0
-          - 0
-    """
 
     url = 'https://snap.stanford.edu/data/soc-sign-bitcoinotc.csv.gz'
 
@@ -69,11 +31,11 @@ class BitcoinOTC(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> str:
-        return 'soc-sign-bitcoinotc.csv'
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     @property
     def num_nodes(self) -> int:

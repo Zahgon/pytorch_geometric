@@ -12,64 +12,6 @@ from torch_geometric.utils import get_laplacian
 
 
 class ChebConv(MessagePassing):
-    r"""The chebyshev spectral graph convolutional operator from the
-    `"Convolutional Neural Networks on Graphs with Fast Localized Spectral
-    Filtering" <https://arxiv.org/abs/1606.09375>`_ paper.
-
-    .. math::
-        \mathbf{X}^{\prime} = \sum_{k=1}^{K} \mathbf{Z}^{(k)} \cdot
-        \mathbf{\Theta}^{(k)}
-
-    where :math:`\mathbf{Z}^{(k)}` is computed recursively by
-
-    .. math::
-        \mathbf{Z}^{(1)} &= \mathbf{X}
-
-        \mathbf{Z}^{(2)} &= \mathbf{\hat{L}} \cdot \mathbf{X}
-
-        \mathbf{Z}^{(k)} &= 2 \cdot \mathbf{\hat{L}} \cdot
-        \mathbf{Z}^{(k-1)} - \mathbf{Z}^{(k-2)}
-
-    and :math:`\mathbf{\hat{L}}` denotes the scaled and normalized Laplacian
-    :math:`\frac{2\mathbf{L}}{\lambda_{\max}} - \mathbf{I}`.
-
-    Args:
-        in_channels (int): Size of each input sample, or :obj:`-1` to derive
-            the size from the first input(s) to the forward method.
-        out_channels (int): Size of each output sample.
-        K (int): Chebyshev filter size :math:`K`.
-        normalization (str, optional): The normalization scheme for the graph
-            Laplacian (default: :obj:`"sym"`):
-
-            1. :obj:`None`: No normalization
-            :math:`\mathbf{L} = \mathbf{D} - \mathbf{A}`
-
-            2. :obj:`"sym"`: Symmetric normalization
-            :math:`\mathbf{L} = \mathbf{I} - \mathbf{D}^{-1/2} \mathbf{A}
-            \mathbf{D}^{-1/2}`
-
-            3. :obj:`"rw"`: Random-walk normalization
-            :math:`\mathbf{L} = \mathbf{I} - \mathbf{D}^{-1} \mathbf{A}`
-
-            :obj:`\lambda_max` should be a :class:`torch.Tensor` of size
-            :obj:`[num_graphs]` in a mini-batch scenario and a
-            scalar/zero-dimensional tensor when operating on single graphs.
-            You can pre-compute :obj:`lambda_max` via the
-            :class:`torch_geometric.transforms.LaplacianLambdaMax` transform.
-        bias (bool, optional): If set to :obj:`False`, the layer will not learn
-            an additive bias. (default: :obj:`True`)
-        **kwargs (optional): Additional arguments of
-            :class:`torch_geometric.nn.conv.MessagePassing`.
-
-    Shapes:
-        - **input:**
-          node features :math:`(|\mathcal{V}|, F_{in})`,
-          edge indices :math:`(2, |\mathcal{E}|)`,
-          edge weights :math:`(|\mathcal{E}|)` *(optional)*,
-          batch vector :math:`(|\mathcal{V}|)` *(optional)*,
-          maximum :obj:`lambda` value :math:`(|\mathcal{G}|)` *(optional)*
-        - **output:** node features :math:`(|\mathcal{V}|, F_{out})`
-    """
     def __init__(
         self,
         in_channels: int,
@@ -162,7 +104,6 @@ class ChebConv(MessagePassing):
         Tx_1 = x  # Dummy.
         out = self.lins[0](Tx_0)
 
-        # propagate_type: (x: Tensor, norm: Tensor)
         if len(self.lins) > 1:
             Tx_1 = self.propagate(edge_index, x=x, norm=norm)
             out = out + self.lins[1](Tx_1)

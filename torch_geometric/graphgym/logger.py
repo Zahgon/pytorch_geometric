@@ -65,158 +65,38 @@ class Logger:
         self._pred = []
         self._custom_stats = {}
 
-    # basic properties
     def basic(self):
-        stats = {
-            'loss': round(self._loss / self._size_current, cfg.round),
-            'lr': round(self._lr, cfg.round),
-            'params': self._params,
-            'time_iter': round(self.time_iter(), cfg.round),
-        }
-        gpu_memory = get_current_gpu_usage()
-        if gpu_memory > 0:
-            stats['gpu_memory'] = gpu_memory
-        return stats
+        pass
 
-    # customized input properties
     def custom(self):
-        if len(self._custom_stats) == 0:
-            return {}
-        out = {}
-        for key, val in self._custom_stats.items():
-            out[key] = val / self._size_current
-        return out
+        pass
 
     def _get_pred_int(self, pred_score):
-        if len(pred_score.shape) == 1 or pred_score.shape[1] == 1:
-            return (pred_score > cfg.model.thresh).long()
-        else:
-            return pred_score.max(dim=1)[1]
+        pass
 
-    # task properties
     def classification_binary(self):
-        from sklearn.metrics import (
-            accuracy_score,
-            f1_score,
-            precision_score,
-            recall_score,
-            roc_auc_score,
-        )
-
-        true, pred_score = torch.cat(self._true), torch.cat(self._pred)
-        pred_int = self._get_pred_int(pred_score)
-        try:
-            r_a_score = roc_auc_score(true, pred_score)
-        except ValueError:
-            r_a_score = 0.0
-        return {
-            'accuracy': round(accuracy_score(true, pred_int), cfg.round),
-            'precision': round(precision_score(true, pred_int), cfg.round),
-            'recall': round(recall_score(true, pred_int), cfg.round),
-            'f1': round(f1_score(true, pred_int), cfg.round),
-            'auc': round(r_a_score, cfg.round),
-        }
+        pass
 
     def classification_multi(self):
-        from sklearn.metrics import accuracy_score
-
-        true, pred_score = torch.cat(self._true), torch.cat(self._pred)
-        pred_int = self._get_pred_int(pred_score)
-        return {'accuracy': round(accuracy_score(true, pred_int), cfg.round)}
+        pass
 
     def regression(self):
-        from sklearn.metrics import mean_absolute_error, mean_squared_error
-
-        true, pred = torch.cat(self._true), torch.cat(self._pred)
-        return {
-            'mae':
-            float(round(mean_absolute_error(true, pred), cfg.round)),
-            'mse':
-            float(round(mean_squared_error(true, pred), cfg.round)),
-            'rmse':
-            float(round(math.sqrt(mean_squared_error(true, pred)), cfg.round))
-        }
+        pass
 
     def time_iter(self):
-        return self._time_used / self._iter
+        pass
 
     def eta(self, epoch_current):
-        epoch_current += 1  # since counter starts from 0
-        time_per_epoch = self._time_total / epoch_current
-        return time_per_epoch * (self._epoch_total - epoch_current)
+        pass
 
     def update_stats(self, true, pred, loss, lr, time_used, params, **kwargs):
-        assert true.shape[0] == pred.shape[0]
-        self._iter += 1
-        self._true.append(true)
-        self._pred.append(pred)
-        batch_size = true.shape[0]
-        self._size_current += batch_size
-        self._loss += loss * batch_size
-        self._lr = lr
-        self._params = params
-        self._time_used += time_used
-        self._time_total += time_used
-        for key, val in kwargs.items():
-            if key not in self._custom_stats:
-                self._custom_stats[key] = val * batch_size
-            else:
-                self._custom_stats[key] += val * batch_size
+        pass
 
     def write_iter(self):
         raise NotImplementedError
 
     def write_epoch(self, cur_epoch):
-        basic_stats = self.basic()
-
-        # Try to load customized metrics
-        task_stats = {}
-        for custom_metric in cfg.custom_metrics:
-            func = register.metric_dict.get(custom_metric)
-            if not func:
-                raise ValueError(
-                    f'Unknown custom metric function name: {custom_metric}')
-            custom_metric_score = func(self._true, self._pred, self.task_type)
-            task_stats[custom_metric] = custom_metric_score
-
-        if not task_stats:  # use default metrics if no matching custom metric
-            if self.task_type == 'regression':
-                task_stats = self.regression()
-            elif self.task_type == 'classification_binary':
-                task_stats = self.classification_binary()
-            elif self.task_type == 'classification_multi':
-                task_stats = self.classification_multi()
-            else:
-                raise ValueError('Task has to be regression or classification')
-
-        epoch_stats = {'epoch': cur_epoch}
-        eta_stats = {'eta': round(self.eta(cur_epoch), cfg.round)}
-        custom_stats = self.custom()
-
-        if self.name == 'train':
-            stats = {
-                **epoch_stats,
-                **eta_stats,
-                **basic_stats,
-                **task_stats,
-                **custom_stats
-            }
-        else:
-            stats = {
-                **epoch_stats,
-                **basic_stats,
-                **task_stats,
-                **custom_stats
-            }
-
-        # print
-        logging.info(f'{self.name}: {stats}')
-        # json
-        dict_to_json(stats, f'{self.out_dir}/stats.json')
-        # tensorboard
-        if cfg.tensorboard_each_run:
-            dict_to_tb(stats, self.tb_writer, cur_epoch)
-        self.reset()
+        pass
 
     def close(self):
         if cfg.tensorboard_each_run:
@@ -253,15 +133,15 @@ class LoggerCallback(Callback):
 
     @property
     def train_logger(self) -> Any:
-        return self._logger[0]
+        pass
 
     @property
     def val_logger(self) -> Any:
-        return self._logger[1]
+        pass
 
     @property
     def test_logger(self) -> Any:
-        return self._logger[2]
+        pass
 
     def close(self):
         for logger in self._logger:
@@ -273,35 +153,28 @@ class LoggerCallback(Callback):
         outputs: Dict[str, Any],
         trainer: 'pl.Trainer',
     ) -> Dict:
-        return dict(
-            true=outputs['true'].detach().cpu(),
-            pred=outputs['pred_score'].detach().cpu(),
-            loss=float(outputs['loss']),
-            lr=trainer.lr_scheduler_configs[0].scheduler.get_last_lr()[0],
-            time_used=time.time() - epoch_start_time,
-            params=cfg.params,
-        )
+        pass
 
     def on_train_epoch_start(
         self,
         trainer: 'pl.Trainer',
         pl_module: 'pl.LightningModule',
     ):
-        self._train_epoch_start_time = time.time()
+        pass
 
     def on_validation_epoch_start(
         self,
         trainer: 'pl.Trainer',
         pl_module: 'pl.LightningModule',
     ):
-        self._val_epoch_start_time = time.time()
+        pass
 
     def on_test_epoch_start(
         self,
         trainer: 'pl.Trainer',
         pl_module: 'pl.LightningModule',
     ):
-        self._test_epoch_start_time = time.time()
+        pass
 
     def on_train_batch_end(
         self,
@@ -312,8 +185,7 @@ class LoggerCallback(Callback):
         batch_idx: int,
         unused: int = 0,
     ):
-        stats = self._get_stats(self._train_epoch_start_time, outputs, trainer)
-        self.train_logger.update_stats(**stats)
+        pass
 
     def on_validation_batch_end(
         self,
@@ -324,8 +196,7 @@ class LoggerCallback(Callback):
         batch_idx: int,
         dataloader_idx: int = 0,
     ):
-        stats = self._get_stats(self._val_epoch_start_time, outputs, trainer)
-        self.val_logger.update_stats(**stats)
+        pass
 
     def on_test_batch_end(
         self,
@@ -336,29 +207,28 @@ class LoggerCallback(Callback):
         batch_idx: int,
         dataloader_idx: int = 0,
     ):
-        stats = self._get_stats(self._test_epoch_start_time, outputs, trainer)
-        self.test_logger.update_stats(**stats)
+        pass
 
     def on_train_epoch_end(
         self,
         trainer: 'pl.Trainer',
         pl_module: 'pl.LightningModule',
     ):
-        self.train_logger.write_epoch(trainer.current_epoch)
+        pass
 
     def on_validation_epoch_end(
         self,
         trainer: 'pl.Trainer',
         pl_module: 'pl.LightningModule',
     ):
-        self.val_logger.write_epoch(trainer.current_epoch)
+        pass
 
     def on_test_epoch_end(
         self,
         trainer: 'pl.Trainer',
         pl_module: 'pl.LightningModule',
     ):
-        self.test_logger.write_epoch(trainer.current_epoch)
+        pass
 
     def on_fit_end(self, trainer, pl_module):
-        self.close()
+        pass

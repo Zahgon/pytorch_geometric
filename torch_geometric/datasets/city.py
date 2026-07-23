@@ -11,69 +11,6 @@ from torch_geometric.io import fs
 
 
 class CityNetwork(InMemoryDataset):
-    r"""The City-Networks are introduced in
-    `"Towards Quantifying Long-Range Interactions in Graph Machine Learning:
-    a Large Graph Dataset and a Measurement"
-    <https://arxiv.org/abs/2503.09008>`_ paper.
-    The dataset contains four city networks: `paris`, `shanghai`, `la`,
-    and `london`, where nodes represent junctions and edges represent
-    undirected road segments. The task is to predict each node's eccentricity
-    score, which is approximated based on its 16-hop neighborhood and naturally
-    requires long-range information. The score indicates how accessible one
-    node is in the network, and is mapped to 10 quantiles for transductive
-    classification. See the original
-    `source code <https://github.com/LeonResearch/City-Networks>`_ for more
-    details on the individual networks.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        name (str): The name of the dataset (``"paris"``, ``"shanghai"``,
-            ``"la"``, ``"london"``).
-        augmented (bool, optional): Whether to use the augmented node features
-            from edge features.(default: :obj:`True`)
-        transform (callable, optional): A function/transform that takes in an
-            :class:`~torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            every access. (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :class:`~torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-
-    **STATS:**
-
-    .. list-table::
-        :widths: 10 10 10 10 10
-        :header-rows: 1
-
-        * - Name
-          - #nodes
-          - #edges
-          - #features
-          - #classes
-        * - paris
-          - 114,127
-          - 182,511
-          - 37
-          - 10
-        * - shanghai
-          - 183,917
-          - 262,092
-          - 37
-          - 10
-        * - la
-          - 240,587
-          - 341,523
-          - 37
-          - 10
-        * - london
-          - 568,795
-          - 756,502
-          - 37
-          - 10
-    """
     url = "https://github.com/LeonResearch/City-Networks/raw/refs/heads/main/data/"  # noqa: E501
 
     def __init__(
@@ -100,19 +37,19 @@ class CityNetwork(InMemoryDataset):
 
     @property
     def raw_dir(self) -> str:
-        return osp.join(self.root, self.name, "raw")
+        pass
 
     @property
     def processed_dir(self) -> str:
-        return osp.join(self.root, self.name, "processed")
+        pass
 
     @property
     def raw_file_names(self) -> str:
-        return f"{self.name}.json"
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return "data.pt"
+        pass
 
     def download(self) -> None:
         self.download_path = download_url(

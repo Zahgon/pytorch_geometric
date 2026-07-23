@@ -22,53 +22,7 @@ def _get_ppr(  # pragma: no cover
     eps: float,
     target: Optional[np.ndarray] = None,
 ) -> Tuple[List[List[int]], List[List[float]]]:
-
-    num_nodes = len(rowptr) - 1 if target is None else len(target)
-    alpha_eps = alpha * eps
-    js = [[0]] * num_nodes
-    vals = [[0.]] * num_nodes
-
-    for inode_uint in numba.prange(num_nodes):
-        if target is None:
-            inode = numba.int64(inode_uint)
-        else:
-            inode = target[inode_uint]
-
-        p = {inode: 0.0}
-        r = {}
-        r[inode] = alpha
-        q = [inode]
-
-        while len(q) > 0:
-            unode = q.pop()
-
-            res = r[unode] if unode in r else 0
-            if unode in p:
-                p[unode] += res
-            else:
-                p[unode] = res
-
-            r[unode] = 0
-            start, end = rowptr[unode], rowptr[unode + 1]
-            ucount = end - start
-
-            for vnode in col[start:end]:
-                _val = (1 - alpha) * res / ucount
-                if vnode in r:
-                    r[vnode] += _val
-                else:
-                    r[vnode] = _val
-
-                res_vnode = r[vnode] if vnode in r else 0
-                vcount = rowptr[vnode + 1] - rowptr[vnode]
-                if res_vnode >= alpha_eps * vcount:
-                    if vnode not in q:
-                        q.append(vnode)
-
-        js[inode_uint] = list(p.keys())
-        vals[inode_uint] = list(p.values())
-
-    return js, vals
+    pass
 
 
 _get_ppr_numba: Optional[Callable] = None

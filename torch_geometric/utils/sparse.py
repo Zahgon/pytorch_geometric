@@ -192,9 +192,6 @@ def to_torch_coo_tensor(
         edge_index, edge_attr = coalesce(edge_index, edge_attr, max(size))
 
     if edge_attr is None:
-        # Expanded tensors are not yet supported in all PyTorch code paths :(
-        # edge_attr = torch.ones(1, device=edge_index.device)
-        # edge_attr = edge_attr.expand(edge_index.size(1))
         edge_attr = torch.ones(edge_index.size(1), device=edge_index.device)
 
     if not torch_geometric.typing.WITH_PT21:
@@ -268,9 +265,6 @@ def to_torch_csr_tensor(
         edge_index, edge_attr = coalesce(edge_index, edge_attr, max(size))
 
     if edge_attr is None:
-        # Expanded tensors are not yet supported in all PyTorch code paths :(
-        # edge_attr = torch.ones(1, device=edge_index.device)
-        # edge_attr = edge_attr.expand(edge_index.size(1))
         edge_attr = torch.ones(edge_index.size(1), device=edge_index.device)
 
     adj = torch.sparse_csr_tensor(
@@ -337,9 +331,6 @@ def to_torch_csc_tensor(
                                          sort_by_row=False)
 
     if edge_attr is None:
-        # Expanded tensors are not yet supported in all PyTorch code paths :(
-        # edge_attr = torch.ones(1, device=edge_index.device)
-        # edge_attr = edge_attr.expand(edge_index.size(1))
         edge_attr = torch.ones(edge_index.size(1), device=edge_index.device)
 
     adj = torch.sparse_csc_tensor(
@@ -432,7 +423,6 @@ def to_edge_index(adj: Union[Tensor, SparseTensor]) -> Tuple[Tensor, Tensor]:
     raise ValueError(f"Unexpected sparse tensor layout (got '{adj.layout}')")
 
 
-# Helper functions ############################################################
 
 
 def get_sparse_diag(
@@ -442,12 +432,7 @@ def get_sparse_diag(
     dtype: Optional[torch.dtype] = None,
     device: Optional[torch.device] = None,
 ) -> Tensor:
-    return torch.sparse.spdiags(
-        torch.full((1, size), fill_value, dtype=dtype, device=device),
-        offsets=torch.zeros(1, dtype=torch.long, device=device),
-        shape=(size, size),
-        layout=layout,
-    )
+    pass
 
 
 def set_sparse_value(adj: Tensor, value: Tensor) -> Tensor:

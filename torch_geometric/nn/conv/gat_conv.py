@@ -33,100 +33,6 @@ else:
 
 
 class GATConv(MessagePassing):
-    r"""The graph attentional operator from the `"Graph Attention Networks"
-    <https://arxiv.org/abs/1710.10903>`_ paper.
-
-    .. math::
-        \mathbf{x}^{\prime}_i = \sum_{j \in \mathcal{N}(i) \cup \{ i \}}
-        \alpha_{i,j}\mathbf{\Theta}_t\mathbf{x}_{j},
-
-    where the attention coefficients :math:`\alpha_{i,j}` are computed as
-
-    .. math::
-        \alpha_{i,j} =
-        \frac{
-        \exp\left(\mathrm{LeakyReLU}\left(
-        \mathbf{a}^{\top}_{s} \mathbf{\Theta}_{s}\mathbf{x}_i
-        + \mathbf{a}^{\top}_{t} \mathbf{\Theta}_{t}\mathbf{x}_j
-        \right)\right)}
-        {\sum_{k \in \mathcal{N}(i) \cup \{ i \}}
-        \exp\left(\mathrm{LeakyReLU}\left(
-        \mathbf{a}^{\top}_{s} \mathbf{\Theta}_{s}\mathbf{x}_i
-        + \mathbf{a}^{\top}_{t}\mathbf{\Theta}_{t}\mathbf{x}_k
-        \right)\right)}.
-
-    If the graph has multi-dimensional edge features :math:`\mathbf{e}_{i,j}`,
-    the attention coefficients :math:`\alpha_{i,j}` are computed as
-
-    .. math::
-        \alpha_{i,j} =
-        \frac{
-        \exp\left(\mathrm{LeakyReLU}\left(
-        \mathbf{a}^{\top}_{s} \mathbf{\Theta}_{s}\mathbf{x}_i
-        + \mathbf{a}^{\top}_{t} \mathbf{\Theta}_{t}\mathbf{x}_j
-        + \mathbf{a}^{\top}_{e} \mathbf{\Theta}_{e} \mathbf{e}_{i,j}
-        \right)\right)}
-        {\sum_{k \in \mathcal{N}(i) \cup \{ i \}}
-        \exp\left(\mathrm{LeakyReLU}\left(
-        \mathbf{a}^{\top}_{s} \mathbf{\Theta}_{s}\mathbf{x}_i
-        + \mathbf{a}^{\top}_{t} \mathbf{\Theta}_{t}\mathbf{x}_k
-        + \mathbf{a}^{\top}_{e} \mathbf{\Theta}_{e} \mathbf{e}_{i,k}
-        \right)\right)}.
-
-    If the graph is not bipartite, :math:`\mathbf{\Theta}_{s} =
-    \mathbf{\Theta}_{t}`.
-
-    Args:
-        in_channels (int or tuple): Size of each input sample, or :obj:`-1` to
-            derive the size from the first input(s) to the forward method.
-            A tuple corresponds to the sizes of source and target
-            dimensionalities in case of a bipartite graph.
-        out_channels (int): Size of each output sample.
-        heads (int, optional): Number of multi-head-attentions.
-            (default: :obj:`1`)
-        concat (bool, optional): If set to :obj:`False`, the multi-head
-            attentions are averaged instead of concatenated.
-            (default: :obj:`True`)
-        negative_slope (float, optional): LeakyReLU angle of the negative
-            slope. (default: :obj:`0.2`)
-        dropout (float, optional): Dropout probability of the normalized
-            attention coefficients which exposes each node to a stochastically
-            sampled neighborhood during training. (default: :obj:`0`)
-        add_self_loops (bool, optional): If set to :obj:`False`, will not add
-            self-loops to the input graph. (default: :obj:`True`)
-        edge_dim (int, optional): Edge feature dimensionality (in case
-            there are any). (default: :obj:`None`)
-        fill_value (float or torch.Tensor or str, optional): The way to
-            generate edge features of self-loops (in case
-            :obj:`edge_dim != None`).
-            If given as :obj:`float` or :class:`torch.Tensor`, edge features of
-            self-loops will be directly given by :obj:`fill_value`.
-            If given as :obj:`str`, edge features of self-loops are computed by
-            aggregating all features of edges that point to the specific node,
-            according to a reduce operation. (:obj:`"add"`, :obj:`"mean"`,
-            :obj:`"min"`, :obj:`"max"`, :obj:`"mul"`). (default: :obj:`"mean"`)
-        bias (bool, optional): If set to :obj:`False`, the layer will not learn
-            an additive bias. (default: :obj:`True`)
-        residual (bool, optional): If set to :obj:`True`, the layer will add
-            a learnable skip-connection. (default: :obj:`False`)
-        **kwargs (optional): Additional arguments of
-            :class:`torch_geometric.nn.conv.MessagePassing`.
-
-    Shapes:
-        - **input:**
-          node features :math:`(|\mathcal{V}|, F_{in})` or
-          :math:`((|\mathcal{V_s}|, F_{s}), (|\mathcal{V_t}|, F_{t}))`
-          if bipartite,
-          edge indices :math:`(2, |\mathcal{E}|)`,
-          edge features :math:`(|\mathcal{E}|, D)` *(optional)*
-        - **output:** node features :math:`(|\mathcal{V}|, H * F_{out})` or
-          :math:`((|\mathcal{V}_t|, H * F_{out})` if bipartite.
-          If :obj:`return_attention_weights=True`, then
-          :math:`((|\mathcal{V}|, H * F_{out}),
-          ((2, |\mathcal{E}|), (|\mathcal{E}|, H)))`
-          or :math:`((|\mathcal{V_t}|, H * F_{out}), ((2, |\mathcal{E}|),
-          (|\mathcal{E}|, H)))` if bipartite
-    """
     def __init__(
         self,
         in_channels: Union[int, Tuple[int, int]],
@@ -156,8 +62,6 @@ class GATConv(MessagePassing):
         self.fill_value = fill_value
         self.residual = residual
 
-        # In case we are operating in bipartite graphs, we apply separate
-        # transformations 'lin_src' and 'lin_dst' to source and target nodes:
         self.lin = self.lin_src = self.lin_dst = None
         if isinstance(in_channels, int):
             self.lin = Linear(in_channels, heads * out_channels, bias=False,
@@ -168,7 +72,6 @@ class GATConv(MessagePassing):
             self.lin_dst = Linear(in_channels[1], heads * out_channels, False,
                                   weight_initializer='glorot')
 
-        # The learnable parameters to compute attention coefficients:
         self.att_src = Parameter(torch.empty(1, heads, out_channels))
         self.att_dst = Parameter(torch.empty(1, heads, out_channels))
 
@@ -180,7 +83,6 @@ class GATConv(MessagePassing):
             self.lin_edge = None
             self.register_parameter('att_edge', None)
 
-        # The number of output channels:
         total_out_channels = out_channels * (heads if concat else 1)
 
         if residual:
@@ -285,8 +187,6 @@ class GATConv(MessagePassing):
 
         res: Optional[Tensor] = None
 
-        # We first transform the input node features. If a tuple is passed, we
-        # transform source and target node features via separate weights:
         if isinstance(x, Tensor):
             assert x.dim() == 2, "Static graphs not supported in 'GATConv'"
 
@@ -296,8 +196,6 @@ class GATConv(MessagePassing):
             if self.lin is not None:
                 x_src = x_dst = self.lin(x).view(-1, H, C)
             else:
-                # If the module is initialized as bipartite, transform source
-                # and destination node features separately:
                 assert self.lin_src is not None and self.lin_dst is not None
                 x_src = self.lin_src(x).view(-1, H, C)
                 x_dst = self.lin_dst(x).view(-1, H, C)
@@ -310,9 +208,6 @@ class GATConv(MessagePassing):
                 res = self.res(x_dst)
 
             if self.lin is not None:
-                # If the module is initialized as non-bipartite, we expect that
-                # source and destination node features have the same shape and
-                # that they their transformations are shared:
                 x_src = self.lin(x_src).view(-1, H, C)
                 if x_dst is not None:
                     x_dst = self.lin(x_dst).view(-1, H, C)
@@ -325,16 +220,12 @@ class GATConv(MessagePassing):
 
         x = (x_src, x_dst)
 
-        # Next, we compute node-level attention coefficients, both for source
-        # and target nodes (if present):
         alpha_src = (x_src * self.att_src).sum(dim=-1)
         alpha_dst = None if x_dst is None else (x_dst * self.att_dst).sum(-1)
         alpha = (alpha_src, alpha_dst)
 
         if self.add_self_loops:
             if isinstance(edge_index, Tensor):
-                # We only want to add self-loops for nodes that appear both as
-                # source and target nodes:
                 num_nodes = x_src.size(0)
                 if x_dst is not None:
                     num_nodes = min(num_nodes, x_dst.size(0))
@@ -353,11 +244,9 @@ class GATConv(MessagePassing):
                         "simultaneously is currently not yet supported for "
                         "'edge_index' in a 'SparseTensor' form")
 
-        # edge_updater_type: (alpha: OptPairTensor, edge_attr: OptTensor)
         alpha = self.edge_updater(edge_index, alpha=alpha, edge_attr=edge_attr,
                                   size=size)
 
-        # propagate_type: (x: OptPairTensor, alpha: Tensor)
         out = self.propagate(edge_index, x=x, alpha=alpha, size=size)
 
         if self.concat:
@@ -374,7 +263,6 @@ class GATConv(MessagePassing):
         if return_attention_weights:
             if isinstance(edge_index, Tensor):
                 if is_torch_sparse_tensor(edge_index):
-                    # TODO TorchScript requires to return a tuple
                     adj = set_sparse_value(edge_index, alpha)
                     return out, (adj, alpha)
                 else:
@@ -387,8 +275,6 @@ class GATConv(MessagePassing):
     def edge_update(self, alpha_j: Tensor, alpha_i: OptTensor,
                     edge_attr: OptTensor, index: Tensor, ptr: OptTensor,
                     dim_size: Optional[int]) -> Tensor:
-        # Given edge-level attention coefficients for source and target nodes,
-        # we simply need to sum them up to "emulate" concatenation:
         alpha = alpha_j if alpha_i is None else alpha_j + alpha_i
         if index.numel() == 0:
             return alpha

@@ -8,7 +8,6 @@ from torch_geometric.typing import OptTensor
 
 
 class DenseGCNConv(torch.nn.Module):
-    r"""See :class:`torch_geometric.nn.conv.GCNConv`."""
     def __init__(
         self,
         in_channels: int,

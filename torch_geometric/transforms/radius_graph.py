@@ -6,23 +6,6 @@ from torch_geometric.transforms import BaseTransform
 
 @functional_transform('radius_graph')
 class RadiusGraph(BaseTransform):
-    r"""Creates edges based on node positions :obj:`data.pos` to all points
-    within a given distance (functional name: :obj:`radius_graph`).
-
-    Args:
-        r (float): The distance.
-        loop (bool, optional): If :obj:`True`, the graph will contain
-            self-loops. (default: :obj:`False`)
-        max_num_neighbors (int, optional): The maximum number of neighbors to
-            return for each element in :obj:`y`.
-            This flag is only needed for CUDA tensors. (default: :obj:`32`)
-        flow (str, optional): The flow direction when using in combination with
-            message passing (:obj:`"source_to_target"` or
-            :obj:`"target_to_source"`). (default: :obj:`"source_to_target"`)
-        num_workers (int): Number of workers to use for computation. Has no
-            effect in case :obj:`batch` is not :obj:`None`, or the input lies
-            on the GPU. (default: :obj:`1`)
-    """
     def __init__(
         self,
         r: float,

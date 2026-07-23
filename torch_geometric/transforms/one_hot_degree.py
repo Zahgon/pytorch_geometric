@@ -8,17 +8,6 @@ from torch_geometric.utils import degree, one_hot
 
 @functional_transform('one_hot_degree')
 class OneHotDegree(BaseTransform):
-    r"""Adds the node degree as one hot encodings to the node features
-    (functional name: :obj:`one_hot_degree`).
-
-    Args:
-        max_degree (int): Maximum degree.
-        in_degree (bool, optional): If set to :obj:`True`, will compute the
-            in-degree of nodes instead of the out-degree.
-            (default: :obj:`False`)
-        cat (bool, optional): Concat node degrees to node features instead
-            of replacing them. (default: :obj:`True`)
-    """
     def __init__(
         self,
         max_degree: int,

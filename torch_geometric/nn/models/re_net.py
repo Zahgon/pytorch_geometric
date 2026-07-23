@@ -11,39 +11,6 @@ from torch_geometric.utils import scatter
 
 
 class RENet(torch.nn.Module):
-    r"""The Recurrent Event Network model from the `"Recurrent Event Network
-    for Reasoning over Temporal Knowledge Graphs"
-    <https://arxiv.org/abs/1904.05530>`_ paper.
-
-    .. math::
-        f_{\mathbf{\Theta}}(\mathbf{e}_s, \mathbf{e}_r,
-        \mathbf{h}^{(t-1)}(s, r))
-
-    based on a RNN encoder
-
-    .. math::
-        \mathbf{h}^{(t)}(s, r) = \textrm{RNN}(\mathbf{e}_s, \mathbf{e}_r,
-        g(\mathcal{O}^{(t)}_r(s)), \mathbf{h}^{(t-1)}(s, r))
-
-    where :math:`\mathbf{e}_s` and :math:`\mathbf{e}_r` denote entity and
-    relation embeddings, and :math:`\mathcal{O}^{(t)}_r(s)` represents the set
-    of objects interacted with subject :math:`s` under relation :math:`r` at
-    timestamp :math:`t`.
-    This model implements :math:`g` as the **Mean Aggregator** and
-    :math:`f_{\mathbf{\Theta}}` as a linear projection.
-
-    Args:
-        num_nodes (int): The number of nodes in the knowledge graph.
-        num_rels (int): The number of relations in the knowledge graph.
-        hidden_channels (int): Hidden size of node and relation embeddings.
-        seq_len (int): The sequence length of past events.
-        num_layers (int, optional): The number of recurrent layers.
-            (default: :obj:`1`)
-        dropout (float): If non-zero, introduces a dropout layer before the
-            final prediction. (default: :obj:`0.`)
-        bias (bool, optional): If set to :obj:`False`, all layers will not
-            learn an additive bias. (default: :obj:`True`)
-    """
     def __init__(
         self,
         num_nodes: int,
@@ -136,19 +103,16 @@ class RENet(torch.nn.Module):
                     self.sub_hist = self.increase_hist_node_size(self.sub_hist)
                     self.obj_hist = self.increase_hist_node_size(self.obj_hist)
 
-                # Delete last timestamp in history.
                 if t > self.t_last:
                     self.sub_hist = self.step(self.sub_hist)
                     self.obj_hist = self.step(self.obj_hist)
                     self.t_last = t
 
-                # Save history in data object.
                 data.h_sub, data.h_sub_t = self.get_history(
                     self.sub_hist, sub, rel)
                 data.h_obj, data.h_obj_t = self.get_history(
                     self.obj_hist, obj, rel)
 
-                # Add new event to history.
                 self.sub_hist[sub][-1].append([obj, rel])
                 self.obj_hist[obj][-1].append([sub, rel])
 

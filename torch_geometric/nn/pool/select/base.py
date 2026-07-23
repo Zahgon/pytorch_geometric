@@ -7,18 +7,6 @@ from torch import Tensor
 
 @dataclass(init=False)
 class SelectOutput:
-    r"""The output of the :class:`Select` method, which holds an assignment
-    from selected nodes to their respective cluster(s).
-
-    Args:
-        node_index (torch.Tensor): The indices of the selected nodes.
-        num_nodes (int): The number of nodes.
-        cluster_index (torch.Tensor): The indices of the clusters each node in
-            :obj:`node_index` is assigned to.
-        num_clusters (int): The number of clusters.
-        weight (torch.Tensor, optional): A weight vector, denoting the strength
-            of the assignment of a node to its cluster. (default: :obj:`None`)
-    """
     node_index: Tensor
     num_nodes: int
     cluster_index: Tensor
@@ -66,15 +54,6 @@ SelectOutput = torch.jit.script(SelectOutput)
 
 
 class Select(torch.nn.Module):
-    r"""An abstract base class for implementing custom node selections as
-    described in the `"Understanding Pooling in Graph Neural Networks"
-    <https://arxiv.org/abs/1905.05178>`_ paper, which maps the nodes of an
-    input graph to supernodes in the coarsened graph.
-
-    Specifically, :class:`Select` returns a :class:`SelectOutput` output, which
-    holds a (sparse) mapping :math:`\mathbf{C} \in {[0, 1]}^{N \times C}` that
-    assigns selected nodes to one or more of :math:`C` super nodes.
-    """
     def reset_parameters(self):
         r"""Resets all learnable parameters of the module."""
 

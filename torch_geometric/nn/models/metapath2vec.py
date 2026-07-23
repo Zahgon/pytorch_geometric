@@ -13,41 +13,6 @@ EPS = 1e-15
 
 
 class MetaPath2Vec(torch.nn.Module):
-    r"""The MetaPath2Vec model from the `"metapath2vec: Scalable Representation
-    Learning for Heterogeneous Networks"
-    <https://ericdongyx.github.io/papers/
-    KDD17-dong-chawla-swami-metapath2vec.pdf>`_ paper where random walks based
-    on a given :obj:`metapath` are sampled in a heterogeneous graph, and node
-    embeddings are learned via negative sampling optimization.
-
-    .. note::
-
-        For an example of using MetaPath2Vec, see
-        `examples/hetero/metapath2vec.py
-        <https://github.com/pyg-team/pytorch_geometric/blob/master/examples/
-        hetero/metapath2vec.py>`_.
-
-    Args:
-        edge_index_dict (Dict[Tuple[str, str, str], torch.Tensor]): Dictionary
-            holding edge indices for each
-            :obj:`(src_node_type, rel_type, dst_node_type)` edge type present
-            in the heterogeneous graph.
-        embedding_dim (int): The size of each embedding vector.
-        metapath (List[Tuple[str, str, str]]): The metapath described as a list
-            of :obj:`(src_node_type, rel_type, dst_node_type)` tuples.
-        walk_length (int): The walk length.
-        context_size (int): The actual context size which is considered for
-            positive samples. This parameter increases the effective sampling
-            rate by reusing samples across different source nodes.
-        walks_per_node (int, optional): The number of walks to sample for each
-            node. (default: :obj:`1`)
-        num_negative_samples (int, optional): The number of negative samples to
-            use for each positive sample. (default: :obj:`1`)
-        num_nodes_dict (Dict[str, int], optional): Dictionary holding the
-            number of nodes for each node type. (default: :obj:`None`)
-        sparse (bool, optional): If set to :obj:`True`, gradients w.r.t. to the
-            weight matrix will be sparse. (default: :obj:`False`)
-    """
     def __init__(
         self,
         edge_index_dict: Dict[EdgeType, Tensor],
@@ -120,7 +85,6 @@ class MetaPath2Vec(torch.nn.Module):
         assert len(offset) == walk_length + 1
         self.offset = torch.tensor(offset)
 
-        # + 1 denotes a dummy node used to link to for isolated nodes.
         self.embedding = Embedding(count + 1, embedding_dim, sparse=sparse)
         self.dummy_idx = count
 
@@ -138,17 +102,7 @@ class MetaPath2Vec(torch.nn.Module):
         return emb if batch is None else emb.index_select(0, batch)
 
     def loader(self, **kwargs):
-        r"""Returns the data loader that creates both positive and negative
-        random walks on the heterogeneous graph.
-
-        Args:
-            **kwargs (optional): Arguments of
-                :class:`torch.utils.data.DataLoader`, such as
-                :obj:`batch_size`, :obj:`shuffle`, :obj:`drop_last` or
-                :obj:`num_workers`.
-        """
-        return DataLoader(range(self.num_nodes_dict[self.metapath[0][0]]),
-                          collate_fn=self._sample, **kwargs)
+        pass
 
     def _pos_sample(self, batch: Tensor) -> Tensor:
         batch = batch.repeat(self.walks_per_node)
@@ -202,7 +156,6 @@ class MetaPath2Vec(torch.nn.Module):
 
     def loss(self, pos_rw: Tensor, neg_rw: Tensor) -> Tensor:
         r"""Computes the loss given positive and negative random walks."""
-        # Positive loss.
         start, rest = pos_rw[:, 0], pos_rw[:, 1:].contiguous()
 
         h_start = self.embedding(start).view(pos_rw.size(0), 1,
@@ -213,7 +166,6 @@ class MetaPath2Vec(torch.nn.Module):
         out = (h_start * h_rest).sum(dim=-1).view(-1)
         pos_loss = -torch.log(torch.sigmoid(out) + EPS).mean()
 
-        # Negative loss.
         start, rest = neg_rw[:, 0], neg_rw[:, 1:].contiguous()
 
         h_start = self.embedding(start).view(neg_rw.size(0), 1,

@@ -154,7 +154,6 @@ class ToHeteroWithBasesTransformer(Transformer):
 
         self.validate()
 
-        # Compute IDs for each node and edge type:
         self.node_type2id = {k: i for i, k in enumerate(metadata[0])}
         self.edge_type2id = {k: i for i, k in enumerate(metadata[1])}
 
@@ -187,83 +186,12 @@ class ToHeteroWithBasesTransformer(Transformer):
         return out
 
     def placeholder(self, node: Node, target: Any, name: str):
-        if node.type is not None:
-            Type = EdgeType if self.is_edge_level(node) else NodeType
-            node.type = Dict[Type, node.type]
-
-        out = node
-
-        # Create `node_offset_dict` and `edge_offset_dict` dictionaries in case
-        # they are not yet initialized. These dictionaries hold the cumulated
-        # sizes used to create a unified graph representation and to split the
-        # output data.
-        if self.is_edge_level(node) and not self._edge_offset_dict_initialized:
-            self.graph.inserting_after(out)
-            out = self.graph.create_node('call_function',
-                                         target=get_edge_offset_dict,
-                                         args=(node, self.edge_type2id),
-                                         name='edge_offset_dict')
-            self._edge_offset_dict_initialized = True
-
-        elif not self._node_offset_dict_initialized:
-            self.graph.inserting_after(out)
-            out = self.graph.create_node('call_function',
-                                         target=get_node_offset_dict,
-                                         args=(node, self.node_type2id),
-                                         name='node_offset_dict')
-            self._node_offset_dict_initialized = True
-
-        # Create a `edge_type` tensor used as input to `HeteroBasisConv`:
-        if self.is_edge_level(node) and not self._edge_type_initialized:
-            self.graph.inserting_after(out)
-            out = self.graph.create_node('call_function', target=get_edge_type,
-                                         args=(node, self.edge_type2id),
-                                         name='edge_type')
-            self._edge_type_initialized = True
-
-        # Add `Linear` operation to align features to the same dimensionality:
-        if name in self.in_channels:
-            self.graph.inserting_after(out)
-            out = self.graph.create_node('call_module',
-                                         target=f'align_lin__{name}',
-                                         args=(node, ),
-                                         name=f'{name}__aligned')
-            self._state[out.name] = self._state[name]
-
-            lin = LinearAlign(self.metadata[int(self.is_edge_level(node))],
-                              self.in_channels[name])
-            setattr(self.module, f'align_lin__{name}', lin)
-
-        # Perform grouping of type-wise values into a single tensor:
-        if self.is_edge_level(node):
-            self.graph.inserting_after(out)
-            out = self.graph.create_node(
-                'call_function', target=group_edge_placeholder,
-                args=(out if name in self.in_channels else node,
-                      self.edge_type2id,
-                      self.find_by_name('node_offset_dict')),
-                name=f'{name}__grouped')
-            self._state[out.name] = 'edge'
-
-        else:
-            self.graph.inserting_after(out)
-            out = self.graph.create_node(
-                'call_function', target=group_node_placeholder,
-                args=(out if name in self.in_channels else node,
-                      self.node_type2id), name=f'{name}__grouped')
-            self._state[out.name] = 'node'
-
-        self.replace_all_uses_with(node, out)
+        pass
 
     def call_message_passing_module(self, node: Node, target: Any, name: str):
-        # Call the `HeteroBasisConv` wrapper instead instead of a single
-        # message passing layer. We need to inject the `edge_type` as first
-        # argument in order to do so.
-        node.args = (self.find_by_name('edge_type'), ) + node.args
+        pass
 
     def output(self, node: Node, target: Any, name: str):
-        # Split the output to dictionaries, holding either node type-wise or
-        # edge type-wise data.
         def _recurse(value: Any) -> Any:
             if isinstance(value, Node) and self.is_edge_level(value):
                 self.graph.inserting_before(node)
@@ -301,17 +229,11 @@ class ToHeteroWithBasesTransformer(Transformer):
         if not isinstance(module, MessagePassing):
             return module
 
-        # Replace each `MessagePassing` module by a `HeteroBasisConv` wrapper:
         return HeteroBasisConv(module, len(self.metadata[1]), self.num_bases)
 
 
-###############################################################################
 
 
-# We make use of a post-message computation hook to inject the
-# basis re-weighting for each individual edge type.
-# This currently requires us to set `conv.fuse = False`, which leads
-# to a materialization of messages.
 def hook(module, inputs, output):
     assert isinstance(module._edge_type, Tensor)
     if module._edge_type.size(0) != output.size(-2):
@@ -327,8 +249,6 @@ def hook(module, inputs, output):
 
 
 class HeteroBasisConv(torch.nn.Module):
-    # A wrapper layer that applies the basis-decomposition technique to a
-    # heterogeneous graph.
     def __init__(self, module: MessagePassing, num_relations: int,
                  num_bases: int):
         super().__init__()
@@ -343,8 +263,6 @@ class HeteroBasisConv(torch.nn.Module):
         for _ in range(num_bases):
             conv = copy.deepcopy(module)
             conv.fuse = False  # Disable `message_and_aggregate` functionality.
-            # We learn a single scalar weight for each individual edge type,
-            # which is used to weight the output message based on edge type:
             conv.edge_type_weight = Parameter(
                 torch.empty(1, num_relations, device=device))
             conv.register_message_forward_hook(hook)
@@ -366,7 +284,6 @@ class HeteroBasisConv(torch.nn.Module):
 
     def forward(self, edge_type: Tensor, *args, **kwargs) -> Tensor:
         out = None
-        # Call message passing modules and perform aggregation:
         for conv in self.convs:
             conv._edge_type = edge_type
             res = conv(*args, **kwargs)
@@ -380,9 +297,6 @@ class HeteroBasisConv(torch.nn.Module):
 
 
 class LinearAlign(torch.nn.Module):
-    # Aligns representations to the same dimensionality. Note that this will
-    # create lazy modules, and as such requires a forward pass in order to
-    # initialize parameters.
     def __init__(self, keys: List[Union[NodeType, EdgeType]],
                  out_channels: int):
         super().__init__()
@@ -401,81 +315,39 @@ class LinearAlign(torch.nn.Module):
                 f'out_channels={self.out_channels})')
 
 
-###############################################################################
 
-# These methods are used in order to receive the cumulated sizes of input
-# dictionaries. We make use of them for creating a unified homogeneous graph
-# representation, as well as to split the final output data once again.
 
 
 def get_node_offset_dict(
     input_dict: Dict[NodeType, Union[Tensor, SparseTensor]],
     type2id: Dict[NodeType, int],
 ) -> Dict[NodeType, int]:
-    cumsum = 0
-    out: Dict[NodeType, int] = {}
-    for key in type2id.keys():
-        out[key] = cumsum
-        cumsum += input_dict[key].size(-2)
-    return out
+    pass
 
 
 def get_edge_offset_dict(
     input_dict: Dict[EdgeType, Union[Tensor, SparseTensor]],
     type2id: Dict[EdgeType, int],
 ) -> Dict[EdgeType, int]:
-    cumsum = 0
-    out: Dict[EdgeType, int] = {}
-    for key in type2id.keys():
-        out[key] = cumsum
-        value = input_dict[key]
-        if isinstance(value, SparseTensor):
-            cumsum += value.nnz()
-        elif value.dtype == torch.long and value.size(0) == 2:
-            cumsum += value.size(-1)
-        else:
-            cumsum += value.size(-2)
-    return out
+    pass
 
 
-###############################################################################
 
-# This method computes the edge type of the final homogeneous graph
-# representation. It will be used in the `HeteroBasisConv` wrapper.
 
 
 def get_edge_type(
     input_dict: Dict[EdgeType, Union[Tensor, SparseTensor]],
     type2id: Dict[EdgeType, int],
 ) -> Tensor:
-
-    inputs = [input_dict[key] for key in type2id.keys()]
-    outs = []
-
-    for i, value in enumerate(inputs):
-        if value.size(0) == 2 and value.dtype == torch.long:  # edge_index
-            out = value.new_full((value.size(-1), ), i, dtype=torch.long)
-        elif isinstance(value, SparseTensor):
-            out = torch.full((value.nnz(), ), i, dtype=torch.long,
-                             device=value.device())
-        else:
-            out = value.new_full((value.size(-2), ), i, dtype=torch.long)
-        outs.append(out)
-
-    return outs[0] if len(outs) == 1 else torch.cat(outs, dim=0)
+    pass
 
 
-###############################################################################
 
-# These methods are used to group the individual type-wise components into a
-# unified single representation.
 
 
 def group_node_placeholder(input_dict: Dict[NodeType, Tensor],
                            type2id: Dict[NodeType, int]) -> Tensor:
-
-    inputs = [input_dict[key] for key in type2id.keys()]
-    return inputs[0] if len(inputs) == 1 else torch.cat(inputs, dim=-2)
+    pass
 
 
 def group_edge_placeholder(
@@ -483,73 +355,19 @@ def group_edge_placeholder(
     type2id: Dict[EdgeType, int],
     offset_dict: Dict[NodeType, int] = None,
 ) -> Union[Tensor, SparseTensor]:
-
-    inputs = [input_dict[key] for key in type2id.keys()]
-
-    if len(inputs) == 1:
-        return inputs[0]
-
-    # In case of grouping a graph connectivity tensor `edge_index` or `adj_t`,
-    # we need to increment its indices:
-    elif inputs[0].size(0) == 2 and inputs[0].dtype == torch.long:
-        if offset_dict is None:
-            raise AttributeError(
-                "Can not infer node-level offsets. Please ensure that there "
-                "exists a node-level argument before the 'edge_index' "
-                "argument in your forward header.")
-
-        outputs = []
-        for value, (src_type, _, dst_type) in zip(inputs, type2id):
-            value = value.clone()
-            value[0, :] += offset_dict[src_type]
-            value[1, :] += offset_dict[dst_type]
-            outputs.append(value)
-
-        return torch.cat(outputs, dim=-1)
-
-    elif isinstance(inputs[0], SparseTensor):
-        if offset_dict is None:
-            raise AttributeError(
-                "Can not infer node-level offsets. Please ensure that there "
-                "exists a node-level argument before the 'SparseTensor' "
-                "argument in your forward header.")
-
-        # For grouping a list of SparseTensors, we convert them into a
-        # unified `edge_index` representation in order to avoid conflicts
-        # induced by re-shuffling the data.
-        rows, cols = [], []
-        for value, (src_type, _, dst_type) in zip(inputs, type2id):
-            col, row, value = value.coo()
-            assert value is None
-            rows.append(row + offset_dict[src_type])
-            cols.append(col + offset_dict[dst_type])
-
-        row = torch.cat(rows, dim=0)
-        col = torch.cat(cols, dim=0)
-        return torch.stack([row, col], dim=0)
-
-    else:
-        return torch.cat(inputs, dim=-2)
+    pass
 
 
-###############################################################################
 
-# This method is used to split the output tensors into individual type-wise
-# components:
 
 
 def split_output(
     output: Tensor,
     offset_dict: Union[Dict[NodeType, int], Dict[EdgeType, int]],
 ) -> Union[Dict[NodeType, Tensor], Dict[EdgeType, Tensor]]:
-
-    cumsums = list(offset_dict.values()) + [output.size(-2)]
-    sizes = [cumsums[i + 1] - cumsums[i] for i in range(len(offset_dict))]
-    outputs = output.split(sizes, dim=-2)
-    return {key: output for key, output in zip(offset_dict, outputs)}
+    pass
 
 
-###############################################################################
 
 
 def key2str(key: Union[NodeType, EdgeType]) -> str:

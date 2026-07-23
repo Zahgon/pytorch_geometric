@@ -12,50 +12,6 @@ from torch_geometric.io import fs
 
 
 class NeuroGraphDataset(InMemoryDataset):
-    r"""The NeuroGraph benchmark datasets from the
-    `"NeuroGraph: Benchmarks for Graph Machine Learning in Brain Connectomics"
-    <https://arxiv.org/abs/2306.06202>`_ paper.
-    :class:`NeuroGraphDataset` holds a collection of five neuroimaging graph
-    learning datasets that span multiple categories of demographics, mental
-    states, and cognitive traits.
-    See the `documentation
-    <https://neurograph.readthedocs.io/en/latest/NeuroGraph.html>`_ and the
-    `Github <https://github.com/Anwar-Said/NeuroGraph>`_ for more details.
-
-    +--------------------+---------+----------------------+
-    | Dataset            | #Graphs | Task                 |
-    +====================+=========+======================+
-    | :obj:`HCPTask`     | 7,443   | Graph Classification |
-    +--------------------+---------+----------------------+
-    | :obj:`HCPGender`   | 1,078   | Graph Classification |
-    +--------------------+---------+----------------------+
-    | :obj:`HCPAge`      | 1,065   | Graph Classification |
-    +--------------------+---------+----------------------+
-    | :obj:`HCPFI`       | 1,071   | Graph Regression     |
-    +--------------------+---------+----------------------+
-    | :obj:`HCPWM`       | 1,078   | Graph Regression     |
-    +--------------------+---------+----------------------+
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        name (str): The name of the dataset (one of :obj:`"HCPGender"`,
-            :obj:`"HCPTask"`, :obj:`"HCPAge"`, :obj:`"HCPFI"`,
-            :obj:`"HCPWM"`).
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        pre_filter (callable, optional): A function that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a boolean
-            value, indicating whether the data object should be included in the
-            final dataset. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-    """
     url = 'https://vanderbilt.box.com/shared/static'
     filenames = {
         'HCPGender': 'r6hlz2arm7yiy6v6981cv2nzq3b0meax.zip',
@@ -83,19 +39,19 @@ class NeuroGraphDataset(InMemoryDataset):
 
     @property
     def raw_dir(self) -> str:
-        return osp.join(self.root, self.name, 'raw')
+        pass
 
     @property
     def raw_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     @property
     def processed_dir(self) -> str:
-        return osp.join(self.root, self.name, 'processed')
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def download(self) -> None:
         url = f'{self.url}/{self.filenames[self.name]}'

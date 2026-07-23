@@ -15,71 +15,10 @@ from torch_geometric.io import fs, read_txt_array
 
 
 class ShapeNet(InMemoryDataset):
-    r"""The ShapeNet part level segmentation dataset from the `"A Scalable
-    Active Framework for Region Annotation in 3D Shape Collections"
-    <http://web.stanford.edu/~ericyi/papers/part_annotation_16_small.pdf>`_
-    paper, containing about 17,000 3D shape point clouds from 16 shape
-    categories.
-    Each category is annotated with 2 to 6 parts.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        categories (str or [str], optional): The category of the CAD models
-            (one or a combination of :obj:`"Airplane"`, :obj:`"Bag"`,
-            :obj:`"Cap"`, :obj:`"Car"`, :obj:`"Chair"`, :obj:`"Earphone"`,
-            :obj:`"Guitar"`, :obj:`"Knife"`, :obj:`"Lamp"`, :obj:`"Laptop"`,
-            :obj:`"Motorbike"`, :obj:`"Mug"`, :obj:`"Pistol"`, :obj:`"Rocket"`,
-            :obj:`"Skateboard"`, :obj:`"Table"`).
-            Can be explicitly set to :obj:`None` to load all categories.
-            (default: :obj:`None`)
-        include_normals (bool, optional): If set to :obj:`False`, will not
-            include normal vectors as input features to :obj:`data.x`.
-            As a result, :obj:`data.x` will be :obj:`None`.
-            (default: :obj:`True`)
-        split (str, optional): If :obj:`"train"`, loads the training dataset.
-            If :obj:`"val"`, loads the validation dataset.
-            If :obj:`"trainval"`, loads the training and validation dataset.
-            If :obj:`"test"`, loads the test dataset.
-            (default: :obj:`"trainval"`)
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        pre_filter (callable, optional): A function that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a boolean
-            value, indicating whether the data object should be included in the
-            final dataset. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-
-    **STATS:**
-
-    .. list-table::
-        :widths: 10 10 10 10 10
-        :header-rows: 1
-
-        * - #graphs
-          - #nodes
-          - #edges
-          - #features
-          - #classes
-        * - 16,881
-          - ~2,616.2
-          - 0
-          - 3
-          - 50
-    """
 
     url = ('https://shapenet.cs.stanford.edu/media/'
            'shapenetcore_partanno_segmentation_benchmark_v0_normal.zip')
 
-    # In case `shapenet.cs.stanford.edu` is offline, try to download the data
-    # from Kaggle instead (requires login):
-    # https://www.kaggle.com/datasets/mitkir/shapenet/download?datasetVersionNumber=1
 
     category_ids = {
         'Airplane': '02691156',
@@ -163,19 +102,15 @@ class ShapeNet(InMemoryDataset):
 
     @property
     def num_classes(self) -> int:
-        return self.y_mask.size(-1)
+        pass
 
     @property
     def raw_file_names(self) -> List[str]:
-        return list(self.category_ids.values()) + ['train_test_split']
+        pass
 
     @property
     def processed_file_names(self) -> List[str]:
-        cats = '_'.join([cat[:3].lower() for cat in self.categories])
-        return [
-            osp.join(f'{cats}_{split}.pt')
-            for split in ['train', 'val', 'test', 'trainval']
-        ]
+        pass
 
     def download(self) -> None:
         path = download_url(self.url, self.root)

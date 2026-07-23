@@ -92,7 +92,6 @@ class GITFormer(torch.nn.Module):
 
         config = AutoConfig.from_pretrained("allenai/scibert_scivocab_uncased")
         config.encoder_width = vision_graph_width
-        # insert cross-attention layer every other block
         config.add_cross_attention = True
         config.is_decoder = True
         config.cross_attention_freq = cross_attention_freq
@@ -105,34 +104,21 @@ class GITFormer(torch.nn.Module):
 
 
 class GITMol(torch.nn.Module):
-    r"""The GITMol model from the `"GIT-Mol: A Multi-modal Large Language
-    Model for Molecular Science with Graph, Image, and Text"
-    <https://arxiv.org/pdf/2308.06911>`_ paper.
-
-    .. note::
-        For an example of using :class:`GITMol`, see
-        `examples/llm/git_mol.py <https://github.com/pyg-team/
-        pytorch_geometric/blob/master/examples/llm/git_mol.py>`_.
-    """
     def __init__(self) -> None:
         super().__init__()
-        # graph
         self.graph_encoder = GraphEncoder(num_layers=2, in_channels=16)
         self.graph_proj = Linear(16, 768)
         self.ln_graph = LayerNorm(768)
-        # text
         self.text_encoder = SentenceTransformer(
             model_name='allenai/scibert_scivocab_uncased',
             pooling_strategy='last_hidden_state',
         )
         self.text_proj = Linear(768, 768)
         self.ln_text = LayerNorm(768)
-        # vision
         self.vision_encoder = VisionTransformer(
             model_name='microsoft/swin-base-patch4-window7-224', )
         self.vision_proj = Linear(1024, 768)
         self.ln_vision = LayerNorm(768)
-        # cross-attention
         self.gitformer = GITFormer(384, 768)
 
         self.xtm_head = torch.nn.ModuleDict({
@@ -224,20 +210,17 @@ class GITMol(torch.nn.Module):
         attention_mask: Tensor,
         modal: str,
     ) -> Tensor:
-        # Initializing lists to hold the original and negative samples
         x_embeds_list = []
         text_input_ids_list = []
         text_attention_mask_list = []
 
         batch_size = x_embeds.size(0)
         for i in range(batch_size):
-            # Original samples
             x_embeds_list.append(x_embeds[i])
             text_input_ids_list.append(input_ids[i, :])
             text_attention_mask_list.append(attention_mask[i, :])
 
             if batch_size > 1:
-                # Negative samples (neg_text_input_ids corresponds to x_embeds)
                 neg_text_input_ids = input_ids[i - 1 if i == batch_size -
                                                1 else i + 1, :]
                 neg_text_attention_mask = attention_mask[i -
@@ -247,19 +230,16 @@ class GITMol(torch.nn.Module):
                 text_attention_mask_list.append(neg_text_attention_mask)
                 x_embeds_list.append(x_embeds[i, :])
 
-                # Negative samples (text_input_ids corresponds to neg_x_embeds)
                 neg_x_embeds = x_embeds[i - 1 if i == batch_size - 1 else i +
                                         1, :]
                 x_embeds_list.append(neg_x_embeds)
                 text_input_ids_list.append(input_ids[i, :])
                 text_attention_mask_list.append(attention_mask[i, :])
 
-        # Stack all samples into two large tensors
         x_embeds_all = torch.stack(x_embeds_list, dim=1) \
             .reshape(-1, x_embeds.size(1), x_embeds.size(2))
         text_input_ids_all = torch.stack(text_input_ids_list, dim=1) \
             .reshape(-1, input_ids.size(1))
-        # Create image attention masks for the concatenated tensor
         image_attns_all = torch.ones(x_embeds_all.size()[:-1],
                                      dtype=torch.long).to(x_embeds_all.device)
         query_tokens_xtm = self.gitformer.query_tokens.expand(
@@ -278,7 +258,6 @@ class GITMol(torch.nn.Module):
         xtm_embeddings = output_xtm[:, :query_tokens_xtm.size(1), :]
 
         xtm_logit = self.xtm_head[modal](xtm_embeddings).mean(dim=1)
-        # Create labels: 1 for the original samples, 0 for the negative samples
         if batch_size > 1:
             labels = torch.cat(
                 [torch.ones(batch_size),
@@ -287,7 +266,6 @@ class GITMol(torch.nn.Module):
             labels = torch.ones(batch_size)
         labels = labels.long().to(xtm_logit.device)
 
-        # Calculate cross entropy loss
         return F.cross_entropy(xtm_logit, labels)
 
     def _calc_xtc_loss(
@@ -315,17 +293,14 @@ class GITMol(torch.nn.Module):
             text_feat.unsqueeze(-1),
         ).squeeze(-1)
 
-        # modal-text similarity: aggregate across all query tokens
         sim_x2t, _ = sim_q2t.max(-1)
         sim_x2t = sim_x2t / self.temp
 
-        # text-query similarity
         sim_t2q = torch.matmul(
             text_feat.unsqueeze(1).unsqueeze(1),
             x_feats.permute(0, 2, 1),
         ).squeeze(-2)
 
-        # text-modal similarity: aggregate across all query tokens
         sim_t2x, _ = sim_t2q.max(-1)
         sim_t2x = sim_t2x / self.temp
 

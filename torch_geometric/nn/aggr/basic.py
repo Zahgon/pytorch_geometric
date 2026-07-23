@@ -10,12 +10,6 @@ from torch_geometric.utils import softmax
 
 
 class SumAggregation(Aggregation):
-    r"""An aggregation operator that sums up features across a set of elements.
-
-    .. math::
-        \mathrm{sum}(\mathcal{X}) = \sum_{\mathbf{x}_i \in \mathcal{X}}
-        \mathbf{x}_i.
-    """
     def forward(self, x: Tensor, index: Optional[Tensor] = None,
                 ptr: Optional[Tensor] = None, dim_size: Optional[int] = None,
                 dim: int = -2) -> Tensor:
@@ -23,13 +17,6 @@ class SumAggregation(Aggregation):
 
 
 class MeanAggregation(Aggregation):
-    r"""An aggregation operator that averages features across a set of
-    elements.
-
-    .. math::
-        \mathrm{mean}(\mathcal{X}) = \frac{1}{|\mathcal{X}|}
-        \sum_{\mathbf{x}_i \in \mathcal{X}} \mathbf{x}_i.
-    """
     def forward(self, x: Tensor, index: Optional[Tensor] = None,
                 ptr: Optional[Tensor] = None, dim_size: Optional[int] = None,
                 dim: int = -2) -> Tensor:
@@ -37,13 +24,6 @@ class MeanAggregation(Aggregation):
 
 
 class MaxAggregation(Aggregation):
-    r"""An aggregation operator that takes the feature-wise maximum across a
-    set of elements.
-
-    .. math::
-        \mathrm{max}(\mathcal{X}) = \max_{\mathbf{x}_i \in \mathcal{X}}
-        \mathbf{x}_i.
-    """
     def forward(self, x: Tensor, index: Optional[Tensor] = None,
                 ptr: Optional[Tensor] = None, dim_size: Optional[int] = None,
                 dim: int = -2) -> Tensor:
@@ -51,13 +31,6 @@ class MaxAggregation(Aggregation):
 
 
 class MinAggregation(Aggregation):
-    r"""An aggregation operator that takes the feature-wise minimum across a
-    set of elements.
-
-    .. math::
-        \mathrm{min}(\mathcal{X}) = \min_{\mathbf{x}_i \in \mathcal{X}}
-        \mathbf{x}_i.
-    """
     def forward(self, x: Tensor, index: Optional[Tensor] = None,
                 ptr: Optional[Tensor] = None, dim_size: Optional[int] = None,
                 dim: int = -2) -> Tensor:
@@ -65,36 +38,14 @@ class MinAggregation(Aggregation):
 
 
 class MulAggregation(Aggregation):
-    r"""An aggregation operator that multiples features across a set of
-    elements.
-
-    .. math::
-        \mathrm{mul}(\mathcal{X}) = \prod_{\mathbf{x}_i \in \mathcal{X}}
-        \mathbf{x}_i.
-    """
     def forward(self, x: Tensor, index: Optional[Tensor] = None,
                 ptr: Optional[Tensor] = None, dim_size: Optional[int] = None,
                 dim: int = -2) -> Tensor:
-        # TODO Currently, `mul` reduction can only operate on `index`:
         self.assert_index_present(index)
         return self.reduce(x, index, None, dim_size, dim, reduce='mul')
 
 
 class VarAggregation(Aggregation):
-    r"""An aggregation operator that takes the feature-wise variance across a
-    set of elements.
-
-    .. math::
-        \mathrm{var}(\mathcal{X}) = \mathrm{mean}(\{ \mathbf{x}_i^2 : x \in
-        \mathcal{X} \}) - \mathrm{mean}(\mathcal{X})^2.
-
-    Args:
-        semi_grad (bool, optional): If set to :obj:`True`, will turn off
-            gradient calculation during :math:`E[X^2]` computation. Therefore,
-            only semi-gradients are used during backpropagation. Useful for
-            saving memory and accelerating backward computation.
-            (default: :obj:`False`)
-    """
     def __init__(self, semi_grad: bool = False):
         super().__init__()
         self.semi_grad = semi_grad
@@ -112,19 +63,6 @@ class VarAggregation(Aggregation):
 
 
 class StdAggregation(Aggregation):
-    r"""An aggregation operator that takes the feature-wise standard deviation
-    across a set of elements.
-
-    .. math::
-        \mathrm{std}(\mathcal{X}) = \sqrt{\mathrm{var}(\mathcal{X})}.
-
-    Args:
-        semi_grad (bool, optional): If set to :obj:`True`, will turn off
-            gradient calculation during :math:`E[X^2]` computation. Therefore,
-            only semi-gradients are used during backpropagation. Useful for
-            saving memory and accelerating backward computation.
-            (default: :obj:`False`)
-    """
     def __init__(self, semi_grad: bool = False):
         super().__init__()
         self.var_aggr = VarAggregation(semi_grad)
@@ -133,41 +71,12 @@ class StdAggregation(Aggregation):
                 ptr: Optional[Tensor] = None, dim_size: Optional[int] = None,
                 dim: int = -2) -> Tensor:
         var = self.var_aggr(x, index, ptr, dim_size, dim)
-        # Allow "undefined" gradient at `sqrt(0.0)`:
         out = var.clamp(min=1e-5).sqrt()
         out = out.masked_fill(out <= math.sqrt(1e-5), 0.0)
         return out
 
 
 class SoftmaxAggregation(Aggregation):
-    r"""The softmax aggregation operator based on a temperature term, as
-    described in the `"DeeperGCN: All You Need to Train Deeper GCNs"
-    <https://arxiv.org/abs/2006.07739>`_ paper.
-
-    .. math::
-        \mathrm{softmax}(\mathcal{X}|t) = \sum_{\mathbf{x}_i\in\mathcal{X}}
-        \frac{\exp(t\cdot\mathbf{x}_i)}{\sum_{\mathbf{x}_j\in\mathcal{X}}
-        \exp(t\cdot\mathbf{x}_j)}\cdot\mathbf{x}_{i},
-
-    where :math:`t` controls the softness of the softmax when aggregating over
-    a set of features :math:`\mathcal{X}`.
-
-    Args:
-        t (float, optional): Initial inverse temperature for softmax
-            aggregation. (default: :obj:`1.0`)
-        learn (bool, optional): If set to :obj:`True`, will learn the value
-            :obj:`t` for softmax aggregation dynamically.
-            (default: :obj:`False`)
-        semi_grad (bool, optional): If set to :obj:`True`, will turn off
-            gradient calculation during softmax computation. Therefore, only
-            semi-gradients are used during backpropagation. Useful for saving
-            memory and accelerating backward computation when :obj:`t` is not
-            learnable. (default: :obj:`False`)
-        channels (int, optional): Number of channels to learn from :math:`t`.
-            If set to a value greater than :obj:`1`, :math:`t` will be learned
-            per input feature channel. This requires compatible shapes for the
-            input to the forward calculation. (default: :obj:`1`)
-    """
     def __init__(self, t: float = 1.0, learn: bool = False,
                  semi_grad: bool = False, channels: int = 1):
         super().__init__()
@@ -219,32 +128,6 @@ class SoftmaxAggregation(Aggregation):
 
 
 class PowerMeanAggregation(Aggregation):
-    r"""The powermean aggregation operator based on a power term, as
-    described in the `"DeeperGCN: All You Need to Train Deeper GCNs"
-    <https://arxiv.org/abs/2006.07739>`_ paper.
-
-    .. math::
-        \mathrm{powermean}(\mathcal{X}|p) = \left(\frac{1}{|\mathcal{X}|}
-        \sum_{\mathbf{x}_i\in\mathcal{X}}\mathbf{x}_i^{p}\right)^{1/p},
-
-    where :math:`p` controls the power of the powermean when aggregating over
-    a set of features :math:`\mathcal{X}`.
-
-    Args:
-        p (float, optional): Initial power for powermean aggregation.
-            (default: :obj:`1.0`)
-        learn (bool, optional): If set to :obj:`True`, will learn the value
-            :obj:`p` for powermean aggregation dynamically.
-            (default: :obj:`False`)
-        channels (int, optional): Number of channels to learn from :math:`p`.
-            If set to a value greater than :obj:`1`, :math:`p` will be learned
-            per input feature channel. This requires compatible shapes for the
-            input to the forward calculation. (default: :obj:`1`)
-        clamp_min (float, optional): Lower-bound of the range to be clamped
-            to. There is no lower bound if set to :obj:`None`.
-        clamp_max (float, optional): Upper-bound of the range to be clamped
-            to. There is no upper bound if set to :obj:`None`.
-    """
     def __init__(
         self,
         p: float = 1.0,

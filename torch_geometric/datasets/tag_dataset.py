@@ -46,40 +46,6 @@ def _safe_auto_tokenizer(model_name: str) -> PreTrainedTokenizerBase:
 
 
 class TAGDataset(InMemoryDataset):
-    r"""The Text Attributed Graph datasets from the
-    `"Learning on Large-scale Text-attributed Graphs via Variational Inference"
-    <https://arxiv.org/abs/2210.14709>`_ paper and `"Harnessing Explanations:
-    LLM-to-LM Interpreter for Enhanced Text-Attributed Graph Representation
-    Learning" <https://arxiv.org/abs/2305.19523>`_ paper.
-    This dataset is aiming on transform `ogbn products`, `ogbn arxiv`
-    into Text Attributed Graph that each node in graph is associate with a
-    raw text, LLM prediction and explanation, that dataset can be adapt to
-    DataLoader (for LM training) and NeighborLoader(for GNN training).
-    In addition, this class can be use as a wrapper class by convert a
-    InMemoryDataset with Tokenizer and text into Text Attributed Graph.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        dataset (InMemoryDataset): The name of the dataset
-            (:obj:`"ogbn-products"`, :obj:`"ogbn-arxiv"`).
-        tokenizer_name (str): The tokenizer name for language model,
-            Be sure to use same tokenizer name as your `model id` of model repo
-            on huggingface.co.
-        text (List[str]): list of raw text associate with node, the order of
-            list should be align with node list
-        split_idx (Optional[Dict[str, torch.Tensor]]): Optional dictionary,
-            for saving split index, it is required that if your dataset doesn't
-            have get_split_idx function
-        tokenize_batch_size (int): batch size of tokenizing text, the
-            tokenizing process will run on cpu, default: 256
-        token_on_disk (bool): save token as .pt file on disk or not,
-            default: False
-        text_on_disk (bool): save given text(list of str) as dataframe on disk
-            or not, default: False
-        force_reload (bool): default: False
-    .. note::
-        See `example/llm/glem.py` for example usage
-    """
     raw_text_id = {
         'ogbn-arxiv': '1g3OOVhRyiyKv13LY6gbp8GLITocOUr_3',
         'ogbn-products': '1I-S176-W4Bm1iPDjQv3hYwQBtxE0v8mt'
@@ -103,7 +69,6 @@ class TAGDataset(InMemoryDataset):
         text_on_disk: bool = False,
         force_reload: bool = False,
     ) -> None:
-        # list the vars you want to pass in before run download & process
         self.name = dataset.name
         self.text = text
         self.llm_prediction_topk = 5
@@ -136,11 +101,8 @@ class TAGDataset(InMemoryDataset):
             if text is not None:
                 self.save_node_text(text)
         self.text_on_disk = text_on_disk
-        # init will call download and process
         super().__init__(self.root, transform=None, pre_transform=None,
                          pre_filter=None, force_reload=force_reload)
-        # after processing and download
-        # Dataset has to have BaseData as _data
         assert dataset._data is not None
         self._data = dataset._data  # reassign reference
         assert self._data is not None
@@ -170,59 +132,34 @@ class TAGDataset(InMemoryDataset):
 
     @property
     def num_classes(self) -> int:
-        return self.__num_classes__
+        pass
 
     @property
     def raw_file_names(self) -> List[str]:
-        file_names = []
-        for _, _, files in os.walk(osp.join(self.root, 'raw')):
-            for file in files:
-                file_names.append(file)
-        return file_names
+        pass
 
     @property
     def processed_file_names(self) -> List[str]:
-        return [
-            'geometric_data_processed.pt', 'pre_filter.pt',
-            'pre_transformed.pt'
-        ]
+        pass
 
     @property
     def token(self) -> Dict[str, Tensor]:
-        if self._token is None:  # lazy load
-            self._token = self.tokenize_graph()
-        return self._token
+        pass
 
     @property
     def llm_explanation_token(self) -> Dict[str, Tensor]:
-        if self._llm_explanation_token is None and \
-                self.name in self.llm_explanation_id:
-            self._llm_explanation_token = self.tokenize_graph(
-                text_type='llm_explanation')
-        return self._llm_explanation_token
+        pass
 
     @property
     def all_token(self) -> Dict[str, Tensor]:
-        if self._all_token is None and \
-                self.name in self.llm_explanation_id:
-            self._all_token = self.tokenize_graph(text_type='all')
-        return self._all_token
+        pass
 
-    # load is_gold after init
     @property
     def is_gold(self) -> Tensor:
-        if self._is_gold is None:
-            print('lazy load is_gold!!')
-            self._is_gold = self.load_gold_mask()
-        return self._is_gold
+        pass
 
     def get_n_id(self, node_idx: IndexType) -> Tensor:
-        if self._n_id is None:
-            assert self._data is not None
-            assert self._data.num_nodes is not None
-            assert isinstance(self._data.num_nodes, int)
-            self._n_id = torch.arange(self._data.num_nodes)
-        return self._n_id[node_idx]
+        pass
 
     def load_gold_mask(self) -> Tensor:
         r"""Use original train split as gold split, generating is_gold mask
@@ -238,14 +175,7 @@ class TAGDataset(InMemoryDataset):
         return is_good_tensor
 
     def get_gold(self, node_idx: IndexType) -> Tensor:
-        r"""Get gold mask for given node_idx.
-
-        Args:
-            node_idx (torch.tensor): a tensor contain node idx
-        """
-        if self._is_gold is None:
-            self._is_gold = self.is_gold
-        return self._is_gold[node_idx]
+        pass
 
     def get_idx_split(self) -> Dict[str, Tensor]:
         return self.split_idx
@@ -268,7 +198,6 @@ class TAGDataset(InMemoryDataset):
             fs.cp(f'{self.llm_prediction_url}/{self.name}.csv', self.raw_dir)
 
     def process(self) -> None:
-        # process Title and Abstraction
         if osp.exists(osp.join(self.root, 'raw', 'node-text.csv.gz')):
             text_df = read_csv(osp.join(self.root, 'raw', 'node-text.csv.gz'))
             self.text = list(text_df['text'])
@@ -283,14 +212,11 @@ class TAGDataset(InMemoryDataset):
                              "The raw text of each node is not specified"
                              "Please pass in 'text' when convert your dataset "
                              "to Text Attribute Graph Dataset")
-        # process LLM explanation and prediction
         llm_explanation_path = f'{self.raw_dir}/node-gpt-response.csv.gz'
         llm_prediction_path = f'{self.raw_dir}/{self.name}.csv'
         if osp.exists(llm_explanation_path) and osp.exists(
                 llm_prediction_path):
-            # load LLM explanation
             self.llm_explanation = list(read_csv(llm_explanation_path)['text'])
-            # load LLM prediction
             preds = []
             with open(llm_prediction_path) as file:
                 reader = csv.reader(file)
@@ -365,7 +291,6 @@ class TAGDataset(InMemoryDataset):
         token_keys = ['input_ids', 'token_type_ids', 'attention_mask']
         path = os.path.join(self.processed_dir, 'token', text_type,
                             self.tokenizer_name)
-        # Check if the .pt files already exist
         token_files_exist = any(
             os.path.exists(os.path.join(path, f'{k}.pt')) for k in token_keys)
 
@@ -409,13 +334,6 @@ class TAGDataset(InMemoryDataset):
         return f'{self.__class__.__name__}()'
 
     class TextDataset(torch.utils.data.Dataset):
-        r"""This nested dataset provides textual data for each node in
-        the graph. Factory method to create TextDataset from TAGDataset.
-
-        Args:
-            tag_dataset (TAGDataset): the parent dataset
-            text_type (str): type of text
-        """
         def __init__(self, tag_dataset: 'TAGDataset',
                      text_type: str = 'raw_text') -> None:
             assert text_type in ['raw_text', 'llm_explanation', 'all']
@@ -433,17 +351,8 @@ class TAGDataset(InMemoryDataset):
             self.labels = tag_dataset._data.y
 
         def get_token(self, node_idx: IndexType) -> Dict[str, Tensor]:
-            r"""This function will be called in __getitem__().
+            pass
 
-            Args:
-                node_idx (IndexType): selected node idx in each batch
-            Returns:
-                items (Dict[str, Tensor]): input for LM
-            """
-            items = {k: v[node_idx] for k, v in self.token.items()}
-            return items
-
-        # for LM training
         def __getitem__(
             self,
             node_id: IndexType,
@@ -478,7 +387,4 @@ class TAGDataset(InMemoryDataset):
             return f'{self.__class__.__name__}()'
 
     def to_text_dataset(self, text_type: str = 'raw_text') -> TextDataset:
-        r"""Factory Build text dataset from Text Attributed Graph Dataset
-        each data point is node's associated text token.
-        """
-        return TAGDataset.TextDataset(self, text_type)
+        pass

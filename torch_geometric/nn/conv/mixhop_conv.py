@@ -13,40 +13,6 @@ from torch_geometric.utils import spmm
 
 
 class MixHopConv(MessagePassing):
-    r"""The Mix-Hop graph convolutional operator from the
-    `"MixHop: Higher-Order Graph Convolutional Architectures via Sparsified
-    Neighborhood Mixing" <https://arxiv.org/abs/1905.00067>`_ paper.
-
-    .. math::
-        \mathbf{X}^{\prime}={\Bigg\Vert}_{p\in P}
-        {\left( \mathbf{\hat{D}}^{-1/2} \mathbf{\hat{A}}
-        \mathbf{\hat{D}}^{-1/2} \right)}^p \mathbf{X} \mathbf{\Theta},
-
-    where :math:`\mathbf{\hat{A}} = \mathbf{A} + \mathbf{I}` denotes the
-    adjacency matrix with inserted self-loops and
-    :math:`\hat{D}_{ii} = \sum_{j=0} \hat{A}_{ij}` its diagonal degree matrix.
-
-    Args:
-        in_channels (int): Size of each input sample, or :obj:`-1` to derive
-            the size from the first input(s) to the forward method.
-        out_channels (int): Size of each output sample.
-        powers (List[int], optional): The powers of the adjacency matrix to
-            use. (default: :obj:`[0, 1, 2]`)
-        add_self_loops (bool, optional): If set to :obj:`False`, will not add
-            self-loops to the input graph. (default: :obj:`True`)
-        bias (bool, optional): If set to :obj:`False`, the layer will not learn
-            an additive bias. (default: :obj:`True`)
-        **kwargs (optional): Additional arguments of
-            :class:`torch_geometric.nn.conv.MessagePassing`.
-
-    Shapes:
-        - **input:**
-          node features :math:`(|\mathcal{V}|, F_{in})`,
-          edge indices :math:`(2, |\mathcal{E}|)`,
-          edge weights :math:`(|\mathcal{E}|)` *(optional)*
-        - **output:**
-          node features :math:`(|\mathcal{V}|, |P| \cdot F_{out})`
-    """
     def __init__(
         self,
         in_channels: int,
@@ -101,7 +67,6 @@ class MixHopConv(MessagePassing):
         outs = [self.lins[0](x)]
 
         for lin in self.lins[1:]:
-            # propagate_type: (x: Tensor, edge_weight: OptTensor)
             x = self.propagate(edge_index, x=x, edge_weight=edge_weight)
 
             outs.append(lin.forward(x))

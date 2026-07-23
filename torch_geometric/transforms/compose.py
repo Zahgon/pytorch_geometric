@@ -5,11 +5,6 @@ from torch_geometric.transforms import BaseTransform
 
 
 class Compose(BaseTransform):
-    r"""Composes several transforms together.
-
-    Args:
-        transforms (List[Callable]): List of transforms to compose.
-    """
     def __init__(self, transforms: List[Callable]):
         self.transforms = transforms
 
@@ -30,11 +25,6 @@ class Compose(BaseTransform):
 
 
 class ComposeFilters:
-    r"""Composes several filters together.
-
-    Args:
-        filters (List[Callable]): List of filters to compose.
-    """
     def __init__(self, filters: List[Callable]):
         self.filters = filters
 

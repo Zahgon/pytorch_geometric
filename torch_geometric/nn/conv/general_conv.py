@@ -19,53 +19,6 @@ from torch_geometric.utils import softmax
 
 
 class GeneralConv(MessagePassing):
-    r"""A general GNN layer adapted from the `"Design Space for Graph Neural
-    Networks" <https://arxiv.org/abs/2011.08843>`_ paper.
-
-    Args:
-        in_channels (int or tuple): Size of each input sample, or :obj:`-1` to
-            derive the size from the first input(s) to the forward method.
-            A tuple corresponds to the sizes of source and target
-            dimensionalities.
-        out_channels (int): Size of each output sample.
-        in_edge_channels (int, optional): Size of each input edge.
-            (default: :obj:`None`)
-        aggr (str, optional): The aggregation scheme to use
-            (:obj:`"add"`, :obj:`"mean"`, :obj:`"max"`).
-            (default: :obj:`"mean"`)
-        skip_linear (bool, optional): Whether apply linear function in skip
-            connection. (default: :obj:`False`)
-        directed_msg (bool, optional): If message passing is directed;
-            otherwise, message passing is bi-directed. (default: :obj:`True`)
-        heads (int, optional): Number of message passing ensembles.
-            If :obj:`heads > 1`, the GNN layer will output an ensemble of
-            multiple messages.
-            If attention is used (:obj:`attention=True`), this corresponds to
-            multi-head attention. (default: :obj:`1`)
-        attention (bool, optional): Whether to add attention to message
-            computation. (default: :obj:`False`)
-        attention_type (str, optional): Type of attention: :obj:`"additive"`,
-            :obj:`"dot_product"`. (default: :obj:`"additive"`)
-        l2_normalize (bool, optional): If set to :obj:`True`, output features
-            will be :math:`\ell_2`-normalized, *i.e.*,
-            :math:`\frac{\mathbf{x}^{\prime}_i}
-            {\| \mathbf{x}^{\prime}_i \|_2}`.
-            (default: :obj:`False`)
-        bias (bool, optional): If set to :obj:`False`, the layer will not learn
-            an additive bias. (default: :obj:`True`)
-        **kwargs (optional): Additional arguments of
-            :class:`torch_geometric.nn.conv.MessagePassing`.
-
-    Shapes:
-        - **input:**
-          node features :math:`(|\mathcal{V}|, F_{in})` or
-          :math:`((|\mathcal{V_s}|, F_{s}), (|\mathcal{V_t}|, F_{t}))`
-          if bipartite,
-          edge indices :math:`(2, |\mathcal{E}|)`,
-          edge attributes :math:`(|\mathcal{E}|, D)` *(optional)*
-        - **output:** node features :math:`(|\mathcal{V}|, F_{out})` or
-          :math:`(|\mathcal{V}_t|, F_{out})` if bipartite
-    """
     def __init__(
         self,
         in_channels: Union[int, Tuple[int, int]],
@@ -116,7 +69,6 @@ class GeneralConv(MessagePassing):
             self.lin_edge = Linear(in_edge_channels, out_channels * self.heads,
                                    bias=bias)
 
-        # TODO: A general torch_geometric.nn.AttentionLayer
         if self.attention:
             if self.attention_type == 'additive':
                 self.att_msg = Parameter(
@@ -151,7 +103,6 @@ class GeneralConv(MessagePassing):
         if isinstance(x, Tensor):
             x: OptPairTensor = (x, x)
         x_self = x[1]
-        # propagate_type: (x: OptPairTensor, edge_attr: OptTensor)
         out = self.propagate(edge_index, x=x, size=size, edge_attr=edge_attr)
         out = out.mean(dim=1)  # todo: other approach to aggregate heads
         out = out + self.lin_self(x_self)

@@ -8,22 +8,6 @@ from torch_geometric.nn.inits import reset
 
 
 class DeepSetsAggregation(Aggregation):
-    r"""Performs Deep Sets aggregation in which the elements to aggregate are
-    first transformed by a Multi-Layer Perceptron (MLP)
-    :math:`\phi_{\mathbf{\Theta}}`, summed, and then transformed by another MLP
-    :math:`\rho_{\mathbf{\Theta}}`, as suggested in the `"Graph Neural Networks
-    with Adaptive Readouts" <https://arxiv.org/abs/2211.04952>`_ paper.
-
-    Args:
-        local_nn (torch.nn.Module, optional): The neural network
-            :math:`\phi_{\mathbf{\Theta}}`, *e.g.*, defined by
-            :class:`torch.nn.Sequential` or
-            :class:`torch_geometric.nn.models.MLP`. (default: :obj:`None`)
-        global_nn (torch.nn.Module, optional): The neural network
-            :math:`\rho_{\mathbf{\Theta}}`, *e.g.*, defined by
-            :class:`torch.nn.Sequential` or
-            :class:`torch_geometric.nn.models.MLP`. (default: :obj:`None`)
-    """
     def __init__(
         self,
         local_nn: Optional[torch.nn.Module] = None,

@@ -17,61 +17,6 @@ from torch_geometric.utils import index_sort
 
 
 class Entities(InMemoryDataset):
-    r"""The relational entities networks :obj:`"AIFB"`, :obj:`"MUTAG"`,
-    :obj:`"BGS"` and :obj:`"AM"` from the `"Modeling Relational Data with Graph
-    Convolutional Networks" <https://arxiv.org/abs/1703.06103>`_ paper.
-    Training and test splits are given by node indices.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        name (str): The name of the dataset (:obj:`"AIFB"`, :obj:`"MUTAG"`,
-            :obj:`"BGS"`, :obj:`"AM"`).
-        hetero (bool, optional): If set to :obj:`True`, will save the dataset
-            as a :class:`~torch_geometric.data.HeteroData` object.
-            (default: :obj:`False`)
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-
-    **STATS:**
-
-    .. list-table::
-        :widths: 10 10 10 10 10
-        :header-rows: 1
-
-        * - Name
-          - #nodes
-          - #edges
-          - #features
-          - #classes
-        * - AIFB
-          - 8,285
-          - 58,086
-          - 0
-          - 4
-        * - AM
-          - 1,666,764
-          - 11,976,642
-          - 0
-          - 11
-        * - MUTAG
-          - 23,644
-          - 148,454
-          - 0
-          - 2
-        * - BGS
-          - 333,845
-          - 1,832,398
-          - 0
-          - 2
-    """
 
     url = 'https://data.dgl.ai/dataset/{}.tgz'
 
@@ -96,32 +41,27 @@ class Entities(InMemoryDataset):
 
     @property
     def raw_dir(self) -> str:
-        return osp.join(self.root, self.name, 'raw')
+        pass
 
     @property
     def processed_dir(self) -> str:
-        return osp.join(self.root, self.name, 'processed')
+        pass
 
     @property
     def num_relations(self) -> int:
-        return int(self._data.edge_type.max()) + 1  # type: ignore
+        pass
 
     @property
     def num_classes(self) -> int:
-        return int(self._data.train_y.max()) + 1  # type: ignore
+        pass
 
     @property
     def raw_file_names(self) -> List[str]:
-        return [
-            f'{self.name}_stripped.nt.gz',
-            'completeDataset.tsv',
-            'trainingSet.tsv',
-            'testSet.tsv',
-        ]
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'hetero_data.pt' if self.hetero else 'data.pt'
+        pass
 
     def download(self) -> None:
         path = download_url(self.url.format(self.name), self.root)

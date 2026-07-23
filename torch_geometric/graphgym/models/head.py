@@ -8,12 +8,6 @@ from torch_geometric.graphgym.register import register_head
 
 @register_head('node')
 class GNNNodeHead(torch.nn.Module):
-    r"""A GNN prediction head for node-level prediction tasks.
-
-    Args:
-        dim_in (int): The input feature dimension.
-        dim_out (int): The output feature dimension.
-    """
     def __init__(self, dim_in: int, dim_out: int):
         super().__init__()
         self.layer_post_mp = MLP(
@@ -45,15 +39,8 @@ class GNNNodeHead(torch.nn.Module):
 @register_head('edge')
 @register_head('link_pred')
 class GNNEdgeHead(torch.nn.Module):
-    r"""A GNN prediction head for edge-level/link-level prediction tasks.
-
-    Args:
-        dim_in (int): The input feature dimension.
-        dim_out (int): The output feature dimension.
-    """
     def __init__(self, dim_in: int, dim_out: int):
         super().__init__()
-        # Module to decode edges from node embeddings:
         if cfg.model.edge_decoding == 'concat':
             self.layer_post_mp = MLP(
                 new_layer_config(
@@ -105,14 +92,6 @@ class GNNEdgeHead(torch.nn.Module):
 
 @register_head('graph')
 class GNNGraphHead(torch.nn.Module):
-    r"""A GNN prediction head for graph-level prediction tasks.
-    A post message passing layer (as specified by :obj:`cfg.gnn.post_mp`) is
-    used to transform the pooled graph-level embeddings using an MLP.
-
-    Args:
-        dim_in (int): The input feature dimension.
-        dim_out (int): The output feature dimension.
-    """
     def __init__(self, dim_in: int, dim_out: int):
         super().__init__()
         self.layer_post_mp = MLP(

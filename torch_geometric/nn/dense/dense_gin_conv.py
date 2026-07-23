@@ -8,7 +8,6 @@ from torch_geometric.nn.inits import reset
 
 
 class DenseGINConv(torch.nn.Module):
-    r"""See :class:`torch_geometric.nn.conv.GINConv`."""
     def __init__(
         self,
         nn: Module,

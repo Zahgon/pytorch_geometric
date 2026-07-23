@@ -89,7 +89,6 @@ class SGModule(torch.nn.Module):
             fc.reset_parameters()
 
     def forward(self, x: Tensor, batch: Tensor):
-        # to dense batch expects sorted batch
         batch, indices = batch.sort(stable=True)
         rev_perm = torch.empty_like(indices)
         rev_perm[indices] = torch.arange(len(indices), device=indices.device)
@@ -97,13 +96,11 @@ class SGModule(torch.nn.Module):
         x, mask = to_dense_batch(x, batch)
         layer_ = []
 
-        # input MLP layer
         x = self.fcs[0](x)
         x = self.bns[0](x)
         x = self.activation(x)
         x = F.dropout(x, p=self.dropout, training=self.training)
 
-        # store as residual link
         layer_.append(x)
 
         for i, attn in enumerate(self.attns):
@@ -115,36 +112,11 @@ class SGModule(torch.nn.Module):
             layer_.append(x)
 
         x_mask = x[mask]
-        # reverse the sorting
         unsorted_x_mask = x_mask[rev_perm]
         return unsorted_x_mask
 
 
 class SGFormer(torch.nn.Module):
-    r"""The sgformer module from the
-    `"SGFormer: Simplifying and Empowering Transformers for
-    Large-Graph Representations"
-    <https://arxiv.org/abs/2306.10759>`_ paper.
-
-    Args:
-        in_channels (int): Input channels.
-        hidden_channels (int): Hidden channels.
-        out_channels (int): Output channels.
-        trans_num_layers (int): The number of layers for all-pair attention.
-            (default: :obj:`2`)
-        trans_num_heads (int): The number of heads for attention.
-            (default: :obj:`1`)
-        trans_dropout (float): Global dropout rate.
-            (default: :obj:`0.5`)
-        gnn_num_layers (int): The number of layers for GNN.
-            (default: :obj:`3`)
-        gnn_dropout (float): GNN dropout rate.
-            (default: :obj:`0.5`)
-        graph_weight (float): The weight balance global and gnn module.
-            (default: :obj:`0.5`)
-        aggregate (str): Aggregate type.
-            (default: :obj:`add`)
-    """
     def __init__(
         self,
         in_channels: int,

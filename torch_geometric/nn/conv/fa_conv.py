@@ -25,57 +25,6 @@ else:
 
 
 class FAConv(MessagePassing):
-    r"""The Frequency Adaptive Graph Convolution operator from the
-    `"Beyond Low-Frequency Information in Graph Convolutional Networks"
-    <https://arxiv.org/abs/2101.00797>`_ paper.
-
-    .. math::
-        \mathbf{x}^{\prime}_i= \epsilon \cdot \mathbf{x}^{(0)}_i +
-        \sum_{j \in \mathcal{N}(i)} \frac{\alpha_{i,j}}{\sqrt{d_i d_j}}
-        \mathbf{x}_{j}
-
-    where :math:`\mathbf{x}^{(0)}_i` and :math:`d_i` denote the initial feature
-    representation and node degree of node :math:`i`, respectively.
-    The attention coefficients :math:`\alpha_{i,j}` are computed as
-
-    .. math::
-        \mathbf{\alpha}_{i,j} = \textrm{tanh}(\mathbf{a}^{\top}[\mathbf{x}_i,
-        \mathbf{x}_j])
-
-    based on the trainable parameter vector :math:`\mathbf{a}`.
-
-    Args:
-        channels (int): Size of each input sample, or :obj:`-1` to derive
-            the size from the first input(s) to the forward method.
-        eps (float, optional): :math:`\epsilon`-value. (default: :obj:`0.1`)
-        dropout (float, optional): Dropout probability of the normalized
-            coefficients which exposes each node to a stochastically
-            sampled neighborhood during training. (default: :obj:`0`).
-        cached (bool, optional): If set to :obj:`True`, the layer will cache
-            the computation of :math:`\sqrt{d_i d_j}` on first execution, and
-            will use the cached version for further executions.
-            This parameter should only be set to :obj:`True` in transductive
-            learning scenarios. (default: :obj:`False`)
-        add_self_loops (bool, optional): If set to :obj:`False`, will not add
-            self-loops to the input graph. (default: :obj:`True`)
-        normalize (bool, optional): Whether to add self-loops (if
-            :obj:`add_self_loops` is :obj:`True`) and compute
-            symmetric normalization coefficients on the fly.
-            If set to :obj:`False`, :obj:`edge_weight` needs to be provided in
-            the layer's :meth:`forward` method. (default: :obj:`True`)
-        **kwargs (optional): Additional arguments of
-            :class:`torch_geometric.nn.conv.MessagePassing`.
-
-    Shapes:
-        - **input:**
-          node features :math:`(|\mathcal{V}|, F)`,
-          initial node features :math:`(|\mathcal{V}|, F)`,
-          edge indices :math:`(2, |\mathcal{E}|)`,
-          edge weights :math:`(|\mathcal{E}|)` *(optional)*
-        - **output:** node features :math:`(|\mathcal{V}|, F)` or
-          :math:`((|\mathcal{V}|, F), ((2, |\mathcal{E}|),
-          (|\mathcal{E}|)))` if :obj:`return_attention_weights=True`
-    """
     _cached_edge_index: Optional[OptPairTensor]
     _cached_adj_t: Optional[SparseTensor]
     _alpha: OptTensor
@@ -205,8 +154,6 @@ class FAConv(MessagePassing):
         alpha_l = self.att_l(x)
         alpha_r = self.att_r(x)
 
-        # propagate_type: (x: Tensor, alpha: PairTensor,
-        #                  edge_weight: OptTensor)
         out = self.propagate(edge_index, x=x, alpha=(alpha_l, alpha_r),
                              edge_weight=edge_weight)
 
@@ -220,7 +167,6 @@ class FAConv(MessagePassing):
             assert alpha is not None
             if isinstance(edge_index, Tensor):
                 if is_torch_sparse_tensor(edge_index):
-                    # TODO TorchScript requires to return a tuple
                     adj = set_sparse_value(edge_index, alpha)
                     return out, (adj, alpha)
                 else:

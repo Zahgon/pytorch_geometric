@@ -16,29 +16,6 @@ from torch_geometric.typing import EdgeType, InputEdges, OptTensor
 
 
 class DistLinkNeighborLoader(LinkLoader, DistLoader):
-    r"""A distributed loader that performs sampling from edges.
-
-    Args:
-        data (tuple): A (:class:`~torch_geometric.data.FeatureStore`,
-            :class:`~torch_geometric.data.GraphStore`) data object.
-        num_neighbors (List[int] or Dict[Tuple[str, str, str], List[int]]):
-            The number of neighbors to sample for each node in each iteration.
-            If an entry is set to :obj:`-1`, all neighbors will be included.
-            In heterogeneous graphs, may also take in a dictionary denoting
-            the amount of neighbors to sample for each individual edge type.
-        master_addr (str): RPC address for distributed loader communication,
-            *i.e.* the IP address of the master node.
-        master_port (Union[int, str]): Open port for RPC communication with
-            the master node.
-        current_ctx (DistContext): Distributed context information of the
-            current process.
-        concurrency (int, optional): RPC concurrency used for defining the
-            maximum size of the asynchronous processing queue.
-            (default: :obj:`1`)
-
-    All other arguments follow the interface of
-    :class:`torch_geometric.loader.LinkNeighborLoader`.
-    """
     def __init__(
         self,
         data: Tuple[LocalFeatureStore, LocalGraphStore],

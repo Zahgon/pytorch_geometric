@@ -16,63 +16,6 @@ from torch_geometric.typing import NoneType
 
 
 class MLP(torch.nn.Module):
-    r"""A Multi-Layer Perception (MLP) model.
-
-    There exists two ways to instantiate an :class:`MLP`:
-
-    1. By specifying explicit channel sizes, *e.g.*,
-
-       .. code-block:: python
-
-          mlp = MLP([16, 32, 64, 128])
-
-       creates a three-layer MLP with **differently** sized hidden layers.
-
-    1. By specifying fixed hidden channel sizes over a number of layers,
-       *e.g.*,
-
-       .. code-block:: python
-
-          mlp = MLP(in_channels=16, hidden_channels=32,
-                    out_channels=128, num_layers=3)
-
-       creates a three-layer MLP with **equally** sized hidden layers.
-
-    Args:
-        channel_list (List[int] or int, optional): List of input, intermediate
-            and output channels such that :obj:`len(channel_list) - 1` denotes
-            the number of layers of the MLP (default: :obj:`None`)
-        in_channels (int, optional): Size of each input sample.
-            Will override :attr:`channel_list`. (default: :obj:`None`)
-        hidden_channels (int, optional): Size of each hidden sample.
-            Will override :attr:`channel_list`. (default: :obj:`None`)
-        out_channels (int, optional): Size of each output sample.
-            Will override :attr:`channel_list`. (default: :obj:`None`)
-        num_layers (int, optional): The number of layers.
-            Will override :attr:`channel_list`. (default: :obj:`None`)
-        dropout (float or List[float], optional): Dropout probability of each
-            hidden embedding. If a list is provided, sets the dropout value per
-            layer. (default: :obj:`0.`)
-        act (str or Callable, optional): The non-linear activation function to
-            use. (default: :obj:`"relu"`)
-        act_first (bool, optional): If set to :obj:`True`, activation is
-            applied before normalization. (default: :obj:`False`)
-        act_kwargs (Dict[str, Any], optional): Arguments passed to the
-            respective activation function defined by :obj:`act`.
-            (default: :obj:`None`)
-        norm (str or Callable, optional): The normalization function to
-            use. (default: :obj:`"batch_norm"`)
-        norm_kwargs (Dict[str, Any], optional): Arguments passed to the
-            respective normalization function defined by :obj:`norm`.
-            (default: :obj:`None`)
-        plain_last (bool, optional): If set to :obj:`False`, will apply
-            non-linearity, batch normalization and dropout to the last layer as
-            well. (default: :obj:`True`)
-        bias (bool or List[bool], optional): If set to :obj:`False`, the module
-            will not learn additive biases. If a list is provided, sets the
-            bias per layer. (default: :obj:`True`)
-        **kwargs (optional): Additional deprecated arguments of the MLP layer.
-    """
     supports_norm_batch: Final[bool]
 
     def __init__(
@@ -95,7 +38,6 @@ class MLP(torch.nn.Module):
     ):
         super().__init__()
 
-        # Backward compatibility:
         act_first = act_first or kwargs.get("relu_first", False)
         batch_norm = kwargs.get("batch_norm", None)
         if batch_norm is not None and isinstance(batch_norm, bool):
@@ -175,18 +117,15 @@ class MLP(torch.nn.Module):
 
     @property
     def in_channels(self) -> int:
-        r"""Size of each input sample."""
-        return self.channel_list[0]
+        pass
 
     @property
     def out_channels(self) -> int:
-        r"""Size of each output sample."""
-        return self.channel_list[-1]
+        pass
 
     @property
     def num_layers(self) -> int:
-        r"""The number of layers."""
-        return len(self.channel_list) - 1
+        pass
 
     def reset_parameters(self):
         r"""Resets all learnable parameters of the module."""
@@ -222,13 +161,8 @@ class MLP(torch.nn.Module):
                 additionally return the embeddings before execution of the
                 final output layer. (default: :obj:`False`)
         """
-        # `return_emb` is annotated here as `NoneType` to be compatible with
-        # TorchScript, which does not support different return types based on
-        # the value of an input argument.
         emb: Optional[Tensor] = None
 
-        # If `plain_last=True`, then `len(norms) = len(lins) -1, thus skipping
-        # the execution of the last layer inside the for-loop.
         for i, (lin, norm) in enumerate(zip(self.lins, self.norms)):
             x = lin(x)
             if self.act is not None and self.act_first:

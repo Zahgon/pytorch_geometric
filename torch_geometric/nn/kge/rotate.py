@@ -9,36 +9,6 @@ from torch_geometric.nn.kge import KGEModel
 
 
 class RotatE(KGEModel):
-    r"""The RotatE model from the `"RotatE: Knowledge Graph Embedding by
-    Relational Rotation in Complex Space" <https://arxiv.org/abs/
-    1902.10197>`_ paper.
-
-    :class:`RotatE` models relations as a rotation in complex space
-    from head to tail such that
-
-    .. math::
-        \mathbf{e}_t = \mathbf{e}_h \circ \mathbf{e}_r,
-
-    resulting in the scoring function
-
-    .. math::
-        d(h, r, t) = - {\| \mathbf{e}_h \circ \mathbf{e}_r - \mathbf{e}_t \|}_p
-
-    .. note::
-
-        For an example of using the :class:`RotatE` model, see
-        `examples/kge_fb15k_237.py
-        <https://github.com/pyg-team/pytorch_geometric/blob/master/examples/
-        kge_fb15k_237.py>`_.
-
-    Args:
-        num_nodes (int): The number of nodes/entities in the graph.
-        num_relations (int): The number of relations in the graph.
-        hidden_channels (int): The hidden embedding size.
-        margin (float, optional): The margin of the ranking loss.
-        sparse (bool, optional): If set to :obj:`True`, gradients w.r.t. to
-            the embedding matrices will be sparse. (default: :obj:`False`)
-    """
     def __init__(
         self,
         num_nodes: int,

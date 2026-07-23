@@ -42,81 +42,6 @@ class MLP(Sequential):
 
 
 class GENConv(MessagePassing):
-    r"""The GENeralized Graph Convolution (GENConv) from the `"DeeperGCN: All
-    You Need to Train Deeper GCNs" <https://arxiv.org/abs/2006.07739>`_ paper.
-
-    :class:`GENConv` supports both :math:`\textrm{softmax}` (see
-    :class:`~torch_geometric.nn.aggr.SoftmaxAggregation`) and
-    :math:`\textrm{powermean}` (see
-    :class:`~torch_geometric.nn.aggr.PowerMeanAggregation`) aggregation.
-    Its message construction is given by:
-
-    .. math::
-        \mathbf{x}_i^{\prime} = \mathrm{MLP} \left( \mathbf{x}_i +
-        \mathrm{AGG} \left( \left\{
-        \mathrm{ReLU} \left( \mathbf{x}_j + \mathbf{e_{ji}} \right) +\epsilon
-        : j \in \mathcal{N}(i) \right\} \right)
-        \right)
-
-    .. note::
-
-        For an example of using :obj:`GENConv`, see
-        `examples/ogbn_proteins_deepgcn.py
-        <https://github.com/pyg-team/pytorch_geometric/blob/master/examples/
-        ogbn_proteins_deepgcn.py>`_.
-
-    Args:
-        in_channels (int or tuple): Size of each input sample, or :obj:`-1` to
-            derive the size from the first input(s) to the forward method.
-            A tuple corresponds to the sizes of source and target
-            dimensionalities.
-        out_channels (int): Size of each output sample.
-        aggr (str or Aggregation, optional): The aggregation scheme to use.
-            Any aggregation of :obj:`torch_geometric.nn.aggr` can be used,
-            (:obj:`"softmax"`, :obj:`"powermean"`, :obj:`"add"`, :obj:`"mean"`,
-            :obj:`max`). (default: :obj:`"softmax"`)
-        t (float, optional): Initial inverse temperature for softmax
-            aggregation. (default: :obj:`1.0`)
-        learn_t (bool, optional): If set to :obj:`True`, will learn the value
-            :obj:`t` for softmax aggregation dynamically.
-            (default: :obj:`False`)
-        p (float, optional): Initial power for power mean aggregation.
-            (default: :obj:`1.0`)
-        learn_p (bool, optional): If set to :obj:`True`, will learn the value
-            :obj:`p` for power mean aggregation dynamically.
-            (default: :obj:`False`)
-        msg_norm (bool, optional): If set to :obj:`True`, will use message
-            normalization. (default: :obj:`False`)
-        learn_msg_scale (bool, optional): If set to :obj:`True`, will learn the
-            scaling factor of message normalization. (default: :obj:`False`)
-        norm (str, optional): Norm layer of MLP layers (:obj:`"batch"`,
-            :obj:`"layer"`, :obj:`"instance"`) (default: :obj:`batch`)
-        num_layers (int, optional): The number of MLP layers.
-            (default: :obj:`2`)
-        expansion (int, optional): The expansion factor of hidden channels in
-            MLP layers. (default: :obj:`2`)
-        eps (float, optional): The epsilon value of the message construction
-            function. (default: :obj:`1e-7`)
-        bias (bool, optional): If set to :obj:`False`, the layer will not learn
-            an additive bias. (default: :obj:`True`)
-        edge_dim (int, optional): Edge feature dimensionality. If set to
-            :obj:`None`, Edge feature dimensionality is expected to match
-            the `out_channels`. Other-wise, edge features are linearly
-            transformed to match `out_channels` of node feature dimensionality.
-            (default: :obj:`None`)
-        **kwargs (optional): Additional arguments of
-            :class:`torch_geometric.nn.conv.GenMessagePassing`.
-
-    Shapes:
-        - **input:**
-          node features :math:`(|\mathcal{V}|, F_{in})` or
-          :math:`((|\mathcal{V_s}|, F_{s}), (|\mathcal{V_t}|, F_{t}))`
-          if bipartite,
-          edge indices :math:`(2, |\mathcal{E}|)`,
-          edge attributes :math:`(|\mathcal{E}|, D)` *(optional)*
-        - **output:** node features :math:`(|\mathcal{V}|, F_{out})` or
-          :math:`(|\mathcal{V}_t|, F_{out})` if bipartite
-    """
     def __init__(
         self,
         in_channels: Union[int, Tuple[int, int]],
@@ -137,12 +62,10 @@ class GENConv(MessagePassing):
         **kwargs,
     ):
 
-        # Backward compatibility:
         semi_grad = True if aggr == 'softmax_sg' else False
         aggr = 'softmax' if aggr == 'softmax_sg' else aggr
         aggr = 'powermean' if aggr == 'power' else aggr
 
-        # Override args of aggregator if `aggr_kwargs` is specified
         if 'aggr_kwargs' not in kwargs:
             if aggr == 'softmax':
                 kwargs['aggr_kwargs'] = dict(t=t, learn=learn_t,
@@ -209,7 +132,6 @@ class GENConv(MessagePassing):
         if hasattr(self, 'lin_src'):
             x = (self.lin_src(x[0]), x[1])
 
-        # propagate_type: (x: OptPairTensor, edge_attr: OptTensor)
         out = self.propagate(edge_index, x=x, edge_attr=edge_attr, size=size)
 
         if hasattr(self, 'lin_aggr_out'):

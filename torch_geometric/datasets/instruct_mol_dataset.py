@@ -11,27 +11,6 @@ from torch_geometric.utils import one_hot
 
 
 class InstructMolDataset(InMemoryDataset):
-    r"""The dataset from the `"InstructMol: Multi-Modal Integration for
-    Building a Versatile and Reliable Molecular Assistant in Drug Discovery"
-    <https://arxiv.org/pdf/2311.16208>`_ paper.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        pre_filter (callable, optional): A function that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a boolean
-            value, indicating whether the data object should be included in the
-            final dataset. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-    """
     raw_url = 'https://huggingface.co/datasets/OpenMol/PubChemSFT/resolve/main'
 
     def __init__(
@@ -48,11 +27,11 @@ class InstructMolDataset(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> List[str]:
-        return ['all_clean.json']
+        pass
 
     @property
     def processed_file_names(self) -> List[str]:
-        return ['data.pt']
+        pass
 
     def download(self) -> None:
         print('downloading dataset...')
@@ -84,11 +63,9 @@ class InstructMolDataset(InMemoryDataset):
             self.save(data_list, self.processed_paths[0])
             return
 
-        # types of atom and bond
         types = {'H': 0, 'C': 1, 'N': 2, 'O': 3, 'F': 4, 'Unknow': 5}
         bonds = {BT.SINGLE: 0, BT.DOUBLE: 1, BT.TRIPLE: 2, BT.AROMATIC: 3}
 
-        # load data
         mols = json.load(open(f'{self.raw_dir}/all_clean.json'))
 
         data_list = []

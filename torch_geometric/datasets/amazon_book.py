@@ -6,25 +6,6 @@ from torch_geometric.data import HeteroData, InMemoryDataset, download_url
 
 
 class AmazonBook(InMemoryDataset):
-    r"""A subset of the AmazonBook rating dataset from the
-    `"LightGCN: Simplifying and Powering Graph Convolution Network for
-    Recommendation" <https://arxiv.org/abs/2002.02126>`_ paper.
-    This is a heterogeneous dataset consisting of 52,643 users and 91,599 books
-    with approximately 2.9 million ratings between them.
-    No labels or features are provided.
-
-    Args:
-        root: Root directory where the dataset should be saved.
-        transform: A function/transform that takes in an
-            :class:`torch_geometric.data.HeteroData` object and returns a
-            transformed version. The data object will be transformed before
-            every access.
-        pre_transform: A function/transform that takes in an
-            :class:`torch_geometric.data.HeteroData` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk.
-        force_reload: Whether to re-process the dataset.
-    """
     url = ('https://raw.githubusercontent.com/gusye1234/LightGCN-PyTorch/'
            'master/data/amazon-book')
 
@@ -41,11 +22,11 @@ class AmazonBook(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> List[str]:
-        return ['user_list.txt', 'item_list.txt', 'train.txt', 'test.txt']
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def download(self) -> None:
         for name in self.raw_file_names:
@@ -56,13 +37,11 @@ class AmazonBook(InMemoryDataset):
 
         data = HeteroData()
 
-        # Process number of nodes for each node type:
         node_types = ['user', 'book']
         for path, node_type in zip(self.raw_paths, node_types):
             df = pd.read_csv(path, sep=' ', header=0)
             data[node_type].num_nodes = len(df)
 
-        # Process edge information for training and testing:
         attr_names = ['edge_index', 'edge_label_index']
         for path, attr_name in zip(self.raw_paths[2:], attr_names):
             rows, cols = [], []

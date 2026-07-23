@@ -8,40 +8,6 @@ from torch_geometric.nn.aggr.fused import FusedAggregation
 
 
 class BatchNorm(torch.nn.Module):
-    r"""Applies batch normalization over a batch of features as described in
-    the `"Batch Normalization: Accelerating Deep Network Training by
-    Reducing Internal Covariate Shift" <https://arxiv.org/abs/1502.03167>`_
-    paper.
-
-    .. math::
-        \mathbf{x}^{\prime}_i = \frac{\mathbf{x} -
-        \textrm{E}[\mathbf{x}]}{\sqrt{\textrm{Var}[\mathbf{x}] + \epsilon}}
-        \odot \gamma + \beta
-
-    The mean and standard-deviation are calculated per-dimension over all nodes
-    inside the mini-batch.
-
-    Args:
-        in_channels (int): Size of each input sample.
-        eps (float, optional): A value added to the denominator for numerical
-            stability. (default: :obj:`1e-5`)
-        momentum (float, optional): The value used for the running mean and
-            running variance computation. (default: :obj:`0.1`)
-        affine (bool, optional): If set to :obj:`True`, this module has
-            learnable affine parameters :math:`\gamma` and :math:`\beta`.
-            (default: :obj:`True`)
-        track_running_stats (bool, optional): If set to :obj:`True`, this
-            module tracks the running mean and variance, and when set to
-            :obj:`False`, this module does not track such statistics and always
-            uses batch statistics in both training and eval modes.
-            (default: :obj:`True`)
-        allow_single_element (bool, optional): If set to :obj:`True`, batches
-            with only a single element will work as during in evaluation.
-            That is the running mean and variance will be used.
-            Requires :obj:`track_running_stats=True`. (default: :obj:`False`)
-        device (torch.device, optional): The device to use for the module.
-            (default: :obj:`None`)
-    """
     def __init__(
         self,
         in_channels: int,
@@ -95,31 +61,6 @@ class BatchNorm(torch.nn.Module):
 
 
 class HeteroBatchNorm(torch.nn.Module):
-    r"""Applies batch normalization over a batch of heterogeneous features as
-    described in the `"Batch Normalization: Accelerating Deep Network Training
-    by Reducing Internal Covariate Shift" <https://arxiv.org/abs/1502.03167>`_
-    paper.
-    Compared to :class:`BatchNorm`, :class:`HeteroBatchNorm` applies
-    normalization individually for each node or edge type.
-
-    Args:
-        in_channels (int): Size of each input sample.
-        num_types (int): The number of types.
-        eps (float, optional): A value added to the denominator for numerical
-            stability. (default: :obj:`1e-5`)
-        momentum (float, optional): The value used for the running mean and
-            running variance computation. (default: :obj:`0.1`)
-        affine (bool, optional): If set to :obj:`True`, this module has
-            learnable affine parameters :math:`\gamma` and :math:`\beta`.
-            (default: :obj:`True`)
-        track_running_stats (bool, optional): If set to :obj:`True`, this
-            module tracks the running mean and variance, and when set to
-            :obj:`False`, this module does not track such statistics and always
-            uses batch statistics in both training and eval modes.
-            (default: :obj:`True`)
-        device (torch.device, optional): The device to use for the module.
-            (default: :obj:`None`)
-    """
     def __init__(
         self,
         in_channels: int,

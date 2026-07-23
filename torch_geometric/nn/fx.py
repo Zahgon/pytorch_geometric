@@ -13,58 +13,6 @@ except (ImportError, ModuleNotFoundError, AttributeError):
 
 
 class Transformer:
-    r"""A :class:`Transformer` executes an FX graph node-by-node, applies
-    transformations to each node, and produces a new :class:`torch.nn.Module`.
-    It exposes a :func:`transform` method that returns the transformed
-    :class:`~torch.nn.Module`.
-    :class:`Transformer` works entirely symbolically.
-
-    Methods in the :class:`Transformer` class can be overridden to customize
-    the behavior of transformation.
-
-    .. code-block:: none
-
-        transform()
-            +-- Iterate over each node in the graph
-                +-- placeholder()
-                +-- get_attr()
-                +-- call_function()
-                +-- call_method()
-                +-- call_module()
-                +-- call_message_passing_module()
-                +-- call_global_pooling_module()
-                +-- output()
-            +-- Erase unused nodes in the graph
-            +-- Iterate over each children module
-                +-- init_submodule()
-
-    In contrast to the :class:`torch.fx.Transformer` class, the
-    :class:`Transformer` exposes additional functionality:
-
-    #. It subdivides :func:`call_module` into nodes that call a regular
-       :class:`torch.nn.Module` (:func:`call_module`), a
-       :class:`MessagePassing` module (:func:`call_message_passing_module`),
-       or a :class:`GlobalPooling` module (:func:`call_global_pooling_module`).
-
-    #. It allows to customize or initialize new children modules via
-       :func:`init_submodule`
-
-    #. It allows to infer whether a node returns node-level or edge-level
-       information via :meth:`is_edge_level`.
-
-    Args:
-        module (torch.nn.Module): The module to be transformed.
-        input_map (Dict[str, str], optional): A dictionary holding information
-            about the type of input arguments of :obj:`module.forward`.
-            For example, in case :obj:`arg` is a node-level argument, then
-            :obj:`input_map['arg'] = 'node'`, and
-            :obj:`input_map['arg'] = 'edge'` otherwise.
-            In case :obj:`input_map` is not further specified, will try to
-            automatically determine the correct type of input arguments.
-            (default: :obj:`None`)
-        debug (bool, optional): If set to :obj:`True`, will perform
-            transformation in debug mode. (default: :obj:`False`)
-    """
     def __init__(
         self,
         module: Module,
@@ -76,7 +24,6 @@ class Transformer:
         self.input_map = input_map
         self.debug = debug
 
-    # Methods to override #####################################################
 
     def placeholder(self, node: Node, target: Any, name: str):
         pass
@@ -105,7 +52,6 @@ class Transformer:
     def init_submodule(self, module: Module, target: str) -> Module:
         return module
 
-    # Internal functionality ##################################################
 
     @property
     def graph(self) -> Graph:
@@ -121,13 +67,8 @@ class Transformer:
             code = self.graph.python_code('self')
             print(code.src if hasattr(code, 'src') else code)
 
-        # We create a private dictionary `self._state` which holds information
-        # about whether a node returns node-level or edge-level information:
-        # `self._state[node.name] in { 'node', 'edge' }`
         self._state = copy.copy(self.input_map or {})
 
-        # We iterate over each node and determine its output level
-        # (node-level, edge-level) by filling `self._state`:
         for node in list(self.graph.nodes):
             if node.op == 'call_function' and 'training' in node.kwargs:
                 warnings.warn(
@@ -156,10 +97,7 @@ class Transformer:
                 else:
                     self._state[node.name] = 'graph'
 
-        # We iterate over each node and may transform it:
         for node in list(self.graph.nodes):
-            # Call the corresponding `Transformer` method for each `node.op`,
-            # e.g.: `call_module(...)`, `call_function(...)`, ...
             op = node.op
             if is_message_passing_op(self.module, op, node.target):
                 op = 'call_message_passing_module'
@@ -167,12 +105,6 @@ class Transformer:
                 op = 'call_global_pooling_module'
             getattr(self, op)(node, node.target, node.name)
 
-        # Remove all unused nodes in the computation graph, i.e., all nodes
-        # which have been replaced by node type-wise or edge type-wise variants
-        # but which are still present in the computation graph.
-        # We do this by iterating over the computation graph in reversed order,
-        # and try to remove every node. This does only succeed in case there
-        # are no users of that node left in the computation graph.
         for node in reversed(list(self.graph.nodes)):
             try:
                 if node.op not in ['placeholder', 'output']:
@@ -244,7 +176,7 @@ class Transformer:
         return self._has_level_arg(node, name='edge')
 
     def has_graph_level_arg(self, node: Node) -> bool:
-        return self._has_level_arg(node, name='graph')
+        pass
 
     def find_by_name(self, name: str) -> Optional[Node]:
         for node in self.graph.nodes:
@@ -259,21 +191,13 @@ class Transformer:
         return None
 
     def replace_all_uses_with(self, to_replace: Node, replace_with: Node):
-        def maybe_replace_node(n: Node) -> Node:
-            return replace_with if n == to_replace else n
-
-        node = replace_with.next
-        while node.op != 'root':
-            node.args = torch.fx.map_arg(node.args, maybe_replace_node)
-            node.kwargs = torch.fx.map_arg(node.kwargs, maybe_replace_node)
-            node = node.next
+        pass
 
 
 def symbolic_trace(
         module: Module,
         concrete_args: Optional[Dict[str, Any]] = None) -> GraphModule:
 
-    # This is to support compatibility with pytorch version 1.9 and lower
     try:
         import torch.fx._symbolic_trace as st
     except (ImportError, ModuleNotFoundError):
@@ -283,14 +207,8 @@ def symbolic_trace(
 
     class Tracer(torch.fx.Tracer):
         def is_leaf_module(self, module: Module, *args, **kwargs) -> bool:
-            # TODO We currently only trace top-level modules.
             return not isinstance(module, torch.nn.Sequential)
 
-        # Note: This is a hack around the fact that `Aggregation.__call__`
-        # is not patched by the base implementation of `trace`.
-        # see https://github.com/pyg-team/pytorch_geometric/pull/5021 for
-        # details on the rationale
-        # TODO: Revisit https://github.com/pyg-team/pytorch_geometric/pull/5021
         @st.compatibility(is_backward_compatible=True)
         def trace(self, root: Union[torch.nn.Module, Callable[..., Any]],
                   concrete_args: Optional[Dict[str, Any]] = None) -> Graph:
@@ -333,27 +251,13 @@ def symbolic_trace(
 
             @st.functools.wraps(st._orig_module_getattr)
             def module_getattr_wrapper(mod, attr):
-                attr_val = st._orig_module_getattr(mod, attr)
-                # Support for PyTorch > 1.12, see:
-                # https://github.com/pytorch/pytorch/pull/84011
-                if hasattr(self, 'getattr'):
-                    return self.getattr(attr, attr_val, parameter_proxy_cache)
-                return self._module_getattr(attr, attr_val,
-                                            parameter_proxy_cache)
+                pass
 
             @st.functools.wraps(st._orig_module_call)
             def module_call_wrapper(mod, *args, **kwargs):
-                def forward(*args, **kwargs):
-                    return st._orig_module_call(mod, *args, **kwargs)
-
-                st._autowrap_check(
-                    patcher,
-                    getattr(getattr(mod, "forward", mod), "__globals__", {}),
-                    self._autowrap_function_ids)
-                return self.call_module(mod, forward, args, kwargs)
+                pass
 
             with st._Patcher() as patcher:
-                # allow duplicate patches to support the case of nested calls
                 patcher.patch_method(torch.nn.Module, "__getattr__",
                                      module_getattr_wrapper, deduplicate=False)
                 patcher.patch_method(torch.nn.Module, "__call__",

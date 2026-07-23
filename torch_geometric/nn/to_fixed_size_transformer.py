@@ -31,6 +31,4 @@ class ToFixedSizeTransformer(Transformer):
         self.batch_size = batch_size
 
     def call_global_pooling_module(self, node: Node, target: Any, name: str):
-        kwargs = node.kwargs.copy()
-        kwargs['dim_size'] = self.batch_size
-        node.kwargs = kwargs
+        pass

@@ -8,20 +8,6 @@ from torch_geometric.utils import to_undirected
 
 @functional_transform('face_to_edge')
 class FaceToEdge(BaseTransform):
-    r"""Converts mesh faces of shape :obj:`[3, num_faces]` or
-    :obj:`[4, num_faces]` to edge indices of shape :obj:`[2, num_edges]`
-    (functional name: :obj:`face_to_edge`).
-
-    This transform supports both 2D triangular faces, represented by a
-    tensor of shape :obj:`[3, num_faces]`, and 3D tetrahedral mesh faces,
-    represented by a tensor of shape :obj:`[4, num_faces]`. It will convert
-    these faces into edge indices, where each edge is defined by the indices
-    of its two endpoints.
-
-    Args:
-        remove_faces (bool, optional): If set to :obj:`False`, the face tensor
-            will not be removed.
-    """
     def __init__(self, remove_faces: bool = True) -> None:
         self.remove_faces = remove_faces
 

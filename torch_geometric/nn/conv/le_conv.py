@@ -8,42 +8,6 @@ from torch_geometric.typing import Adj, OptTensor, PairTensor
 
 
 class LEConv(MessagePassing):
-    r"""The local extremum graph neural network operator from the
-    `"ASAP: Adaptive Structure Aware Pooling for Learning Hierarchical Graph
-    Representations" <https://arxiv.org/abs/1911.07979>`_ paper.
-
-    :class:`LEConv` finds the importance of nodes with respect to their
-    neighbors using the difference operator:
-
-    .. math::
-        \mathbf{x}^{\prime}_i = \mathbf{x}_i \cdot \mathbf{\Theta}_1 +
-        \sum_{j \in \mathcal{N}(i)} e_{j,i} \cdot
-        (\mathbf{\Theta}_2 \mathbf{x}_i - \mathbf{\Theta}_3 \mathbf{x}_j)
-
-    where :math:`e_{j,i}` denotes the edge weight from source node :obj:`j` to
-    target node :obj:`i` (default: :obj:`1`)
-
-    Args:
-        in_channels (int or tuple): Size of each input sample, or :obj:`-1` to
-            derive the size from the first input(s) to the forward method.
-            A tuple corresponds to the sizes of source and target
-            dimensionalities.
-        out_channels (int): Size of each output sample.
-        bias (bool, optional): If set to :obj:`False`, the layer will
-            not learn an additive bias. (default: :obj:`True`).
-        **kwargs (optional): Additional arguments of
-            :class:`torch_geometric.nn.conv.MessagePassing`.
-
-    Shapes:
-        - **input:**
-          node features :math:`(|\mathcal{V}|, F_{in})` or
-          :math:`((|\mathcal{V_s}|, F_{s}), (|\mathcal{V_t}|, F_{t}))`
-          if bipartite,
-          edge indices :math:`(2, |\mathcal{E}|)`,
-          edge features :math:`(|\mathcal{E}|, D)` *(optional)*
-        - **output:** node features :math:`(|\mathcal{V}|, F_{out})` or
-          :math:`(|\mathcal{V}_t|, F_{out})` if bipartite
-    """
     def __init__(self, in_channels: Union[int, Tuple[int, int]],
                  out_channels: int, bias: bool = True, **kwargs):
         kwargs.setdefault('aggr', 'add')
@@ -76,7 +40,6 @@ class LEConv(MessagePassing):
         a = self.lin1(x[0])
         b = self.lin2(x[1])
 
-        # propagate_type: (a: Tensor, b: Tensor, edge_weight: OptTensor)
         out = self.propagate(edge_index, a=a, b=b, edge_weight=edge_weight)
 
         return out + self.lin3(x[1])

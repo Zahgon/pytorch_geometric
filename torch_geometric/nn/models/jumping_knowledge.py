@@ -6,41 +6,6 @@ from torch.nn import LSTM, Linear
 
 
 class JumpingKnowledge(torch.nn.Module):
-    r"""The Jumping Knowledge layer aggregation module from the
-    `"Representation Learning on Graphs with Jumping Knowledge Networks"
-    <https://arxiv.org/abs/1806.03536>`_ paper.
-
-    Jumping knowledge is performed based on either **concatenation**
-    (:obj:`"cat"`)
-
-    .. math::
-
-        \mathbf{x}_v^{(1)} \, \Vert \, \ldots \, \Vert \, \mathbf{x}_v^{(T)},
-
-    **max pooling** (:obj:`"max"`)
-
-    .. math::
-
-        \max \left( \mathbf{x}_v^{(1)}, \ldots, \mathbf{x}_v^{(T)} \right),
-
-    or **weighted summation**
-
-    .. math::
-
-        \sum_{t=1}^T \alpha_v^{(t)} \mathbf{x}_v^{(t)}
-
-    with attention scores :math:`\alpha_v^{(t)}` obtained from a bi-directional
-    LSTM (:obj:`"lstm"`).
-
-    Args:
-        mode (str): The aggregation scheme to use
-            (:obj:`"cat"`, :obj:`"max"` or :obj:`"lstm"`).
-        channels (int, optional): The number of channels per representation.
-            Needs to be only set for LSTM-style aggregation.
-            (default: :obj:`None`)
-        num_layers (int, optional): The number of layers to aggregate. Needs to
-            be only set for LSTM-style aggregation. (default: :obj:`None`)
-    """
     def __init__(
         self,
         mode: str,
@@ -101,18 +66,6 @@ class JumpingKnowledge(torch.nn.Module):
 
 
 class HeteroJumpingKnowledge(torch.nn.Module):
-    r"""A heterogeneous version of the :class:`JumpingKnowledge` module.
-
-    Args:
-        types (List[str]): The keys of the input dictionary.
-        mode (str): The aggregation scheme to use
-            (:obj:`"cat"`, :obj:`"max"` or :obj:`"lstm"`).
-        channels (int, optional): The number of channels per representation.
-            Needs to be only set for LSTM-style aggregation.
-            (default: :obj:`None`)
-        num_layers (int, optional): The number of layers to aggregate. Needs to
-            be only set for LSTM-style aggregation. (default: :obj:`None`)
-    """
     def __init__(
         self,
         types: List[str],

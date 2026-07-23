@@ -8,35 +8,6 @@ from torch_geometric.utils import index_sort
 
 
 class WordNet18(InMemoryDataset):
-    r"""The WordNet18 dataset from the `"Translating Embeddings for Modeling
-    Multi-Relational Data"
-    <https://papers.nips.cc/paper/5071-translating-embeddings-for-modeling
-    -multi-relational-data>`_ paper,
-    containing 40,943 entities, 18 relations and 151,442 fact triplets,
-    *e.g.*, furniture includes bed.
-
-    .. note::
-
-        The original :obj:`WordNet18` dataset suffers from test leakage, *i.e.*
-        more than 80% of test triplets can be found in the training set with
-        another relation type.
-        Therefore, it should not be used for research evaluation anymore.
-        We recommend to use its cleaned version
-        :class:`~torch_geometric.datasets.WordNet18RR` instead.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-    """
 
     url = ('https://raw.githubusercontent.com/villmow/'
            'datasets_knowledge_embedding/master/WN18/original')
@@ -54,11 +25,11 @@ class WordNet18(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> List[str]:
-        return ['train.txt', 'valid.txt', 'test.txt']
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def download(self) -> None:
         for filename in self.raw_file_names:
@@ -110,23 +81,6 @@ class WordNet18(InMemoryDataset):
 
 
 class WordNet18RR(InMemoryDataset):
-    r"""The WordNet18RR dataset from the `"Convolutional 2D Knowledge Graph
-    Embeddings" <https://arxiv.org/abs/1707.01476>`_ paper, containing 40,943
-    entities, 11 relations and 93,003 fact triplets.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-    """
 
     url = ('https://raw.githubusercontent.com/villmow/'
            'datasets_knowledge_embedding/master/WN18RR/original')
@@ -158,11 +112,11 @@ class WordNet18RR(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> List[str]:
-        return ['train.txt', 'valid.txt', 'test.txt']
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def download(self) -> None:
         for filename in self.raw_file_names:

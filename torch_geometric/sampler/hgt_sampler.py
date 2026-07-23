@@ -21,9 +21,6 @@ from torch_geometric.typing import (
 
 
 class HGTSampler(BaseSampler):
-    r"""An implementation of an in-memory heterogeneous layer-wise sampler
-    user by :class:`~torch_geometric.loader.HGTLoader`.
-    """
     def __init__(
         self,
         data: HeteroData,
@@ -47,11 +44,9 @@ class HGTSampler(BaseSampler):
         self.num_samples = num_samples
         self.num_hops = max([len(v) for v in num_samples.values()])
 
-        # Conversion to/from C++ string type (see `NeighborSampler`):
         self.to_rel_type = {k: '__'.join(k) for k in self.edge_types}
         self.to_edge_type = {v: k for k, v in self.to_rel_type.items()}
 
-        # Convert the graph data into a suitable format for sampling:
         colptr_dict, row_dict, self.perm = to_hetero_csc(
             data, device='cpu', share_memory=share_memory, is_sorted=is_sorted)
         self.row_dict = remap_keys(row_dict, self.to_rel_type)
@@ -88,4 +83,4 @@ class HGTSampler(BaseSampler):
 
     @property
     def edge_permutation(self) -> Union[OptTensor, Dict[EdgeType, OptTensor]]:
-        return self.perm
+        pass

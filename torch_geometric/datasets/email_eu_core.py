@@ -12,27 +12,6 @@ from torch_geometric.data import (
 
 
 class EmailEUCore(InMemoryDataset):
-    r"""An e-mail communication network of a large European research
-    institution, taken from the `"Local Higher-order Graph Clustering"
-    <https://www-cs.stanford.edu/~jure/pubs/mappr-kdd17.pdf>`_ paper.
-    Nodes indicate members of the institution.
-    An edge between a pair of members indicates that they exchanged at least
-    one email.
-    Node labels indicate membership to one of the 42 departments.
-
-    Args:
-        root (str): Root directory where the dataset should be saved.
-        transform (callable, optional): A function/transform that takes in an
-            :obj:`torch_geometric.data.Data` object and returns a transformed
-            version. The data object will be transformed before every access.
-            (default: :obj:`None`)
-        pre_transform (callable, optional): A function/transform that takes in
-            an :obj:`torch_geometric.data.Data` object and returns a
-            transformed version. The data object will be transformed before
-            being saved to disk. (default: :obj:`None`)
-        force_reload (bool, optional): Whether to re-process the dataset.
-            (default: :obj:`False`)
-    """
 
     urls = [
         'https://snap.stanford.edu/data/email-Eu-core.txt.gz',
@@ -52,11 +31,11 @@ class EmailEUCore(InMemoryDataset):
 
     @property
     def raw_file_names(self) -> List[str]:
-        return ['email-Eu-core.txt', 'email-Eu-core-department-labels.txt']
+        pass
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        pass
 
     def download(self) -> None:
         for url in self.urls:

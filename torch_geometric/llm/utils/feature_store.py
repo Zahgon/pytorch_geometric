@@ -12,12 +12,9 @@ from torch_geometric.sampler import HeteroSamplerOutput, SamplerOutput
 from torch_geometric.typing import InputNodes
 
 
-# NOTE: Only compatible with Homogeneous graphs for now
 class KNNRAGFeatureStore(LocalFeatureStore):
-    """A feature store that uses a KNN-based retrieval."""
     def __init__(self) -> None:
         """Initializes the feature store."""
-        # to be set by the config
         self.encoder_model = None
         self.k_nodes = None
         self._config: Dict[str, Any] = {}
@@ -25,53 +22,22 @@ class KNNRAGFeatureStore(LocalFeatureStore):
 
     @property
     def config(self) -> Dict[str, Any]:
-        """Get the config for the feature store."""
-        return self._config
+        pass
 
     def _set_from_config(self, config: Dict[str, Any], attr_name: str) -> None:
-        """Set an attribute from the config.
-
-        Args:
-            config (Dict[str, Any]): Config dictionary
-            attr_name (str): Name of attribute to set
-
-        Raises:
-            ValueError: If required attribute not found in config
-        """
-        if attr_name not in config:
-            raise ValueError(
-                f"Required config parameter '{attr_name}' not found")
-        setattr(self, attr_name, config[attr_name])
+        pass
 
     @config.setter  # type: ignore
     def config(self, config: Dict[str, Any]) -> None:
-        """Set the config for the feature store.
-
-        Args:
-            config (Dict[str, Any]):
-                Config dictionary containing required parameters
-
-        Raises:
-            ValueError: If required parameters missing from config
-        """
-        self._set_from_config(config, "k_nodes")
-        self._set_from_config(config, "encoder_model")
-        assert self.encoder_model is not None, \
-            "Need to define encoder model from config"
-        self.encoder_model.eval()
-
-        self._config = config
+        pass
 
     @property
     def x(self) -> Tensor:
-        """Returns the node features."""
-        return Tensor(self.get_tensor(group_name=None, attr_name='x'))
+        pass
 
     @property
     def edge_attr(self) -> Tensor:
-        """Returns the edge attributes."""
-        return Tensor(
-            self.get_tensor(group_name=(None, None), attr_name='edge_attr'))
+        pass
 
     def retrieve_seed_nodes(  # noqa: D417
             self, query: Union[str, List[str],
@@ -152,7 +118,6 @@ class KNNRAGFeatureStore(LocalFeatureStore):
                 [sample.global_row, sample.global_col], dim=0)
         result = Data(x=x, edge_attr=edge_attr, edge_index=edge_idx)
 
-        # useful for tracking what subset of the graph was sampled
         result.node_idx = sample.node
         result.edge_idx = edge_id
 

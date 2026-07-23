@@ -8,7 +8,6 @@ class DistRole(Enum):
 
 @dataclass
 class DistContext:
-    r"""Context information of the current process."""
     rank: int
     global_rank: int
     world_size: int
@@ -18,4 +17,4 @@ class DistContext:
 
     @property
     def worker_name(self) -> str:
-        return f'{self.group_name}-{self.rank}'
+        pass

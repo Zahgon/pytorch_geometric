@@ -32,36 +32,6 @@ def group(
 
 
 class HANConv(MessagePassing):
-    r"""The Heterogenous Graph Attention Operator from the
-    `"Heterogenous Graph Attention Network"
-    <https://arxiv.org/abs/1903.07293>`_ paper.
-
-    .. note::
-
-        For an example of using HANConv, see `examples/hetero/han_imdb.py
-        <https://github.com/pyg-team/pytorch_geometric/blob/master/examples/
-        hetero/han_imdb.py>`_.
-
-    Args:
-        in_channels (int or Dict[str, int]): Size of each input sample of every
-            node type, or :obj:`-1` to derive the size from the first input(s)
-            to the forward method.
-        out_channels (int): Size of each output sample.
-        metadata (Tuple[List[str], List[Tuple[str, str, str]]]): The metadata
-            of the heterogeneous graph, *i.e.* its node and edge types given
-            by a list of strings and a list of string triplets, respectively.
-            See :meth:`torch_geometric.data.HeteroData.metadata` for more
-            information.
-        heads (int, optional): Number of multi-head-attentions.
-            (default: :obj:`1`)
-        negative_slope (float, optional): LeakyReLU angle of the negative
-            slope. (default: :obj:`0.2`)
-        dropout (float, optional): Dropout probability of the normalized
-            attention coefficients which exposes each node to a stochastically
-            sampled neighborhood during training. (default: :obj:`0`)
-        **kwargs (optional): Additional arguments of
-            :class:`torch_geometric.nn.conv.MessagePassing`.
-    """
     def __init__(
         self,
         in_channels: Union[int, Dict[str, int]],
@@ -133,12 +103,10 @@ class HANConv(MessagePassing):
         H, D = self.heads, self.out_channels // self.heads
         x_node_dict, out_dict = {}, {}
 
-        # Iterate over node types:
         for node_type, x in x_dict.items():
             x_node_dict[node_type] = self.proj[node_type](x).view(-1, H, D)
             out_dict[node_type] = []
 
-        # Iterate over edge types:
         for edge_type, edge_index in edge_index_dict.items():
             src_type, _, dst_type = edge_type
             edge_type = '__'.join(edge_type)
@@ -148,14 +116,12 @@ class HANConv(MessagePassing):
             x_dst = x_node_dict[dst_type]
             alpha_src = (x_src * lin_src).sum(dim=-1)
             alpha_dst = (x_dst * lin_dst).sum(dim=-1)
-            # propagate_type: (x: PairTensor, alpha: PairTensor)
             out = self.propagate(edge_index, x=(x_src, x_dst),
                                  alpha=(alpha_src, alpha_dst))
 
             out = F.relu(out)
             out_dict[dst_type].append(out)
 
-        # iterate over node types:
         semantic_attn_dict = {}
         for node_type, outs in out_dict.items():
             out, attn = group(outs, self.q, self.k_lin)

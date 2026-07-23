@@ -20,11 +20,10 @@ try:
 except ImportError:  # PyTorch < 2.0
     from torch.optim.lr_scheduler import _LRScheduler as LRScheduler
 
-# Activation Resolver #########################################################
 
 
 def swish(x: Tensor) -> Tensor:
-    return x * x.sigmoid()
+    pass
 
 
 def activation_resolver(query: Union[Any, str] = 'relu', *args, **kwargs):
@@ -42,7 +41,6 @@ def activation_resolver(query: Union[Any, str] = 'relu', *args, **kwargs):
                     **kwargs)
 
 
-# Normalization Resolver ######################################################
 
 
 def normalization_resolver(query: Union[Any, str], *args, **kwargs):
@@ -58,7 +56,6 @@ def normalization_resolver(query: Union[Any, str], *args, **kwargs):
                     **kwargs)
 
 
-# Aggregation Resolver ########################################################
 
 
 def aggregation_resolver(query: Union[Any, str], *args, **kwargs):
@@ -77,7 +74,6 @@ def aggregation_resolver(query: Union[Any, str], *args, **kwargs):
     return resolver(aggrs, aggr_dict, query, base_cls, None, *args, **kwargs)
 
 
-# Optimizer Resolver ##########################################################
 
 
 def optimizer_resolver(query: Union[Any, str], *args, **kwargs):
@@ -89,7 +85,6 @@ def optimizer_resolver(query: Union[Any, str], *args, **kwargs):
     return resolver(optimizers, {}, query, base_cls, None, *args, **kwargs)
 
 
-# Learning Rate Scheduler Resolver ############################################
 
 
 def lr_scheduler_resolver(

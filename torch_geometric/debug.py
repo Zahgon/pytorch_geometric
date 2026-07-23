@@ -13,14 +13,6 @@ def set_debug_enabled(mode: bool) -> None:
 
 
 class debug:
-    r"""Context-manager that enables the debug mode to help track down errors
-    and separate usage errors from real bugs.
-
-    .. code-block:: python
-
-        with torch_geometric.debug():
-            out = model(data.x, data.edge_index)
-    """
     def __init__(self) -> None:
         self.prev = is_debug_enabled()
 
@@ -32,14 +24,6 @@ class debug:
 
 
 class set_debug:
-    r"""Context-manager that sets the debug mode on or off.
-
-    :class:`set_debug` will enable or disable the debug mode based on its
-    argument :attr:`mode`.
-    It can be used as a context-manager or as a function.
-
-    See :class:`debug` above for more details.
-    """
     def __init__(self, mode: bool) -> None:
         self.prev = is_debug_enabled()
         set_debug_enabled(mode)

@@ -13,44 +13,6 @@ from torch_geometric.utils._subgraph import hyper_subgraph
 
 
 class HyperGraphData(Data):
-    r"""A data object describing a hypergraph.
-
-    The data object can hold node-level, link-level and graph-level attributes.
-    This object differs from a standard :obj:`~torch_geometric.data.Data`
-    object by having hyperedges, i.e. edges that connect more
-    than two nodes. For example, in the hypergraph scenario
-    :math:`\mathcal{G} = (\mathcal{V}, \mathcal{E})` with
-    :math:`\mathcal{V} = \{ 0, 1, 2, 3, 4 \}` and
-    :math:`\mathcal{E} = \{ \{ 0, 1, 2 \}, \{ 1, 2, 3, 4 \} \}`, the
-    hyperedge index :obj:`edge_index` is represented as:
-
-    .. code-block:: python
-
-        # hyper graph with two hyperedges
-        # connecting 3 and 4 nodes, respectively
-        edge_index = torch.tensor([
-            [0, 1, 2, 1, 2, 3, 4],
-            [0, 0, 0, 1, 1, 1, 1],
-        ])
-
-    Args:
-        x (torch.Tensor, optional): Node feature matrix with shape
-            :obj:`[num_nodes, num_node_features]`. (default: :obj:`None`)
-        edge_index (LongTensor, optional): Hyperedge tensor
-            with shape :obj:`[2, num_edges*num_nodes_per_edge]`.
-            Where `edge_index[1]` denotes the hyperedge index and
-            `edge_index[0]` denotes the node indices that are connected
-            by the hyperedge. (default: :obj:`None`)
-            (default: :obj:`None`)
-        edge_attr (torch.Tensor, optional): Edge feature matrix with shape
-            :obj:`[num_edges, num_edge_features]`.
-            (default: :obj:`None`)
-        y (torch.Tensor, optional): Graph-level or node-level ground-truth
-            labels with arbitrary shape. (default: :obj:`None`)
-        pos (torch.Tensor, optional): Node position matrix with shape
-            :obj:`[num_nodes, num_dimensions]`. (default: :obj:`None`)
-        **kwargs (optional): Additional attributes.
-    """
     def __init__(
         self,
         x: OptTensor = None,
@@ -71,18 +33,12 @@ class HyperGraphData(Data):
 
     @property
     def num_edges(self) -> int:
-        r"""Returns the number of hyperedges in the hypergraph."""
-        if self.edge_index is None:
-            return 0
-        return max(self.edge_index[1]) + 1
+        pass
 
     @property
     def num_nodes(self) -> Optional[int]:
         num_nodes = super().num_nodes
 
-        # For hypergraphs, `edge_index[1]` does not contain node indices.
-        # Therefore, the below code is used to prevent `num_nodes` being
-        # estimated as the number of hyperedges.
         if (self.edge_index is not None and num_nodes == self.num_edges):
             return max(self.edge_index[0]) + 1
 
